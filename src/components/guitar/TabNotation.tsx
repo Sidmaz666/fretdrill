@@ -7,15 +7,16 @@ interface TabNotationProps {
   exercise: Exercise | null;
   onNoteClick?: (note: ExerciseNote) => void;
   activeNoteIndex?: number;
+  playingIdx?: number;
   className?: string;
 }
 
-export default function TabNotation({ exercise, onNoteClick, activeNoteIndex = -1, className = '' }: TabNotationProps) {
+export default function TabNotation({ exercise, onNoteClick, activeNoteIndex = -1, playingIdx = -1, className = '' }: TabNotationProps) {
   const [hoveredIdx, setHoveredIdx] = useState<number | null>(null);
 
   const isActive = useCallback((noteIdx: number) => {
-    return activeNoteIndex === noteIdx || hoveredIdx === noteIdx;
-  }, [activeNoteIndex, hoveredIdx]);
+    return activeNoteIndex === noteIdx || hoveredIdx === noteIdx || playingIdx === noteIdx;
+  }, [activeNoteIndex, hoveredIdx, playingIdx]);
 
   if (!exercise || !exercise.notes.length) {
     return (
@@ -66,15 +67,18 @@ export default function TabNotation({ exercise, onNoteClick, activeNoteIndex = -
             <span className="text-[#8b7355] font-bold opacity-70">|</span>
             {tabGrid[rowIdx].map((note, cellIdx) => {
               const noteActive = note !== null && isActive(cellIdx);
+              const isPlaying = note !== null && playingIdx === cellIdx;
               return (
                 <span
                   key={cellIdx}
                   className={`inline-block text-center cursor-pointer transition-colors duration-100 ${
-                    note
-                      ? noteActive
-                        ? 'text-[#9b3939] font-bold bg-[rgba(155,57,57,0.1)] rounded-sm'
-                        : 'text-[#4a4a4a] font-bold hover:text-[#9b3939] hover:bg-[rgba(155,57,57,0.05)] rounded-sm'
-                      : 'text-[#c4b89c]'
+                    isPlaying
+                      ? 'text-[#9b3939] font-bold bg-[rgba(155,57,57,0.2)] rounded-sm'
+                      : note
+                        ? noteActive
+                          ? 'text-[#9b3939] font-bold bg-[rgba(155,57,57,0.1)] rounded-sm'
+                          : 'text-[#4a4a4a] font-bold hover:text-[#9b3939] hover:bg-[rgba(155,57,57,0.05)] rounded-sm'
+                        : 'text-[#c4b89c]'
                   }`}
                   style={{ width: cellWidth, minWidth: cellWidth }}
                   onMouseEnter={() => {

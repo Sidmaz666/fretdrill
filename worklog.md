@@ -31,3 +31,29 @@ Stage Summary:
 - Accordion exercise panel works with expand/collapse
 - Exercise path clearly visible on fretboard with arrows and sequence numbers
 - Browser-verified interactivity: key switching, position switching, exercise selection all work
+
+---
+Task ID: 2
+Agent: Main
+Task: Major UI/UX overhaul - full-width controls, exercise pills, playable audio, functional connections
+
+Work Log:
+- Completely rewrote page.tsx with new layout:
+  - Controls: Key selector full width row 1, Scale dropdown full width row 2, Position + Intervals side by side
+  - Verbose nerdy labels: "— Root note of the scale", "— CAGED shape on neck", note counts, step formulas
+  - Exercise selector: horizontal grouped pills by category (no accordion, no side panel)
+  - Added Web Audio API guitar sound engine - notes play on click
+  - Added PLAY/STOP button to play through entire exercise sequentially
+  - Added Sound ON/OFF toggle in header
+  - Made Position Connections functional - clicking shows bridge zone on fretboard with "Back" button
+  - Connection view state tracks {start, end} fret range
+- Updated TabNotation.tsx to support playingIdx for highlight during exercise playback
+- Fixed connection card click propagation - PatternDiagram onNoteClick now calls handleConnectionClick
+
+Stage Summary:
+- Full-width layout with nerdy verbose labels throughout
+- Exercise selection via horizontal grouped pills (no accordion)
+- Audio playback works - click any note to hear it, PLAY button sequences through exercise
+- Position Connections now functional - click to see bridge zone, Back button to return
+- Tab notation highlights current note during playback
+- All interactive features browser-verified
