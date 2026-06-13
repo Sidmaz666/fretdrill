@@ -22,3 +22,27 @@ Stage Summary:
 - 8 exercise types (ascending, descending, asc/desc, thirds, 3-note sequences, 4-note sequences, triads, position connect)
 - Color-coded fretboard with interval labels matching reference images
 - Professional dark theme UI
+
+---
+Task ID: 2
+Agent: main
+Task: Redesign FretBoard Forge with Conceptual Sketch style, light mode only
+
+Work Log:
+- Completely redesigned globals.css with warm paper tones (#f5f0e8 bg, #8b7355 borders)
+- Added sketch-style CSS classes: sketch-card, sketch-btn, sketch-underline, crosshatch-bg, annotation
+- Removed all dark mode CSS variables and forced light mode
+- Redesigned FretboardDiagram SVG with sketch aesthetic: paper background, SVG displacement filter for hand-drawn lines, muted string colors, crosshatch root notes, italic serif labels, annotation arrows
+- Redesigned TabNotation with paper background, serif italic fonts, muted colors
+- Completely rewrote main page.tsx with sketch-style cards, pencil borders, serif italic headings
+- Updated layout.tsx to remove dark mode and enforce light background
+- Improved note label contrast (dark text #2c2c2c/#3a3a3a on colored circles)
+- Increased string opacity for better visibility
+- VLM rated final design 8/10 for conceptual sketch aesthetic
+
+Stage Summary:
+- Full conceptual sketch style redesign complete
+- Light mode only, no dark mode
+- Paper texture, pencil lines, crosshatching, annotations, muted earth tones
+- Georgia serif italic font throughout for handwritten feel
+- All functionality preserved (key/scale selectors, positions, exercises, tabs)

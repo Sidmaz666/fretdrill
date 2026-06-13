@@ -26,8 +26,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
 import {
@@ -38,7 +36,21 @@ import {
   ChevronRight,
   Zap,
   BookOpen,
+  Pencil,
 } from 'lucide-react';
+
+// Sketch-style interval color mapping (muted, pencil-like)
+function getSketchIntervalColor(label: string): string {
+  if (label === 'R') return '#8b4a4a';
+  if (label.includes('♭3') || label.includes('♭2')) return '#6b4a7a';
+  if (label === '3' || label === '2') return '#4a7a4a';
+  if (label === '4') return '#4a5a8a';
+  if (label.includes('5') || label === '5') return '#4a7a7a';
+  if (label.includes('6')) return '#8a6a3a';
+  if (label.includes('7')) return '#7a4a6a';
+  if (label.includes('♯') || label.includes('♭')) return '#6b4a7a';
+  return '#5a5a6a';
+}
 
 export default function Home() {
   // State: Key and Scale (defaults: A minor pentatonic)
@@ -58,7 +70,6 @@ export default function Home() {
     [keyNote, scaleId]
   );
 
-  // Current position fret range
   const currentPosition = positions[positionIndex] || {
     fretStart: 0,
     fretEnd: FRET_COUNT,
@@ -77,8 +88,7 @@ export default function Home() {
   // Randomize exercise
   const handleRandomize = useCallback(() => {
     const types = Object.keys(EXERCISE_TYPES) as ExerciseType[];
-    const randomType = types[Math.floor(Math.random() * types.length)];
-    setExerciseType(randomType);
+    setExerciseType(types[Math.floor(Math.random() * types.length)]);
   }, []);
 
   // Navigate positions
@@ -90,7 +100,7 @@ export default function Home() {
     setPositionIndex(prev => Math.min(positions.length - 1, prev + 1));
   }, [positions.length]);
 
-  // Scale info
+  // Scale notes
   const scaleNotes = useMemo(() => {
     return scale.intervals.map(interval => {
       const noteIndex = (KEY_NAMES.indexOf(keyNote) + interval) % 12;
@@ -99,235 +109,228 @@ export default function Home() {
   }, [keyNote, scale]);
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white">
-      {/* Header */}
-      <header className="border-b border-slate-800 bg-slate-950/80 backdrop-blur-sm sticky top-0 z-50">
+    <div className="min-h-screen bg-[#f5f0e8] text-[#2c2c2c]">
+      {/* Header - sketch style with pencil lines */}
+      <header className="border-b-2 border-[#8b7355] bg-[#faf6ef]">
         <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center">
-              <Guitar className="w-6 h-6 text-white" />
+            <div className="w-10 h-10 rounded-sm border-2 border-[#8b7355] flex items-center justify-center bg-[#f5f0e8]">
+              <Pencil className="w-5 h-5 text-[#6b5b47]" />
             </div>
             <div>
-              <h1 className="text-lg font-bold text-white">FretBoard Forge</h1>
-              <p className="text-xs text-slate-400">Procedural Guitar Exercise Generator</p>
+              <h1 className="text-lg font-bold text-[#2c2c2c]" style={{ fontFamily: "'Georgia', 'Times New Roman', serif", fontStyle: 'italic' }}>
+                FretBoard Forge
+              </h1>
+              <p className="text-xs text-[#8b7355] italic" style={{ fontFamily: "'Georgia', serif" }}>
+                procedural guitar exercise generator
+              </p>
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <Badge variant="outline" className="border-amber-500/30 text-amber-400">
-              <Music className="w-3 h-3 mr-1" />
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 border border-[#8b7355] rounded-sm text-sm text-[#6b5b47] font-serif italic">
+              <Music className="w-3.5 h-3.5" />
               {keyNote} {scale.name}
-            </Badge>
+            </span>
           </div>
         </div>
       </header>
 
       <main className="max-w-7xl mx-auto px-4 py-6">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
           {/* Left Sidebar - Controls */}
           <div className="lg:col-span-3 space-y-4">
             {/* Key Selector */}
-            <Card className="bg-slate-900 border-slate-800">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-semibold text-slate-200">Key</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-4 gap-1.5">
-                  {KEY_DISPLAY_NAMES.map((key, idx) => (
-                    <Button
-                      key={idx}
-                      variant={keyIndex === idx ? 'default' : 'outline'}
-                      size="sm"
-                      className={
-                        keyIndex === idx
-                          ? 'bg-amber-500 hover:bg-amber-600 text-black font-bold'
-                          : 'border-slate-700 text-slate-300 hover:border-amber-500/50 hover:text-amber-400'
-                      }
-                      onClick={() => {
-                        setKeyIndex(idx);
-                        setPositionIndex(0);
-                      }}
-                    >
-                      {key}
-                    </Button>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
+            <div className="sketch-card bg-[#faf6ef] p-4">
+              <h3 className="text-xs uppercase tracking-widest text-[#8b7355] mb-3 font-serif italic">
+                Key
+              </h3>
+              <div className="grid grid-cols-4 gap-1.5">
+                {KEY_DISPLAY_NAMES.map((key, idx) => (
+                  <button
+                    key={idx}
+                    className={`px-1 py-1.5 text-xs font-semibold border transition-all rounded-sm ${
+                      keyIndex === idx
+                        ? 'sketch-btn-active border-[#6b5b47] bg-[rgba(139,115,85,0.15)] text-[#2c2c2c]'
+                        : 'sketch-btn border-[#c4b89c] hover:border-[#8b7355]'
+                    }`}
+                    onClick={() => {
+                      setKeyIndex(idx);
+                      setPositionIndex(0);
+                    }}
+                  >
+                    {key}
+                  </button>
+                ))}
+              </div>
+            </div>
 
             {/* Scale Selector */}
-            <Card className="bg-slate-900 border-slate-800">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-semibold text-slate-200">Scale</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <Select value={scaleId} onValueChange={(v) => { setScaleId(v); setPositionIndex(0); }}>
-                  <SelectTrigger className="bg-slate-800 border-slate-700 text-white">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent className="bg-slate-800 border-slate-700">
-                    {Object.entries(SCALES).map(([id, s]) => (
-                      <SelectItem key={id} value={id} className="text-slate-200 focus:bg-slate-700 focus:text-white">
-                        {s.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-
-                {/* Scale notes display */}
-                <div className="mt-3 flex flex-wrap gap-1.5">
-                  {scaleNotes.map((note, idx) => (
-                    <Badge
-                      key={idx}
-                      variant="outline"
-                      className={
-                        idx === 0
-                          ? 'border-red-500/50 text-red-400 bg-red-500/10'
-                          : 'border-slate-600 text-slate-300'
-                      }
-                    >
-                      {note}
-                    </Badge>
+            <div className="sketch-card bg-[#faf6ef] p-4">
+              <h3 className="text-xs uppercase tracking-widest text-[#8b7355] mb-3 font-serif italic">
+                Scale
+              </h3>
+              <Select value={scaleId} onValueChange={(v) => { setScaleId(v); setPositionIndex(0); }}>
+                <SelectTrigger className="bg-[#f5f0e8] border-[#c4b89c] text-[#2c2c2c] text-sm rounded-sm">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="bg-[#faf6ef] border-[#c4b89c]">
+                  {Object.entries(SCALES).map(([id, s]) => (
+                    <SelectItem key={id} value={id} className="text-[#2c2c2c] focus:bg-[rgba(139,115,85,0.1)] focus:text-[#2c2c2c]">
+                      {s.name}
+                    </SelectItem>
                   ))}
-                </div>
-              </CardContent>
-            </Card>
+                </SelectContent>
+              </Select>
+
+              {/* Scale notes */}
+              <div className="mt-3 flex flex-wrap gap-1.5">
+                {scaleNotes.map((note, idx) => (
+                  <span
+                    key={idx}
+                    className={`inline-flex items-center justify-center px-2 py-0.5 text-xs font-serif italic border rounded-sm ${
+                      idx === 0
+                        ? 'border-[#8b4a4a]/50 text-[#8b4a4a] bg-[#8b4a4a]/10'
+                        : 'border-[#c4b89c] text-[#6b5b47]'
+                    }`}
+                  >
+                    {note}
+                  </span>
+                ))}
+              </div>
+            </div>
 
             {/* Position Selector */}
-            <Card className="bg-slate-900 border-slate-800">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-semibold text-slate-200">Position</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
+            <div className="sketch-card bg-[#faf6ef] p-4">
+              <h3 className="text-xs uppercase tracking-widest text-[#8b7355] mb-3 font-serif italic">
+                Position
+              </h3>
+              <div className="space-y-3">
                 <div className="flex items-center gap-2">
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    className="h-8 w-8 border-slate-700"
+                  <button
+                    className="sketch-btn w-8 h-8 flex items-center justify-center border-[#c4b89c] disabled:opacity-30"
                     onClick={handlePrevPosition}
                     disabled={positionIndex <= 0}
                   >
                     <ChevronLeft className="h-4 w-4" />
-                  </Button>
+                  </button>
                   <div className="flex-1 text-center">
-                    <span className="text-amber-400 font-semibold">
+                    <span className="text-[#4a4a4a] font-semibold font-serif italic text-sm">
                       {currentPosition.name}
                     </span>
-                    <span className="text-slate-500 text-xs block">
+                    <span className="text-[#8b7355] text-xs block font-serif italic">
                       Frets {currentPosition.fretStart}–{currentPosition.fretEnd}
                     </span>
                   </div>
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    className="h-8 w-8 border-slate-700"
+                  <button
+                    className="sketch-btn w-8 h-8 flex items-center justify-center border-[#c4b89c] disabled:opacity-30"
                     onClick={handleNextPosition}
                     disabled={positionIndex >= positions.length - 1}
                   >
                     <ChevronRight className="h-4 w-4" />
-                  </Button>
+                  </button>
                 </div>
-                <Button
-                  variant={showAllPositions ? 'default' : 'outline'}
-                  size="sm"
-                  className={
+                <button
+                  className={`w-full text-sm py-1.5 rounded-sm transition-all ${
                     showAllPositions
-                      ? 'bg-amber-500 text-black w-full'
-                      : 'border-slate-700 text-slate-300 w-full'
-                  }
+                      ? 'sketch-btn-active border-[#6b5b47]'
+                      : 'sketch-btn border-[#c4b89c]'
+                  }`}
                   onClick={() => setShowAllPositions(!showAllPositions)}
                 >
-                  {showAllPositions ? 'Showing All Positions' : 'Show All Positions'}
-                </Button>
+                  {showAllPositions ? '✓ All Positions' : 'Show All'}
+                </button>
                 {!showAllPositions && (
                   <div className="flex gap-1">
                     {positions.map((pos, idx) => (
-                      <Button
+                      <button
                         key={idx}
-                        variant={positionIndex === idx ? 'default' : 'outline'}
-                        size="sm"
-                        className={
+                        className={`flex-1 py-1 text-xs font-semibold rounded-sm transition-all ${
                           positionIndex === idx
-                            ? 'bg-amber-500/20 text-amber-400 border-amber-500/50 flex-1'
-                            : 'border-slate-700 text-slate-400 flex-1'
-                        }
+                            ? 'sketch-btn-active border-[#6b5b47]'
+                            : 'sketch-btn border-[#c4b89c]'
+                        }`}
                         onClick={() => setPositionIndex(idx)}
                       >
                         {idx + 1}
-                      </Button>
+                      </button>
                     ))}
                   </div>
                 )}
-              </CardContent>
-            </Card>
+              </div>
+            </div>
 
             {/* Exercise Type */}
-            <Card className="bg-slate-900 border-slate-800">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-semibold text-slate-200 flex items-center gap-2">
-                  <Zap className="w-4 h-4 text-amber-400" />
-                  Exercise Type
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2">
+            <div className="sketch-card bg-[#faf6ef] p-4">
+              <h3 className="text-xs uppercase tracking-widest text-[#8b7355] mb-3 font-serif italic flex items-center gap-1.5">
+                <Zap className="w-3.5 h-3.5" />
+                Exercise
+              </h3>
+              <div className="space-y-2">
                 <Select value={exerciseType} onValueChange={(v) => setExerciseType(v as ExerciseType)}>
-                  <SelectTrigger className="bg-slate-800 border-slate-700 text-white">
+                  <SelectTrigger className="bg-[#f5f0e8] border-[#c4b89c] text-[#2c2c2c] text-sm rounded-sm">
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent className="bg-slate-800 border-slate-700">
+                  <SelectContent className="bg-[#faf6ef] border-[#c4b89c]">
                     {Object.entries(EXERCISE_TYPES).map(([id, info]) => (
-                      <SelectItem key={id} value={id} className="text-slate-200 focus:bg-slate-700 focus:text-white">
+                      <SelectItem key={id} value={id} className="text-[#2c2c2c] focus:bg-[rgba(139,115,85,0.1)]">
                         {info.name}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="border-amber-500/30 text-amber-400 hover:bg-amber-500/10 w-full"
+                <button
+                  className="sketch-btn w-full text-sm py-1.5 border-[#8b7355] text-[#6b5b47]"
                   onClick={handleRandomize}
                 >
-                  <Shuffle className="w-3 h-3 mr-2" />
+                  <Shuffle className="w-3 h-3 inline mr-1.5" />
                   Random Exercise
-                </Button>
-              </CardContent>
-            </Card>
+                </button>
+              </div>
+            </div>
           </div>
 
-          {/* Main Content - Fretboard & Tabs */}
+          {/* Main Content */}
           <div className="lg:col-span-9 space-y-4">
-            {/* View Mode Tabs */}
+            {/* View Mode Tabs - sketch style */}
             <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as 'fretboard' | 'exercise')}>
-              <TabsList className="bg-slate-900 border border-slate-800">
-                <TabsTrigger value="fretboard" className="data-[state=active]:bg-amber-500 data-[state=active]:text-black">
-                  <BookOpen className="w-4 h-4 mr-2" />
+              <TabsList className="bg-[#faf6ef] border border-[#c4b89c] rounded-sm h-auto p-0.5">
+                <TabsTrigger
+                  value="fretboard"
+                  className="data-[state=active]:bg-[rgba(139,115,85,0.15)] data-[state=active]:text-[#2c2c2c] data-[state=active]:border-[#8b7355] data-[state=active]:shadow-none rounded-sm text-[#8b7355] text-xs border border-transparent px-3 py-1.5 font-serif italic"
+                >
+                  <BookOpen className="w-3.5 h-3.5 mr-1.5" />
                   Fretboard View
                 </TabsTrigger>
-                <TabsTrigger value="exercise" className="data-[state=active]:bg-amber-500 data-[state=active]:text-black">
-                  <Zap className="w-4 h-4 mr-2" />
+                <TabsTrigger
+                  value="exercise"
+                  className="data-[state=active]:bg-[rgba(139,115,85,0.15)] data-[state=active]:text-[#2c2c2c] data-[state=active]:border-[#8b7355] data-[state=active]:shadow-none rounded-sm text-[#8b7355] text-xs border border-transparent px-3 py-1.5 font-serif italic"
+                >
+                  <Zap className="w-3.5 h-3.5 mr-1.5" />
                   Exercise View
                 </TabsTrigger>
               </TabsList>
 
               <TabsContent value="fretboard" className="mt-4 space-y-4">
                 {/* Fretboard Diagram */}
-                <Card className="bg-slate-900 border-slate-800 overflow-hidden">
-                  <CardHeader className="pb-2">
-                    <div className="flex items-center justify-between">
-                      <CardTitle className="text-base font-semibold text-white">
+                <div className="sketch-card bg-[#faf6ef] overflow-hidden">
+                  <div className="p-4 pb-2">
+                    <div className="flex items-center justify-between mb-1">
+                      <h2 className="text-base font-semibold font-serif italic text-[#2c2c2c]">
                         {keyNote} {scale.name}
-                        {!showAllPositions && ` — ${currentPosition.name}`}
-                      </CardTitle>
-                      <div className="flex items-center gap-2 text-xs text-slate-400">
-                        <span>Intervals:</span>
+                        {!showAllPositions && (
+                          <span className="text-[#8b7355] font-normal"> — {currentPosition.name}</span>
+                        )}
+                      </h2>
+                      <div className="flex items-center gap-1.5 text-xs text-[#8b7355]">
+                        <span className="font-serif italic">intervals:</span>
                         {scale.intervalLabels.map((label, idx) => (
                           <span
                             key={idx}
-                            className="inline-flex items-center justify-center w-6 h-6 rounded-full text-[10px] font-bold"
+                            className="inline-flex items-center justify-center w-6 h-6 text-[9px] font-bold font-serif italic border rounded-sm"
                             style={{
-                              backgroundColor: getIntervalColorForLabel(label) + '33',
-                              color: getIntervalColorForLabel(label),
-                              border: `1px solid ${getIntervalColorForLabel(label)}55`,
+                              borderColor: getSketchIntervalColor(label) + '55',
+                              color: getSketchIntervalColor(label),
+                              backgroundColor: getSketchIntervalColor(label) + '10',
                             }}
                           >
                             {label}
@@ -335,37 +338,35 @@ export default function Home() {
                         ))}
                       </div>
                     </div>
-                  </CardHeader>
-                  <CardContent className="pb-4">
-                    <div className="overflow-x-auto">
-                      <FretboardDiagram
-                        keyNote={keyNote}
-                        scaleId={scaleId}
-                        startFret={startFret}
-                        endFret={endFret}
-                        showAllPositions={showAllPositions}
-                        positionIndex={positionIndex}
-                      />
-                    </div>
-                  </CardContent>
-                </Card>
+                  </div>
+                  <div className="px-2 pb-4 overflow-x-auto">
+                    <FretboardDiagram
+                      keyNote={keyNote}
+                      scaleId={scaleId}
+                      startFret={startFret}
+                      endFret={endFret}
+                      showAllPositions={showAllPositions}
+                      positionIndex={positionIndex}
+                    />
+                  </div>
+                </div>
 
-                {/* All 5 positions preview */}
+                {/* Position previews */}
                 {!showAllPositions && (
                   <div className="grid grid-cols-5 gap-2">
                     {positions.map((pos, idx) => (
                       <button
                         key={idx}
                         onClick={() => setPositionIndex(idx)}
-                        className={`p-2 rounded-lg border transition-all ${
+                        className={`p-2 rounded-sm border transition-all text-left ${
                           positionIndex === idx
-                            ? 'border-amber-500/50 bg-amber-500/10'
-                            : 'border-slate-800 bg-slate-900 hover:border-slate-700'
+                            ? 'border-[#8b7355] bg-[rgba(139,115,85,0.1)]'
+                            : 'border-[#c4b89c] bg-[#faf6ef] hover:border-[#8b7355]'
                         }`}
                       >
-                        <div className="text-xs font-semibold text-slate-300 mb-1">{pos.name}</div>
-                        <div className="text-[10px] text-slate-500">Frets {pos.fretStart}–{pos.fretEnd}</div>
-                        <div className="mt-1 overflow-hidden rounded">
+                        <div className="text-xs font-semibold text-[#4a4a4a] font-serif italic mb-0.5">{pos.name}</div>
+                        <div className="text-[10px] text-[#8b7355] font-serif italic">Frets {pos.fretStart}–{pos.fretEnd}</div>
+                        <div className="mt-1 overflow-hidden rounded-sm">
                           <FretboardDiagram
                             keyNote={keyNote}
                             scaleId={scaleId}
@@ -373,7 +374,6 @@ export default function Home() {
                             endFret={pos.fretEnd}
                             positionIndex={idx}
                             width={150}
-                            className="[&_*]:!text-[6px]"
                           />
                         </div>
                       </button>
@@ -381,45 +381,43 @@ export default function Home() {
                   </div>
                 )}
 
-                {/* Full fretboard when showing all */}
+                {/* Full fretboard */}
                 {showAllPositions && (
-                  <Card className="bg-slate-900 border-slate-800">
-                    <CardContent className="pt-4">
-                      <div className="overflow-x-auto">
-                        <FretboardDiagram
-                          keyNote={keyNote}
-                          scaleId={scaleId}
-                          startFret={0}
-                          endFret={FRET_COUNT}
-                          showAllPositions={true}
-                          positionIndex={-1}
-                        />
-                      </div>
-                    </CardContent>
-                  </Card>
+                  <div className="sketch-card bg-[#faf6ef] p-4">
+                    <div className="overflow-x-auto">
+                      <FretboardDiagram
+                        keyNote={keyNote}
+                        scaleId={scaleId}
+                        startFret={0}
+                        endFret={FRET_COUNT}
+                        showAllPositions={true}
+                        positionIndex={-1}
+                      />
+                    </div>
+                  </div>
                 )}
               </TabsContent>
 
               <TabsContent value="exercise" className="mt-4 space-y-4">
-                {/* Current Exercise */}
-                <Card className="bg-slate-900 border-slate-800">
-                  <CardHeader className="pb-2">
+                {/* Exercise card */}
+                <div className="sketch-card bg-[#faf6ef]">
+                  <div className="p-4 pb-2">
                     <div className="flex items-center justify-between">
                       <div>
-                        <CardTitle className="text-base font-semibold text-white">
+                        <h2 className="text-base font-semibold font-serif italic text-[#2c2c2c]">
                           {currentExercise?.name || 'No Exercise'}
-                        </CardTitle>
-                        <p className="text-xs text-slate-400 mt-1">
+                        </h2>
+                        <p className="text-xs text-[#8b7355] mt-0.5 font-serif italic">
                           {currentExercise?.description}
                         </p>
                       </div>
-                      <Badge variant="outline" className="border-amber-500/30 text-amber-400">
+                      <span className="inline-flex items-center px-2 py-0.5 border border-[#c4b89c] rounded-sm text-xs text-[#6b5b47] font-serif italic">
                         {keyNote} {scale.name} — {currentPosition.name}
-                      </Badge>
+                      </span>
                     </div>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    {/* Fretboard with exercise notes highlighted */}
+                  </div>
+                  <div className="px-2 pb-4 space-y-3">
+                    {/* Fretboard with exercise notes */}
                     <div className="overflow-x-auto">
                       <FretboardDiagram
                         keyNote={keyNote}
@@ -430,126 +428,113 @@ export default function Home() {
                       />
                     </div>
 
-                    <Separator className="bg-slate-800" />
+                    <div className="border-t border-[#c4b89c] mx-4" />
 
                     {/* Tab Notation */}
-                    <TabNotation exercise={currentExercise} />
-                  </CardContent>
-                </Card>
+                    <div className="mx-2">
+                      <TabNotation exercise={currentExercise} />
+                    </div>
+                  </div>
+                </div>
 
                 {/* Quick exercise buttons */}
-                <Card className="bg-slate-900 border-slate-800">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm font-semibold text-slate-200">Quick Exercises</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                      {Object.entries(EXERCISE_TYPES).map(([id, info]) => (
-                        <Button
-                          key={id}
-                          variant={exerciseType === id ? 'default' : 'outline'}
-                          size="sm"
-                          className={
-                            exerciseType === id
-                              ? 'bg-amber-500 text-black font-semibold'
-                              : 'border-slate-700 text-slate-300 hover:border-amber-500/50 hover:text-amber-400'
-                          }
-                          onClick={() => setExerciseType(id as ExerciseType)}
-                        >
-                          {info.name}
-                        </Button>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
+                <div className="sketch-card bg-[#faf6ef] p-4">
+                  <h3 className="text-xs uppercase tracking-widest text-[#8b7355] mb-3 font-serif italic">
+                    Quick Exercises
+                  </h3>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
+                    {Object.entries(EXERCISE_TYPES).map(([id, info]) => (
+                      <button
+                        key={id}
+                        className={`text-xs py-1.5 px-2 rounded-sm transition-all ${
+                          exerciseType === id
+                            ? 'sketch-btn-active border-[#6b5b47]'
+                            : 'sketch-btn border-[#c4b89c]'
+                        }`}
+                        onClick={() => setExerciseType(id as ExerciseType)}
+                      >
+                        {info.name}
+                      </button>
+                    ))}
+                  </div>
+                </div>
               </TabsContent>
             </Tabs>
 
             {/* Scale Reference */}
-            <Card className="bg-slate-900 border-slate-800">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-semibold text-slate-200 flex items-center gap-2">
-                  <Music className="w-4 h-4 text-amber-400" />
-                  Scale Reference — {keyNote} {scale.name}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <h4 className="text-xs text-slate-400 mb-2 uppercase tracking-wide">Notes & Intervals</h4>
-                    <div className="flex flex-wrap gap-2">
-                      {scale.intervals.map((interval, idx) => {
-                        const noteIndex = (KEY_NAMES.indexOf(keyNote) + interval) % 12;
-                        const noteName = KEY_NAMES[noteIndex];
-                        const label = scale.intervalLabels[idx];
-                        const color = getIntervalColorForLabel(label);
-                        return (
-                          <div
-                            key={idx}
-                            className="flex flex-col items-center px-3 py-2 rounded-lg"
-                            style={{
-                              backgroundColor: color + '15',
-                              border: `1px solid ${color}33`,
-                            }}
-                          >
-                            <span className="text-sm font-bold" style={{ color }}>{noteName}</span>
-                            <span className="text-[10px] text-slate-400">{label}</span>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                  <div>
-                    <h4 className="text-xs text-slate-400 mb-2 uppercase tracking-wide">Interval Formula</h4>
-                    <div className="font-mono text-sm text-slate-300 bg-slate-800 rounded-lg p-3">
-                      {scale.intervals.map((interval, idx) => (
-                        <span key={idx}>
-                          {idx > 0 && <span className="text-slate-500"> - </span>}
-                          <span className="text-amber-400">{interval}</span>
-                          <span className="text-slate-500 text-xs ml-0.5">st</span>
-                        </span>
-                      ))}
-                    </div>
-                    <p className="text-xs text-slate-500 mt-2">
-                      Steps from root: {scale.intervals.slice(1).map((interval, idx) => {
-                        const prevInterval = idx === 0 ? 0 : scale.intervals[idx];
-                        const step = interval - prevInterval;
-                        return step === 1 ? 'H' : step === 2 ? 'W' : `${step}H`;
-                      }).join(' - ')}
-                      (W = Whole step, H = Half step)
-                    </p>
+            <div className="sketch-card bg-[#faf6ef] p-4">
+              <h3 className="text-xs uppercase tracking-widest text-[#8b7355] mb-3 font-serif italic flex items-center gap-1.5">
+                <Music className="w-3.5 h-3.5" />
+                Scale Reference — {keyNote} {scale.name}
+              </h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <h4 className="text-[10px] uppercase tracking-widest text-[#8b7355] mb-2 font-serif italic">
+                    Notes & Intervals
+                  </h4>
+                  <div className="flex flex-wrap gap-2">
+                    {scale.intervals.map((interval, idx) => {
+                      const noteIndex = (KEY_NAMES.indexOf(keyNote) + interval) % 12;
+                      const noteName = KEY_NAMES[noteIndex];
+                      const label = scale.intervalLabels[idx];
+                      const color = getSketchIntervalColor(label);
+                      return (
+                        <div
+                          key={idx}
+                          className="flex flex-col items-center px-3 py-2 rounded-sm"
+                          style={{
+                            backgroundColor: color + '08',
+                            border: `1px solid ${color}30`,
+                          }}
+                        >
+                          <span className="text-sm font-bold font-serif italic" style={{ color }}>
+                            {noteName}
+                          </span>
+                          <span className="text-[10px] text-[#8b7355] font-serif italic">{label}</span>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
-              </CardContent>
-            </Card>
+                <div>
+                  <h4 className="text-[10px] uppercase tracking-widest text-[#8b7355] mb-2 font-serif italic">
+                    Interval Formula
+                  </h4>
+                  <div className="font-mono text-sm text-[#4a4a4a] bg-[#f5f0e8] border border-[#c4b89c] rounded-sm p-3">
+                    {scale.intervals.map((interval, idx) => (
+                      <span key={idx}>
+                        {idx > 0 && <span className="text-[#c4b89c]"> — </span>}
+                        <span className="text-[#6b5b47]">{interval}</span>
+                        <span className="text-[#b8a88a] text-xs ml-0.5">st</span>
+                      </span>
+                    ))}
+                  </div>
+                  <p className="text-xs text-[#8b7355] mt-2 font-serif italic">
+                    Steps from root: {scale.intervals.slice(1).map((interval, idx) => {
+                      const prevInterval = idx === 0 ? 0 : scale.intervals[idx];
+                      const step = interval - prevInterval;
+                      return step === 1 ? 'H' : step === 2 ? 'W' : `${step}H`;
+                    }).join(' — ')}
+                    {' '}(W = Whole step, H = Half step)
+                  </p>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-slate-800 mt-8">
+      <footer className="border-t-2 border-[#c4b89c] mt-8">
         <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
-          <p className="text-xs text-slate-500">
+          <p className="text-xs text-[#8b7355] font-serif italic">
             FretBoard Forge — Procedural Guitar Exercise Generator
           </p>
-          <p className="text-xs text-slate-600">
+          <p className="text-xs text-[#b8a88a] font-serif italic">
             Inspired by Ricky&apos;s Guitar teaching method
           </p>
         </div>
       </footer>
     </div>
   );
-}
-
-// Helper function to get interval color as hex string
-function getIntervalColorForLabel(label: string): string {
-  if (label === 'R') return '#ef4444';
-  if (label.includes('♭3') || label.includes('♭2')) return '#a855f7';
-  if (label === '3' || label === '2') return '#22c55e';
-  if (label === '4') return '#3b82f6';
-  if (label.includes('5') || label === '5') return '#06b6d4';
-  if (label.includes('6')) return '#f97316';
-  if (label.includes('7')) return '#ec4899';
-  if (label.includes('♯') || label.includes('♭')) return '#a855f7';
-  return '#6366f1';
 }

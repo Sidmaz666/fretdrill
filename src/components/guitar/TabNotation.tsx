@@ -11,8 +11,8 @@ interface TabNotationProps {
 export default function TabNotation({ exercise, className = '' }: TabNotationProps) {
   if (!exercise || !exercise.notes.length) {
     return (
-      <div className={`flex items-center justify-center h-40 bg-slate-900 rounded-lg ${className}`}>
-        <p className="text-slate-500 text-sm">Select an exercise to see tabs</p>
+      <div className={`flex items-center justify-center h-40 bg-[#faf6ef] border border-[#c4b89c] rounded-sm ${className}`}>
+        <p className="text-[#8b7355] text-sm italic font-serif">Select an exercise to see tabs...</p>
       </div>
     );
   }
@@ -26,15 +26,10 @@ export default function TabNotation({ exercise, className = '' }: TabNotationPro
   const tabRows: string[][] = stringNames.map(() => []);
 
   for (const note of displayNotes) {
-    const row = 5 - note.string; // Convert string index to tab row
+    const row = 5 - note.string;
     for (let r = 0; r < 6; r++) {
       if (r === row) {
-        const fretStr = note.fret.toString();
-        if (note.fret >= 10) {
-          tabRows[r].push(fretStr);
-        } else {
-          tabRows[r].push(fretStr);
-        }
+        tabRows[r].push(note.fret.toString());
       } else {
         tabRows[r].push('');
       }
@@ -42,36 +37,40 @@ export default function TabNotation({ exercise, className = '' }: TabNotationPro
   }
 
   return (
-    <div className={`bg-slate-900 rounded-lg p-4 overflow-x-auto ${className}`}>
-      <div className="mb-2 flex items-center gap-2">
-        <span className="text-amber-400 text-sm font-semibold">{exercise.name}</span>
-        <span className="text-slate-500 text-xs">— {exercise.description}</span>
+    <div className={`bg-[#faf6ef] border border-[#c4b89c] p-4 overflow-x-auto rounded-sm ${className}`}>
+      {/* Exercise title - sketch annotation style */}
+      <div className="mb-3 flex items-center gap-2 border-b border-[#c4b89c] pb-2">
+        <span className="text-[#6b5b47] text-sm font-semibold italic font-serif">{exercise.name}</span>
+        <span className="text-[#b8a88a] text-xs font-serif italic">— {exercise.description}</span>
       </div>
-      <div className="font-mono text-sm">
+
+      {/* Tab notation - monospace, pencil-on-paper style */}
+      <div className="font-mono text-sm leading-relaxed">
         {stringNames.map((name, rowIdx) => (
           <div key={rowIdx} className="flex items-center whitespace-nowrap">
-            <span className="text-slate-400 w-4 text-right mr-2">{name}</span>
-            <span className="text-slate-400">|</span>
+            <span className="text-[#8b7355] w-4 text-right mr-2 font-serif italic text-xs">{name}</span>
+            <span className="text-[#8b7355] font-bold">|</span>
             {tabRows[rowIdx].map((cell, cellIdx) => (
               <span
                 key={cellIdx}
                 className={`inline-block text-center ${
                   cell
-                    ? 'text-emerald-400 font-bold'
-                    : 'text-slate-600'
+                    ? 'text-[#4a4a4a] font-bold'
+                    : 'text-[#c4b89c]'
                 }`}
                 style={{ width: cellWidth, minWidth: cellWidth }}
               >
                 {cell || '—'}
               </span>
             ))}
-            <span className="text-slate-400">|</span>
+            <span className="text-[#8b7355] font-bold">|</span>
           </div>
         ))}
       </div>
+
       {exercise.notes.length > maxNotes && (
-        <p className="text-slate-500 text-xs mt-2">
-          Showing first {maxNotes} of {exercise.notes.length} notes
+        <p className="text-[#b8a88a] text-xs mt-2 font-serif italic">
+          Showing first {maxNotes} of {exercise.notes.length} notes...
         </p>
       )}
     </div>
