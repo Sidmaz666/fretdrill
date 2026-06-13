@@ -8,10 +8,11 @@ interface TabNotationProps {
   onNoteClick?: (note: ExerciseNote) => void;
   activeNoteIndex?: number;
   playingIdx?: number;
+  activePlayingNote?: ExerciseNote | null;
   className?: string;
 }
 
-export default function TabNotation({ exercise, onNoteClick, activeNoteIndex = -1, playingIdx = -1, className = '' }: TabNotationProps) {
+export default function TabNotation({ exercise, onNoteClick, activeNoteIndex = -1, playingIdx = -1, activePlayingNote = null, className = '' }: TabNotationProps) {
   const [hoveredIdx, setHoveredIdx] = useState<number | null>(null);
 
   const isActive = useCallback((noteIdx: number) => {
@@ -20,16 +21,19 @@ export default function TabNotation({ exercise, onNoteClick, activeNoteIndex = -
 
   if (!exercise || !exercise.notes.length) {
     return (
-      <div className={`sketch-card bg-[#faf6ef] flex items-center justify-center h-24 ${className}`}>
-        <p className="text-[#8b7355] text-sm italic font-serif">Select an exercise to see tabs...</p>
+      <div className={`sketch-card bg-[#faf6ef] flex items-center justify-center h-28 ${className}`}>
+        <div className="text-center">
+          <p className="text-[#8b7355] text-sm italic font-serif">Select an exercise to see tabs...</p>
+          <p className="text-[#b8a88a] text-[9px] italic font-serif mt-1">Choose from the exercise categories above</p>
+        </div>
       </div>
     );
   }
 
   const stringNames = ['e', 'B', 'G', 'D', 'A', 'E'];
-  const maxNotes = 28;
+  const maxNotes = 32;
   const displayNotes = exercise.notes.slice(0, maxNotes);
-  const cellWidth = 24;
+  const cellWidth = 22;
 
   // Build tab grid
   const tabGrid: (ExerciseNote | null)[][] = stringNames.map(() => []);
@@ -54,12 +58,19 @@ export default function TabNotation({ exercise, onNoteClick, activeNoteIndex = -
           <span className="text-[12px] font-bold text-[#9b3939] font-serif italic">{exercise.name}</span>
           <span className="text-[10px] text-[#8b7355] font-serif italic">— {exercise.description}</span>
         </div>
-        <span className="text-[9px] text-[#b8a88a] font-serif italic">
-          {exercise.notes.length} notes
-        </span>
+        <div className="flex items-center gap-3">
+          {activePlayingNote && (
+            <span className="text-[10px] text-[#9b3939] font-serif italic font-bold animate-pulse">
+              Playing: {activePlayingNote.note} ({activePlayingNote.intervalLabel}) · String {6 - activePlayingNote.string} · Fret {activePlayingNote.fret}
+            </span>
+          )}
+          <span className="text-[9px] text-[#b8a88a] font-serif italic">
+            {exercise.notes.length} notes
+          </span>
+        </div>
       </div>
 
-      {/* Tab notation */}
+      {/* Tab notation grid */}
       <div className="font-mono text-sm leading-relaxed select-none">
         {stringNames.map((name, rowIdx) => (
           <div key={rowIdx} className="flex items-center whitespace-nowrap">
@@ -68,12 +79,15 @@ export default function TabNotation({ exercise, onNoteClick, activeNoteIndex = -
             {tabGrid[rowIdx].map((note, cellIdx) => {
               const noteActive = note !== null && isActive(cellIdx);
               const isPlaying = note !== null && playingIdx === cellIdx;
+              const isCurrentPlaying = activePlayingNote && note && 
+                activePlayingNote.string === note.string && 
+                activePlayingNote.fret === note.fret;
               return (
                 <span
                   key={cellIdx}
-                  className={`inline-block text-center cursor-pointer transition-colors duration-100 ${
-                    isPlaying
-                      ? 'text-[#9b3939] font-bold bg-[rgba(155,57,57,0.2)] rounded-sm'
+                  className={`inline-block text-center cursor-pointer transition-all duration-75 ${
+                    isCurrentPlaying || isPlaying
+                      ? 'text-[#9b3939] font-bold bg-[rgba(155,57,57,0.25)] rounded-sm scale-110'
                       : note
                         ? noteActive
                           ? 'text-[#9b3939] font-bold bg-[rgba(155,57,57,0.1)] rounded-sm'
@@ -98,6 +112,7 @@ export default function TabNotation({ exercise, onNoteClick, activeNoteIndex = -
         ))}
       </div>
 
+      {/* Note info footer */}
       {exercise.notes.length > maxNotes && (
         <p className="text-[10px] text-[#8b7355] mt-2 font-serif italic">
           Showing first {maxNotes} of {exercise.notes.length} notes...

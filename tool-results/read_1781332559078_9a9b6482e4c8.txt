@@ -1,0 +1,653 @@
+     1→'use client';
+     2→
+     3→import React, { useState, useMemo, useCallback, useRef, useEffect } from 'react';
+     4→import {
+     5→  KEY_NAMES,
+     6→  KEY_DISPLAY_NAMES,
+     7→  SCALES,
+     8→  NoteName,
+     9→  getCAGEDPositions,
+    10→  getScaleOnFretboard,
+    11→  FRET_COUNT,
+    12→  STRING_OPEN_NOTES,
+    13→} from '@/lib/music-theory';
+    14→import {
+    15→  generateExercise,
+    16→  generatePatternExercises,
+    17→  ExerciseType,
+    18→  EXERCISE_TYPES,
+    19→  ExerciseNote,
+    20→} from '@/lib/exercise-generator';
+    21→import FretboardDiagram from '@/components/guitar/FretboardDiagram';
+    22→import PatternDiagram from '@/components/guitar/PatternDiagram';
+    23→import TabNotation from '@/components/guitar/TabNotation';
+    24→import {
+    25→  Select,
+    26→  SelectContent,
+    27→  SelectItem,
+    28→  SelectTrigger,
+    29→  SelectValue,
+    30→} from '@/components/ui/select';
+    31→import {
+    32→  ChevronLeft,
+    33→  ChevronRight,
+    34→  Shuffle,
+    35→  Music,
+    36→  Zap,
+    37→  GitBranch,
+    38→  Target,
+    39→  Layers,
+    40→  Route,
+    41→  Volume2,
+    42→  Play,
+    43→  Square,
+    44→  ArrowRight,
+    45→  Info,
+    46→} from 'lucide-react';
+    47→
+    48→// ─── Audio Engine ───
+    49→// Guitar string frequencies (standard tuning, open strings)
+    50→const STRING_FREQUENCIES = [82.41, 110.0, 146.83, 196.0, 246.94, 329.63]; // E2, A2, D3, G3, B3, E4
+    51→
+    52→let audioCtx: AudioContext | null = null;
+    53→function getAudioCtx() {
+    54→  if (!audioCtx) audioCtx = new AudioContext();
+    55→  return audioCtx;
+    56→}
+    57→
+    58→function playNote(stringIdx: number, fret: number, duration: number = 0.5) {
+    59→  try {
+    60→    const ctx = getAudioCtx();
+    61→    if (ctx.state === 'suspended') ctx.resume();
+    62→    const baseFreq = STRING_FREQUENCIES[stringIdx];
+    63→    const freq = baseFreq * Math.pow(2, fret / 12);
+    64→    
+    65→    // Create oscillator with guitar-like timbre
+    66→    const osc = ctx.createOscillator();
+    67→    const gain = ctx.createGain();
+    68→    const osc2 = ctx.createOscillator();
+    69→    
+    70→    osc.type = 'triangle';
+    71→    osc.frequency.setValueAtTime(freq, ctx.currentTime);
+    72→    osc2.type = 'sawtooth';
+    73→    osc2.frequency.setValueAtTime(freq, ctx.currentTime);
+    74→    
+    75→    const gain2 = ctx.createGain();
+    76→    gain2.gain.setValueAtTime(0.15, ctx.currentTime);
+    77→    
+    78→    // Envelope: quick attack, medium decay
+    79→    gain.gain.setValueAtTime(0, ctx.currentTime);
+    80→    gain.gain.linearRampToValueAtTime(0.35, ctx.currentTime + 0.01);
+    81→    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + duration);
+    82→    gain2.gain.setValueAtTime(0, ctx.currentTime);
+    83→    gain2.gain.linearRampToValueAtTime(0.08, ctx.currentTime + 0.01);
+    84→    gain2.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + duration);
+    85→    
+    86→    osc.connect(gain);
+    87→    osc2.connect(gain2);
+    88→    gain.connect(ctx.destination);
+    89→    gain2.connect(ctx.destination);
+    90→    
+    91→    osc.start(ctx.currentTime);
+    92→    osc2.start(ctx.currentTime);
+    93→    osc.stop(ctx.currentTime + duration);
+    94→    osc2.stop(ctx.currentTime + duration);
+    95→  } catch (e) {
+    96→    // Silently fail if audio not available
+    97→  }
+    98→}
+    99→
+   100→// Interval color mapping
+   101→function getIntervalColor(label: string): string {
+   102→  if (label === 'R') return '#9b3939';
+   103→  if (label.includes('♭3') || label.includes('♭2')) return '#6b4a7a';
+   104→  if (label === '3' || label === '2') return '#4a7a4a';
+   105→  if (label === '4') return '#4a5a8a';
+   106→  if (label === '5') return '#4a7a7a';
+   107→  if (label.includes('5')) return '#4a7a7a';
+   108→  if (label.includes('6')) return '#8a6a3a';
+   109→  if (label.includes('7')) return '#7a4a6a';
+   110→  if (label.includes('♯') || label.includes('♭')) return '#6b4a7a';
+   111→  return '#5a5a6a';
+   112→}
+   113→
+   114→// Exercise categories
+   115→const EXERCISE_CATEGORIES = [
+   116→  { label: 'Scale Runs', icon: Route, types: ['scale-asc', 'scale-desc', 'scale-asc-desc'] as ExerciseType[] },
+   117→  { label: 'Sequences', icon: Layers, types: ['thirds', 'sequence-3', 'sequence-4'] as ExerciseType[] },
+   118→  { label: 'Shapes', icon: Target, types: ['triads', 'string-skip', 'lateral-run'] as ExerciseType[] },
+   119→  { label: 'Technique', icon: Zap, types: ['diagonal', 'position-shift', 'pentatonic-run', 'economy-picking'] as ExerciseType[] },
+   120→  { label: 'Connections', icon: GitBranch, types: ['connecting'] as ExerciseType[] },
+   121→];
+   122→
+   123→export default function Home() {
+   124→  const [keyIndex, setKeyIndex] = useState(9); // A
+   125→  const [scaleId, setScaleId] = useState('minor-pentatonic');
+   126→  const [positionIndex, setPositionIndex] = useState(0);
+   127→  const [exerciseType, setExerciseType] = useState<ExerciseType>('scale-asc-desc');
+   128→  const [showAllPositions, setShowAllPositions] = useState(false);
+   129→  const [activeNote, setActiveNote] = useState<{ string: number; fret: number } | null>(null);
+   130→  const [soundEnabled, setSoundEnabled] = useState(true);
+   131→  const [isPlaying, setIsPlaying] = useState(false);
+   132→  const [playingIdx, setPlayingIdx] = useState(-1);
+   133→  const [connectionView, setConnectionView] = useState<{ start: number; end: number } | null>(null);
+   134→  const playingRef = useRef(false);
+   135→
+   136→  const keyNote = KEY_NAMES[keyIndex];
+   137→  const scale = SCALES[scaleId];
+   138→
+   139→  const positions = useMemo(() => getCAGEDPositions(keyNote, scaleId), [keyNote, scaleId]);
+   140→  const currentPosition = positions[positionIndex] || { fretStart: 0, fretEnd: FRET_COUNT, name: 'Full Fretboard' };
+   141→  const startFret = connectionView ? connectionView.start : (showAllPositions ? 0 : currentPosition.fretStart);
+   142→  const endFret = connectionView ? connectionView.end : (showAllPositions ? FRET_COUNT : currentPosition.fretEnd);
+   143→
+   144→  // Generate current exercise
+   145→  const currentExercise = useMemo(
+   146→    () => generateExercise(exerciseType, keyNote, scaleId, positionIndex),
+   147→    [exerciseType, keyNote, scaleId, positionIndex]
+   148→  );
+   149→
+   150→  // Exercise notes for fretboard highlighting
+   151→  const exerciseHighlightNotes = useMemo(() => {
+   152→    if (!currentExercise || !currentExercise.notes.length) return undefined;
+   153→    const allScaleNotes = getScaleOnFretboard(keyNote, scaleId, 0, FRET_COUNT);
+   154→    const exerciseNoteKeys = new Set(currentExercise.notes.map(n => `${n.string}-${n.fret}`));
+   155→    return allScaleNotes.filter(n => exerciseNoteKeys.has(`${n.string}-${n.fret}`));
+   156→  }, [currentExercise, keyNote, scaleId]);
+   157→
+   158→  // Exercise path with sequence numbers
+   159→  const exercisePath = useMemo(() => {
+   160→    if (!currentExercise || !currentExercise.notes.length) return undefined;
+   161→    const seen = new Set<string>();
+   162→    const path: Array<{ string: number; fret: number; sequenceNumber?: number }> = [];
+   163→    for (const note of currentExercise.notes) {
+   164→      const key = `${note.string}-${note.fret}`;
+   165→      if (!seen.has(key)) {
+   166→        seen.add(key);
+   167→        path.push({ string: note.string, fret: note.fret, sequenceNumber: note.sequenceNumber });
+   168→      }
+   169→    }
+   170→    return path;
+   171→  }, [currentExercise]);
+   172→
+   173→  const patternExercises = useMemo(() => generatePatternExercises(keyNote, scaleId), [keyNote, scaleId]);
+   174→
+   175→  const handleRandomize = useCallback(() => {
+   176→    const types = Object.keys(EXERCISE_TYPES) as ExerciseType[];
+   177→    setExerciseType(types[Math.floor(Math.random() * types.length)]);
+   178→  }, []);
+   179→
+   180→  const handlePrevPosition = useCallback(() => {
+   181→    setPositionIndex(prev => Math.max(0, prev - 1));
+   182→    setConnectionView(null);
+   183→  }, []);
+   184→  const handleNextPosition = useCallback(() => {
+   185→    setPositionIndex(prev => Math.min(positions.length - 1, prev + 1));
+   186→    setConnectionView(null);
+   187→  }, [positions.length]);
+   188→
+   189→  const scaleNotes = useMemo(() => {
+   190→    return scale.intervals.map(interval => {
+   191→      const noteIndex = (KEY_NAMES.indexOf(keyNote) + interval) % 12;
+   192→      return KEY_NAMES[noteIndex];
+   193→    });
+   194→  }, [keyNote, scale]);
+   195→
+   196→  // Play a single note on the fretboard
+   197→  const handleFretboardNoteClick = useCallback((note: { string: number; fret: number }) => {
+   198→    if (soundEnabled) playNote(note.string, note.fret, 0.6);
+   199→    setActiveNote(prev => prev && prev.string === note.string && prev.fret === note.fret ? null : note);
+   200→  }, [soundEnabled]);
+   201→
+   202→  // Play through the entire exercise sequentially
+   203→  const playExercise = useCallback(() => {
+   204→    if (!currentExercise || !currentExercise.notes.length) return;
+   205→    if (isPlaying) {
+   206→      playingRef.current = false;
+   207→      setIsPlaying(false);
+   208→      setPlayingIdx(-1);
+   209→      return;
+   210→    }
+   211→    setIsPlaying(true);
+   212→    playingRef.current = true;
+   213→    const notes = currentExercise.notes;
+   214→    const bpm = 140;
+   215→    const intervalMs = (60 / bpm) * 1000;
+   216→    
+   217→    let idx = 0;
+   218→    const playNext = () => {
+   219→      if (!playingRef.current || idx >= notes.length) {
+   220→        setIsPlaying(false);
+   221→        setPlayingIdx(-1);
+   222→        playingRef.current = false;
+   223→        return;
+   224→      }
+   225→      const note = notes[idx];
+   226→      setPlayingIdx(idx);
+   227→      setActiveNote({ string: note.string, fret: note.fret });
+   228→      if (soundEnabled) playNote(note.string, note.fret, 0.4);
+   229→      idx++;
+   230→      setTimeout(playNext, intervalMs);
+   231→    };
+   232→    playNext();
+   233→  }, [currentExercise, isPlaying, soundEnabled]);
+   234→
+   235→  const handleTabNoteClick = useCallback((note: ExerciseNote) => {
+   236→    if (soundEnabled) playNote(note.string, note.fret, 0.6);
+   237→    setActiveNote({ string: note.string, fret: note.fret });
+   238→    setTimeout(() => setActiveNote(null), 1500);
+   239→  }, [soundEnabled]);
+   240→
+   241→  const handlePatternClick = useCallback((posIdx: number) => {
+   242→    setPositionIndex(posIdx);
+   243→    setShowAllPositions(false);
+   244→    setConnectionView(null);
+   245→  }, []);
+   246→
+   247→  // Connection diagram click — show bridge zone on fretboard
+   248→  const handleConnectionClick = useCallback((bridgeStart: number, bridgeEnd: number) => {
+   249→    setConnectionView({ start: bridgeStart, end: bridgeEnd });
+   250→    setShowAllPositions(true);
+   251→  }, []);
+   252→
+   253→  // Clear connection view when changing position
+   254→  useEffect(() => {
+   255→    if (!connectionView) return;
+   256→  }, [connectionView]);
+   257→
+   258→  return (
+   259→    <div className="min-h-screen flex flex-col bg-[#f5f0e8] text-[#2c2c2c]">
+   260→      {/* ── HEADER ── */}
+   261→      <header className="border-b-2 border-[#8b7355] bg-[#faf6ef] shrink-0">
+   262→        <div className="max-w-[1400px] mx-auto px-5 py-2.5 flex items-center justify-between gap-4">
+   263→          <div className="flex items-center gap-2 shrink-0">
+   264→            <div className="w-8 h-8 rounded-sm border-2 border-[#8b7355] flex items-center justify-center bg-[#f5f0e8]">
+   265→              <Music className="w-4 h-4 text-[#6b5b47]" />
+   266→            </div>
+   267→            <div>
+   268→              <h1 className="text-base font-bold text-[#2c2c2c] leading-tight" style={{ fontFamily: "'Georgia', serif", fontStyle: 'italic' }}>
+   269→                FretBoard Forge
+   270→              </h1>
+   271→              <p className="text-[8px] text-[#8b7355] font-serif italic -mt-0.5">Procedural Guitar Exercise Generator</p>
+   272→            </div>
+   273→          </div>
+   274→          {/* Sound toggle + exercise play */}
+   275→          <div className="flex items-center gap-2">
+   276→            <button
+   277→              className={`sketch-btn px-2 py-1 text-[10px] flex items-center gap-1 ${soundEnabled ? 'border-[#6b5b47]' : 'border-[#c4b89c] opacity-50'}`}
+   278→              onClick={() => setSoundEnabled(!soundEnabled)}
+   279→              title={soundEnabled ? 'Sound on' : 'Sound off'}
+   280→            >
+   281→              <Volume2 className="w-3.5 h-3.5" />
+   282→              {soundEnabled ? 'ON' : 'OFF'}
+   283→            </button>
+   284→            <button
+   285→              className={`px-3 py-1 text-[10px] font-bold flex items-center gap-1.5 border-2 rounded-sm transition-all ${
+   286→                isPlaying
+   287→                  ? 'bg-[#9b3939] text-white border-[#9b3939]'
+   288→                  : 'sketch-btn border-[#6b5b47]'
+   289→              }`}
+   290→              onClick={playExercise}
+   291→            >
+   292→              {isPlaying ? <Square className="w-3 h-3" /> : <Play className="w-3 h-3" />}
+   293→              {isPlaying ? 'STOP' : 'PLAY'}
+   294→            </button>
+   295→          </div>
+   296→        </div>
+   297→      </header>
+   298→
+   299→      <main className="flex-1 max-w-[1400px] w-full mx-auto px-4 py-4 space-y-4">
+   300→        {/* ── CONTROLS — Full width, well organized ── */}
+   301→        <div className="sketch-card bg-[#faf6ef] p-4 space-y-3">
+   302→          {/* Row 1: Key selector (full width) */}
+   303→          <div>
+   304→            <div className="flex items-center gap-2 mb-2">
+   305→              <h3 className="text-[10px] uppercase tracking-[0.15em] text-[#8b7355] font-serif italic font-bold">Key</h3>
+   306→              <span className="text-[9px] text-[#b8a88a] font-serif italic">— Root note of the scale</span>
+   307→            </div>
+   308→            <div className="flex flex-wrap gap-1">
+   309→              {KEY_DISPLAY_NAMES.map((key, idx) => (
+   310→                <button
+   311→                  key={idx}
+   312→                  className={`h-8 min-w-[42px] px-2 text-[11px] font-semibold border transition-all rounded-sm ${
+   313→                    keyIndex === idx
+   314→                      ? 'sketch-btn-active border-[#6b5b47]'
+   315→                      : 'sketch-btn border-[#c4b89c] hover:border-[#8b7355]'
+   316→                  }`}
+   317→                  onClick={() => { setKeyIndex(idx); setPositionIndex(0); setConnectionView(null); }}
+   318→                >
+   319→                  {key}
+   320→                </button>
+   321→              ))}
+   322→            </div>
+   323→          </div>
+   324→
+   325→          {/* Row 2: Scale (full width) + Position + Intervals */}
+   326→          <div className="grid grid-cols-1 md:grid-cols-[1fr_auto_auto] gap-4 items-start">
+   327→            {/* Scale — takes full width on the left */}
+   328→            <div>
+   329→              <div className="flex items-center gap-2 mb-2">
+   330→                <h3 className="text-[10px] uppercase tracking-[0.15em] text-[#8b7355] font-serif italic font-bold">Scale</h3>
+   331→                <span className="text-[9px] text-[#b8a88a] font-serif italic">— {scale.intervals.length} notes · {scale.intervalLabels.join(' − ')}</span>
+   332→              </div>
+   333→              <Select value={scaleId} onValueChange={(v) => { setScaleId(v); setPositionIndex(0); setConnectionView(null); }}>
+   334→                <SelectTrigger className="bg-[#f5f0e8] border-[#c4b89c] text-[#2c2c2c] text-xs rounded-sm h-9 w-full">
+   335→                  <SelectValue />
+   336→                </SelectTrigger>
+   337→                <SelectContent className="bg-[#faf6ef] border-[#c4b89c]">
+   338→                  {Object.entries(SCALES).map(([id, s]) => (
+   339→                    <SelectItem key={id} value={id} className="text-[#2c2c2c] focus:bg-[rgba(139,115,85,0.1)] text-xs">
+   340→                      {s.name} ({s.intervals.length} notes)
+   341→                    </SelectItem>
+   342→                  ))}
+   343→                </SelectContent>
+   344→              </Select>
+   345→              {/* Scale notes row */}
+   346→              <div className="flex items-center gap-1.5 mt-2 flex-wrap">
+   347→                {scaleNotes.map((note, idx) => {
+   348→                  const label = scale.intervalLabels[idx];
+   349→                  const color = getIntervalColor(label);
+   350→                  return (
+   351→                    <span
+   352→                      key={idx}
+   353→                      className="inline-flex items-center gap-1 px-2 py-1 text-[10px] font-serif italic border rounded-sm"
+   354→                      style={{
+   355→                        borderColor: color + '50',
+   356→                        color: color,
+   357→                        backgroundColor: color + '0a',
+   358→                      }}
+   359→                    >
+   360→                      <span className="font-bold">{note}</span>
+   361→                      <span className="opacity-50 text-[9px]">{label}</span>
+   362→                    </span>
+   363→                  );
+   364→                })}
+   365→                <span className="text-[9px] text-[#8b7355] font-serif italic ml-1">
+   366→                  Steps: {scale.intervals.slice(1).map((interval, idx) => {
+   367→                    const prevInterval = idx === 0 ? 0 : scale.intervals[idx];
+   368→                    const step = interval - prevInterval;
+   369→                    return step === 1 ? 'H' : step === 2 ? 'W' : `${step}H`;
+   370→                  }).join(' − ')}
+   371→                </span>
+   372→              </div>
+   373→            </div>
+   374→
+   375→            {/* Position */}
+   376→            <div>
+   377→              <div className="flex items-center gap-2 mb-2">
+   378→                <h3 className="text-[10px] uppercase tracking-[0.15em] text-[#8b7355] font-serif italic font-bold">Position</h3>
+   379→                <span className="text-[9px] text-[#b8a88a] font-serif italic">— CAGED shape on neck</span>
+   380→              </div>
+   381→              <div className="flex items-center gap-1">
+   382→                <button className="sketch-btn w-7 h-8 flex items-center justify-center border-[#c4b89c] disabled:opacity-30" onClick={handlePrevPosition} disabled={positionIndex <= 0}>
+   383→                  <ChevronLeft className="h-3.5 w-3.5" />
+   384→                </button>
+   385→                {positions.map((_, idx) => (
+   386→                  <button
+   387→                    key={idx}
+   388→                    className={`h-8 w-9 text-[11px] font-semibold rounded-sm transition-all border ${
+   389→                      !showAllPositions && !connectionView && positionIndex === idx
+   390→                        ? 'sketch-btn-active border-[#6b5b47]'
+   391→                        : 'sketch-btn border-[#c4b89c] hover:border-[#8b7355]'
+   392→                    }`}
+   393→                    onClick={() => { setPositionIndex(idx); setShowAllPositions(false); setConnectionView(null); }}
+   394→                  >
+   395→                    {idx + 1}
+   396→                  </button>
+   397→                ))}
+   398→                <button
+   399→                  className={`h-8 px-2 text-[11px] font-semibold rounded-sm transition-all border ${
+   400→                    showAllPositions && !connectionView
+   401→                      ? 'sketch-btn-active border-[#6b5b47]'
+   402→                      : 'sketch-btn border-[#c4b89c] hover:border-[#8b7355]'
+   403→                  }`}
+   404→                  onClick={() => { setShowAllPositions(true); setConnectionView(null); }}
+   405→                >
+   406→                  All
+   407→                </button>
+   408→                <button className="sketch-btn w-7 h-8 flex items-center justify-center border-[#c4b89c] disabled:opacity-30" onClick={handleNextPosition} disabled={positionIndex >= positions.length - 1}>
+   409→                  <ChevronRight className="h-3.5 w-3.5" />
+   410→                </button>
+   411→              </div>
+   412→              <div className="mt-1.5 text-[10px] text-[#6b5b47] font-serif italic font-semibold text-center">
+   413→                {connectionView
+   414→                  ? `Bridge Zone · Frets ${connectionView.start}–${connectionView.end}`
+   415→                  : showAllPositions
+   416→                    ? 'Full Fretboard · All Positions'
+   417→                    : `${currentPosition.name} · Frets ${currentPosition.fretStart}–${currentPosition.fretEnd}`
+   418→                }
+   419→              </div>
+   420→            </div>
+   421→
+   422→            {/* Intervals legend */}
+   423→            <div>
+   424→              <div className="flex items-center gap-2 mb-2">
+   425→                <h3 className="text-[10px] uppercase tracking-[0.15em] text-[#8b7355] font-serif italic font-bold">Intervals</h3>
+   426→              </div>
+   427→              <div className="flex flex-wrap gap-1 max-w-[200px]">
+   428→                {scale.intervalLabels.map((label, idx) => (
+   429→                  <span
+   430→                    key={idx}
+   431→                    className="inline-flex items-center justify-center px-2 py-1 text-[10px] font-bold font-serif italic border rounded-sm"
+   432→                    style={{
+   433→                      borderColor: getIntervalColor(label) + '55',
+   434→                      color: getIntervalColor(label),
+   435→                      backgroundColor: getIntervalColor(label) + '12',
+   436→                    }}
+   437→                  >
+   438→                    {label}
+   439→                  </span>
+   440→                ))}
+   441→              </div>
+   442→            </div>
+   443→          </div>
+   444→        </div>
+   445→
+   446→        {/* ── FRETBOARD — Full width ── */}
+   447→        <div className="sketch-card bg-[#faf6ef] overflow-hidden">
+   448→          <div className="px-4 pt-3 pb-1.5 flex items-center justify-between border-b border-[#e8e2d6]">
+   449→            <div>
+   450→              <h2 className="text-sm font-bold font-serif italic text-[#2c2c2c]">
+   451→                {keyNote} {scale.name}
+   452→                {connectionView
+   453→                  ? <span className="text-[#6b4a7a] font-normal"> — Bridge Frets {connectionView.start}–{connectionView.end}</span>
+   454→                  : !showAllPositions
+   455→                    ? <span className="text-[#8b7355] font-normal"> — {currentPosition.name}</span>
+   456→                    : <span className="text-[#8b7355] font-normal"> — All Positions</span>
+   457→                }
+   458→              </h2>
+   459→              <p className="text-[10px] text-[#8b7355] font-serif italic mt-0.5">
+   460→                {currentExercise?.name || 'Select exercise'} · {currentExercise?.notes.length || 0} notes · Click any note to hear it
+   461→              </p>
+   462→            </div>
+   463→            {connectionView && (
+   464→              <button
+   465→                className="sketch-btn text-[10px] px-2 py-1 border-[#6b4a7a] text-[#6b4a7a] flex items-center gap-1"
+   466→                onClick={() => setConnectionView(null)}
+   467→              >
+   468→                <ChevronLeft className="w-3 h-3" /> Back
+   469→              </button>
+   470→            )}
+   471→          </div>
+   472→          <div className="px-2 py-2 overflow-x-auto">
+   473→            <FretboardDiagram
+   474→              keyNote={keyNote}
+   475→              scaleId={scaleId}
+   476→              startFret={startFret}
+   477→              endFret={endFret}
+   478→              showAllPositions={showAllPositions || !!connectionView}
+   479→              positionIndex={positionIndex}
+   480→              highlightNotes={exerciseHighlightNotes}
+   481→              exercisePath={exercisePath}
+   482→              activeNote={activeNote}
+   483→              onNoteClick={handleFretboardNoteClick}
+   484→              showPatternLines={true}
+   485→              fullFretboard={true}
+   486→            />
+   487→          </div>
+   488→        </div>
+   489→
+   490→        {/* ── EXERCISE SELECTOR — Horizontal grouped pills, full width ── */}
+   491→        <div className="sketch-card bg-[#faf6ef] p-4 space-y-3">
+   492→          <div className="flex items-center justify-between">
+   493→            <div className="flex items-center gap-2">
+   494→              <Zap className="w-3.5 h-3.5 text-[#8b7355]" />
+   495→              <h3 className="text-[11px] uppercase tracking-[0.15em] text-[#8b7355] font-serif italic font-bold">Exercise</h3>
+   496→              <span className="text-[9px] text-[#b8a88a] font-serif italic">— {EXERCISE_TYPES[exerciseType].description}</span>
+   497→            </div>
+   498→            <button
+   499→              className="sketch-btn text-[10px] px-2 py-1 border-[#8b7355] text-[#6b5b47] font-semibold flex items-center gap-1"
+   500→              onClick={handleRandomize}
+   501→            >
+   502→              <Shuffle className="w-3 h-3" />
+   503→              Random
+   504→            </button>
+   505→          </div>
+   506→
+   507→          {/* Exercise type pills — grouped by category, all visible */}
+   508→          {EXERCISE_CATEGORIES.map(cat => {
+   509→            const Icon = cat.icon;
+   510→            const isActiveCat = cat.types.includes(exerciseType);
+   511→            return (
+   512→              <div key={cat.label} className="flex items-center gap-2 flex-wrap">
+   513→                <span className={`inline-flex items-center gap-1 text-[9px] uppercase tracking-[0.1em] font-serif italic font-bold shrink-0 ${
+   514→                  isActiveCat ? 'text-[#9b3939]' : 'text-[#8b7355]'
+   515→                }`}>
+   516→                  <Icon className="w-3 h-3" />
+   517→                  {cat.label}
+   518→                </span>
+   519→                <div className="flex flex-wrap gap-1">
+   520→                  {cat.types.map(typeId => {
+   521→                    const info = EXERCISE_TYPES[typeId];
+   522→                    const isSelected = exerciseType === typeId;
+   523→                    return (
+   524→                      <button
+   525→                        key={typeId}
+   526→                        className={`text-[10px] py-1.5 px-2.5 rounded-sm transition-all border font-semibold ${
+   527→                          isSelected
+   528→                            ? 'bg-[rgba(155,57,57,0.12)] border-[#9b393970] text-[#9b3939]'
+   529→                            : 'sketch-btn border-[#c4b89c] hover:border-[#8b7355]'
+   530→                        }`}
+   531→                        onClick={() => setExerciseType(typeId)}
+   532→                        title={info.description}
+   533→                      >
+   534→                        {info.name}
+   535→                      </button>
+   536→                    );
+   537→                  })}
+   538→                </div>
+   539→              </div>
+   540→            );
+   541→          })}
+   542→        </div>
+   543→
+   544→        {/* ── TAB NOTATION — Full width ── */}
+   545→        <TabNotation
+   546→          exercise={currentExercise}
+   547→          onNoteClick={handleTabNoteClick}
+   548→          playingIdx={playingIdx}
+   549→        />
+   550→
+   551→        {/* ── CAGED PATTERNS ── */}
+   552→        <div className="sketch-card bg-[#faf6ef] p-4">
+   553→          <div className="flex items-center gap-2 mb-3">
+   554→            <GitBranch className="w-3.5 h-3.5 text-[#8b7355]" />
+   555→            <h3 className="text-[11px] uppercase tracking-[0.15em] text-[#8b7355] font-serif italic font-bold">
+   556→              CAGED Patterns — {keyNote} {scale.name}
+   557→            </h3>
+   558→            <span className="text-[9px] text-[#b8a88a] font-serif italic">— Click to navigate to position</span>
+   559→          </div>
+   560→          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
+   561→            {patternExercises.map((pat) => (
+   562→              <button
+   563→                key={pat.position}
+   564→                onClick={() => handlePatternClick(pat.position - 1)}
+   565→                className="text-left"
+   566→              >
+   567→                <PatternDiagram
+   568→                  keyNote={keyNote}
+   569→                  scaleId={scaleId}
+   570→                  fretStart={pat.fretStart}
+   571→                  fretEnd={pat.fretEnd}
+   572→                  positionNumber={pat.position}
+   573→                  exerciseNotes={pat.notes}
+   574→                  selected={positionIndex === pat.position - 1 && !showAllPositions && !connectionView}
+   575→                />
+   576→              </button>
+   577→            ))}
+   578→          </div>
+   579→        </div>
+   580→
+   581→        {/* ── POSITION CONNECTIONS — Now functional ── */}
+   582→        <div className="sketch-card bg-[#faf6ef] p-4">
+   583→          <div className="flex items-center gap-2 mb-3">
+   584→            <ArrowRight className="w-3.5 h-3.5 text-[#6b4a7a]" />
+   585→            <h3 className="text-[11px] uppercase tracking-[0.15em] text-[#6b4a7a] font-serif italic font-bold">
+   586→              Position Connections
+   587→            </h3>
+   588→            <span className="text-[9px] text-[#b8a88a] font-serif italic">— Click to see bridge zone on fretboard</span>
+   589→            <Info className="w-3 h-3 text-[#b8a88a]" />
+   590→          </div>
+   591→          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+   592→            {positions.slice(0, -1).map((pos, idx) => {
+   593→              const nextPos = positions[idx + 1];
+   594→              if (!nextPos) return null;
+   595→              const bridgeStart = Math.max(0, pos.fretEnd - 3);
+   596→              const bridgeEnd = Math.min(FRET_COUNT, nextPos.fretStart + 4);
+   597→              const bridgeNotes = getScaleOnFretboard(keyNote, scaleId, bridgeStart, bridgeEnd);
+   598→              const seen = new Set<string>();
+   599→              const connectNotes = bridgeNotes.filter(n => {
+   600→                const key = `${n.string}-${n.fret}`;
+   601→                if (seen.has(key)) return false;
+   602→                seen.add(key);
+   603→                return true;
+   604→              });
+   605→              const isActive = connectionView?.start === bridgeStart && connectionView?.end === bridgeEnd;
+   606→              
+   607→              return (
+   608→                <div
+   609→                  key={`conn-${idx}`}
+   610→                  onClick={() => handleConnectionClick(bridgeStart, bridgeEnd)}
+   611→                  className={`text-left transition-all rounded-sm border-2 cursor-pointer ${
+   612→                    isActive
+   613→                      ? 'border-[#6b4a7a] bg-[rgba(107,74,122,0.08)]'
+   614→                      : 'border-[#c4b89c] bg-[#faf6ef] hover:border-[#6b4a7a]'
+   615→                  }`}
+   616→                >
+   617→                  <PatternDiagram
+   618→                    keyNote={keyNote}
+   619→                    scaleId={scaleId}
+   620→                    fretStart={bridgeStart}
+   621→                    fretEnd={bridgeEnd}
+   622→                    positionNumber={idx + 1}
+   623→                    customLabel={`P${idx + 1} → P${idx + 2}`}
+   624→                    exerciseNotes={connectNotes.map((n, i) => ({
+   625→                      string: n.string,
+   626→                      fret: n.fret,
+   627→                      sequenceNumber: i + 1,
+   628→                    }))}
+   629→                    selected={isActive}
+   630→                    onNoteClick={() => handleConnectionClick(bridgeStart, bridgeEnd)}
+   631→                  />
+   632→                </div>
+   633→              );
+   634→            })}
+   635→          </div>
+   636→        </div>
+   637→      </main>
+   638→
+   639→      {/* Footer */}
+   640→      <footer className="border-t-2 border-[#c4b89c] mt-auto">
+   641→        <div className="max-w-[1400px] mx-auto px-4 py-2.5 flex items-center justify-between">
+   642→          <p className="text-[10px] text-[#8b7355] font-serif italic">
+   643→            FretBoard Forge — Procedural Guitar Exercise Generator
+   644→          </p>
+   645→          <p className="text-[10px] text-[#b8a88a] font-serif italic">
+   646→            Inspired by Ricky&apos;s Guitar
+   647→          </p>
+   648→        </div>
+   649→      </footer>
+   650→    </div>
+   651→  );
+   652→}
+   653→

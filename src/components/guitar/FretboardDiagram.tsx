@@ -449,9 +449,12 @@ export default function FretboardDiagram({
               onMouseLeave={() => setHoveredNote(null)}
               opacity={baseOpacity}
             >
-              {/* Active/hover glow */}
+              {/* Active/hover glow — strong during playback */}
               {isActive && (
-                <circle cx={note.x} cy={note.y} r={r + 10} fill={color} opacity={0.12} />
+                <>
+                  <circle cx={note.x} cy={note.y} r={r + 14} fill={color} opacity={0.08} />
+                  <circle cx={note.x} cy={note.y} r={r + 10} fill={color} opacity={0.15} />
+                </>
               )}
 
               {/* Exercise highlight ring — thicker and more visible */}
@@ -477,12 +480,12 @@ export default function FretboardDiagram({
                 />
               )}
 
-              {/* Note circle — exercise notes get stronger fill */}
+              {/* Note circle — exercise notes get stronger fill, active gets brightest */}
               <circle
                 cx={note.x} cy={note.y} r={r}
-                fill={isActive ? color + '50' : (isExNote ? color + '35' : (note.isRoot ? color + '22' : color + '10'))}
+                fill={isActive ? color + '60' : (isExNote ? color + '35' : (note.isRoot ? color + '22' : color + '10'))}
                 stroke={isActive ? color : (isExNote ? color : color + '80')}
-                strokeWidth={isActive ? 2.5 : (isExNote ? 2.2 : (note.isRoot ? 2 : 1))}
+                strokeWidth={isActive ? 3 : (isExNote ? 2.2 : (note.isRoot ? 2 : 1))}
               />
 
               {/* Interval label inside note */}
