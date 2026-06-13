@@ -265,9 +265,12 @@ export default function Home() {
 
   const handleTabNoteClick = useCallback((note: ExerciseNote) => {
     if (soundEnabled) playGuitarNote(note.string, note.fret, 0.6);
-    setActiveNote({ string: note.string, fret: note.fret });
-    setTimeout(() => setActiveNote(null), 1500);
-  }, [soundEnabled]);
+    // Only set active note if not currently playing (avoids double highlight)
+    if (!isPlaying) {
+      setActiveNote({ string: note.string, fret: note.fret });
+      setTimeout(() => setActiveNote(null), 1500);
+    }
+  }, [soundEnabled, isPlaying]);
 
   const handlePatternClick = useCallback((posIdx: number) => {
     setPositionIndex(posIdx);
@@ -443,13 +446,6 @@ export default function Home() {
 
   // BPM presets
   const bpmPresets = [60, 80, 100, 120, 140, 160, 180];
-
-  // Active playback notes for TabNotation
-  const activePlayingNote = useMemo(() => {
-    if (!isPlaying || playingIdx < 0) return null;
-    const notes = playbackMode === 'exercise' ? currentExercise.notes : scaleNotesForPlayback;
-    return notes[playingIdx] || null;
-  }, [isPlaying, playingIdx, playbackMode, currentExercise, scaleNotesForPlayback]);
 
   return (
     <div className="min-h-screen flex flex-col bg-[#f5f0e8] text-[#2c2c2c]">
@@ -860,7 +856,13 @@ export default function Home() {
           exercise={currentExercise}
           onNoteClick={handleTabNoteClick}
           playingIdx={playingIdx}
-          activePlayingNote={activePlayingNote}
+          isPlaying={isPlaying}
+          isPaused={isPaused}
+          playbackMode={playbackMode}
+          onPlayExercise={handlePlayExercise}
+          onPlayScale={handlePlayScale}
+          onPause={togglePausePlayback}
+          onStop={stopPlayback}
         />
 
         {/* ══════════════════════════════════════════════
