@@ -19,23 +19,23 @@ export default function TabNotation({ exercise, onNoteClick, activeNoteIndex = -
 
   if (!exercise || !exercise.notes.length) {
     return (
-      <div className={`flex items-center justify-center h-32 bg-[#faf6ef] border border-[#c4b89c] rounded-sm ${className}`}>
+      <div className={`sketch-card bg-[#faf6ef] flex items-center justify-center h-24 ${className}`}>
         <p className="text-[#8b7355] text-sm italic font-serif">Select an exercise to see tabs...</p>
       </div>
     );
   }
 
   const stringNames = ['e', 'B', 'G', 'D', 'A', 'E'];
-  const maxNotes = 24;
+  const maxNotes = 28;
   const displayNotes = exercise.notes.slice(0, maxNotes);
-  const cellWidth = 26;
+  const cellWidth = 24;
 
-  // Build tab grid: each note gets a column, 6 rows (strings)
+  // Build tab grid
   const tabGrid: (ExerciseNote | null)[][] = stringNames.map(() => []);
 
   for (let noteIdx = 0; noteIdx < displayNotes.length; noteIdx++) {
     const note = displayNotes[noteIdx];
-    const row = 5 - note.string; // string 0 (low E) = row 5, string 5 (high e) = row 0
+    const row = 5 - note.string;
     for (let r = 0; r < 6; r++) {
       if (r === row) {
         tabGrid[r].push(note);
@@ -46,35 +46,39 @@ export default function TabNotation({ exercise, onNoteClick, activeNoteIndex = -
   }
 
   return (
-    <div className={`bg-[#faf6ef] border border-[#c4b89c] p-3 overflow-x-auto rounded-sm ${className}`}>
-      {/* Exercise title */}
-      <div className="mb-2 flex items-center gap-2 border-b border-[#c4b89c] pb-2">
-        <span className="text-[#4a4a4a] text-sm font-semibold italic font-serif">{exercise.name}</span>
-        <span className="text-[#b8a88a] text-xs font-serif italic">— {exercise.description}</span>
+    <div className={`sketch-card bg-[#faf6ef] p-4 overflow-x-auto ${className}`}>
+      {/* Exercise title bar */}
+      <div className="mb-3 flex items-center justify-between border-b border-[#e8e2d6] pb-2">
+        <div className="flex items-center gap-2">
+          <span className="text-[12px] font-bold text-[#9b3939] font-serif italic">{exercise.name}</span>
+          <span className="text-[10px] text-[#8b7355] font-serif italic">— {exercise.description}</span>
+        </div>
+        <span className="text-[9px] text-[#b8a88a] font-serif italic">
+          {exercise.notes.length} notes
+        </span>
       </div>
 
       {/* Tab notation */}
       <div className="font-mono text-sm leading-relaxed select-none">
         {stringNames.map((name, rowIdx) => (
           <div key={rowIdx} className="flex items-center whitespace-nowrap">
-            <span className="text-[#8b7355] w-4 text-right mr-2 font-serif italic text-xs">{name}</span>
-            <span className="text-[#8b7355] font-bold">|</span>
+            <span className="text-[#8b7355] w-5 text-right mr-2 font-serif italic text-xs font-bold">{name}</span>
+            <span className="text-[#8b7355] font-bold opacity-70">|</span>
             {tabGrid[rowIdx].map((note, cellIdx) => {
-              const noteIdx = cellIdx; // column index maps to note index
-              const noteActive = note !== null && isActive(noteIdx);
+              const noteActive = note !== null && isActive(cellIdx);
               return (
                 <span
                   key={cellIdx}
                   className={`inline-block text-center cursor-pointer transition-colors duration-100 ${
                     note
                       ? noteActive
-                        ? 'text-[#2c2c2c] font-bold bg-[rgba(139,115,85,0.15)] rounded-sm'
-                        : 'text-[#4a4a4a] font-bold hover:text-[#2c2c2c] hover:bg-[rgba(139,115,85,0.08)] rounded-sm'
+                        ? 'text-[#9b3939] font-bold bg-[rgba(155,57,57,0.1)] rounded-sm'
+                        : 'text-[#4a4a4a] font-bold hover:text-[#9b3939] hover:bg-[rgba(155,57,57,0.05)] rounded-sm'
                       : 'text-[#c4b89c]'
                   }`}
                   style={{ width: cellWidth, minWidth: cellWidth }}
                   onMouseEnter={() => {
-                    if (note) setHoveredIdx(noteIdx);
+                    if (note) setHoveredIdx(cellIdx);
                   }}
                   onMouseLeave={() => setHoveredIdx(null)}
                   onClick={() => {
@@ -85,13 +89,13 @@ export default function TabNotation({ exercise, onNoteClick, activeNoteIndex = -
                 </span>
               );
             })}
-            <span className="text-[#8b7355] font-bold">|</span>
+            <span className="text-[#8b7355] font-bold opacity-70">|</span>
           </div>
         ))}
       </div>
 
       {exercise.notes.length > maxNotes && (
-        <p className="text-[#b8a88a] text-xs mt-2 font-serif italic">
+        <p className="text-[10px] text-[#8b7355] mt-2 font-serif italic">
           Showing first {maxNotes} of {exercise.notes.length} notes...
         </p>
       )}

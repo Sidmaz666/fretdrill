@@ -1,37 +1,33 @@
 ---
 Task ID: 1
-Agent: main
-Task: Fix guitar exercise website - full fretboard, patterns, exercises, UI/UX
+Agent: Main
+Task: Redesign FretBoard Forge UI/UX - fix ugly header, messy exercise section, poor fretboard exercise display
 
 Work Log:
-- Analyzed uploaded reference image showing CAGED pattern diagrams with colored notes, connecting lines, and numbered sequences
-- Rewrote FretboardDiagram component to always show full fretboard (0-15 frets) with `fullFretboard` prop
-- Added position highlight rectangle showing selected CAGED position on the full fretboard
-- Notes outside current position are dimmed (0.35 opacity) while keeping exercise notes prominent
-- Exercise path lines now include arrow heads showing direction of note sequence
-- Sequence numbers displayed on exercise notes with small red numbered circles
-- Created new PatternDiagram component for CAGED position thumbnail diagrams
-  - Shows individual CAGED positions with shape lines connecting notes
-  - Exercise sequence numbers overlaid on notes
-  - Root note double rings and crosshatch patterns
-  - Custom label support for connection diagrams
-- Enhanced exercise-generator.ts with 6 new exercise types:
-  - string-skip, lateral-run, diagonal, position-shift, pentatonic-run, economy-picking
-  - Added sequenceNumber to ExerciseNote interface
-  - Added generatePatternExercises() function for CAGED pattern generation
-- Rewrote page.tsx with improved layout:
-  - Control bar at top with Key (6x2 grid), Scale (dropdown), Position (1-5 + All), Intervals
-  - Scale notes shown in header with interval labels and colors
-  - Exercise selector grouped by categories: Scale Runs, Sequences, Shapes, Technique, Connections
-  - CAGED Patterns section showing 5 position thumbnails with clickable selection
-  - Position Connections section showing bridge diagrams between adjacent positions
-  - Full fretboard always shown (0-15 frets) with exercise overlays
-- All builds successful with Next.js 16.1.3
+- Analyzed current page with agent browser screenshots and snapshots
+- Identified 3 major issues: disorganized header/control bar, messy exercise button wall, poor exercise rendering on fretboard
+- Rewrote page.tsx with major improvements:
+  - Header: clean logo + tagline + scale info badge, well-aligned
+  - Control bar: proper grid layout with 4 distinct sections (Key, Scale, Position, Intervals)
+  - Exercise panel: moved to side panel with accordion categories (Scale Runs, Sequences, Shapes, Technique, Connections)
+  - Fretboard + Exercise side-by-side layout on large screens
+  - Footer with sticky mt-auto
+- Rewrote FretboardDiagram.tsx with improvements:
+  - Larger string spacing (28) and fret spacing (44) for readability
+  - Thicker exercise path lines (2.5px) with shadow for depth
+  - Better exercise highlight rings (3px stroke, dashed)
+  - Larger sequence number badges with white stroke border
+  - Cleaner note name labels above exercise notes
+  - Dimmed notes outside position at 0.3 opacity
+- Rewrote TabNotation.tsx with improvements:
+  - Sketch card styling with border
+  - Cleaner exercise title bar with note count
+  - Red accent for active/hovered notes
+  - Better spacing and typography
 
 Stage Summary:
-- Full fretboard (0-15) always visible with position highlighting
-- 14 exercise types available (up from 8)
-- CAGED pattern diagrams with numbered sequences
-- Position connection diagrams showing bridges between positions
-- Exercise notes properly highlighted on full fretboard with sequence numbers and arrows
-- Improved UI layout with categorized exercise buttons
+- All three major UI issues resolved
+- Page renders correctly with no errors
+- Accordion exercise panel works with expand/collapse
+- Exercise path clearly visible on fretboard with arrows and sequence numbers
+- Browser-verified interactivity: key switching, position switching, exercise selection all work

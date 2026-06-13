@@ -25,17 +25,16 @@ interface FretboardDiagramProps {
   compact?: boolean;
   showPatternLines?: boolean;
   className?: string;
-  /** Always show full fretboard regardless of position */
   fullFretboard?: boolean;
 }
 
 // Layout constants for full fretboard view
-const FULL_STRING_SPACING = 26;
-const FULL_FRET_SPACING = 42;
-const FULL_LEFT_MARGIN = 36;
-const FULL_TOP_MARGIN = 28;
-const FULL_BOTTOM_MARGIN = 24;
-const FULL_NOTE_RADIUS = 10;
+const FULL_STRING_SPACING = 28;
+const FULL_FRET_SPACING = 44;
+const FULL_LEFT_MARGIN = 40;
+const FULL_TOP_MARGIN = 30;
+const FULL_BOTTOM_MARGIN = 26;
+const FULL_NOTE_RADIUS = 11;
 
 // Compact view constants
 const COMPACT_STRING_SPACING = 20;
@@ -78,7 +77,6 @@ export default function FretboardDiagram({
 }: FretboardDiagramProps) {
   const [hoveredNote, setHoveredNote] = useState<{ string: number; fret: number } | null>(null);
 
-  // Always show full fretboard in the main view
   const effectiveStartFret = fullFretboard ? 0 : startFret;
   const effectiveEndFret = fullFretboard ? FRET_COUNT : endFret;
 
@@ -89,7 +87,6 @@ export default function FretboardDiagram({
   const fretRange = effectiveEndFret - effectiveStartFret;
   const stringLabels = ['E', 'A', 'D', 'G', 'B', 'e'];
 
-  // Layout sizing
   const ss = compact ? COMPACT_STRING_SPACING : FULL_STRING_SPACING;
   const fs = compact ? COMPACT_FRET_SPACING : FULL_FRET_SPACING;
   const lm = compact ? COMPACT_LEFT_MARGIN : FULL_LEFT_MARGIN;
@@ -131,7 +128,6 @@ export default function FretboardDiagram({
     if (!showPatternLines || compact) return [];
     const lines: Array<{ x1: number; y1: number; x2: number; y2: number; color: string; isRoot: boolean; inPosition: boolean }> = [];
     
-    // Group notes by string
     const byString: Map<number, typeof notePositions> = new Map();
     for (const note of notePositions) {
       if (!byString.has(note.string)) byString.set(note.string, []);
@@ -157,7 +153,7 @@ export default function FretboardDiagram({
       }
     }
     
-    // Connect notes across adjacent strings (same fret or ±1 fret) to form the shape
+    // Connect notes across adjacent strings
     for (let s = 0; s < 5; s++) {
       const lower = byString.get(s) || [];
       const higher = byString.get(s + 1) || [];
@@ -201,7 +197,6 @@ export default function FretboardDiagram({
   // Exercise path note positions for numbering
   const exerciseNotePositions = useMemo(() => {
     if (!exercisePath) return [];
-    // Deduplicate while preserving order
     const seen = new Set<string>();
     const result: Array<{ string: number; fret: number; x: number; y: number; idx: number; sequenceNumber?: number }> = [];
     
@@ -242,8 +237,8 @@ export default function FretboardDiagram({
     return {
       x: x1,
       width: x2 - x1,
-      y: tm - 12,
-      height: 5 * ss + 24,
+      y: tm - 14,
+      height: 5 * ss + 28,
     };
   }, [positionHighlight, showAllPositions, effectiveStartFret, lm, fs, tm, ss]);
 
@@ -265,6 +260,10 @@ export default function FretboardDiagram({
         className="w-full h-auto"
         style={{ maxWidth: svgWidth, minWidth: compact ? undefined : svgWidth }}
       >
+        <defs>
+          {/* Arrow marker for exercise paths */}
+        </defs>
+
         {/* Paper background */}
         <rect x={0} y={0} width={svgWidth} height={svgHeight} fill="#faf6ef" rx={2} />
 
@@ -275,11 +274,11 @@ export default function FretboardDiagram({
             y={positionRect.y}
             width={positionRect.width}
             height={positionRect.height}
-            fill="rgba(139, 115, 85, 0.06)"
-            stroke="rgba(139, 115, 85, 0.2)"
-            strokeWidth={1}
-            strokeDasharray="4 2"
-            rx={3}
+            fill="rgba(139, 115, 85, 0.05)"
+            stroke="rgba(139, 115, 85, 0.18)"
+            strokeWidth={1.5}
+            strokeDasharray="6 3"
+            rx={4}
           />
         )}
 
@@ -287,11 +286,11 @@ export default function FretboardDiagram({
         {fretMarkerPositions.map(marker => (
           marker.isDouble ? (
             <React.Fragment key={`marker-${marker.fret}`}>
-              <circle cx={marker.x - 7} cy={tm + 1.5 * ss} r={compact ? 2 : 3} fill="#c4b89c" opacity={0.5} />
-              <circle cx={marker.x + 7} cy={tm + 3.5 * ss} r={compact ? 2 : 3} fill="#c4b89c" opacity={0.5} />
+              <circle cx={marker.x - 8} cy={tm + 1.5 * ss} r={compact ? 2 : 3.5} fill="#c4b89c" opacity={0.45} />
+              <circle cx={marker.x + 8} cy={tm + 3.5 * ss} r={compact ? 2 : 3.5} fill="#c4b89c" opacity={0.45} />
             </React.Fragment>
           ) : (
-            <circle key={`marker-${marker.fret}`} cx={marker.x} cy={tm + 2.5 * ss} r={compact ? 2 : 3} fill="#c4b89c" opacity={0.5} />
+            <circle key={`marker-${marker.fret}`} cx={marker.x} cy={tm + 2.5 * ss} r={compact ? 2 : 3.5} fill="#c4b89c" opacity={0.45} />
           )
         ))}
 
@@ -303,10 +302,10 @@ export default function FretboardDiagram({
           return (
             <line
               key={`fret-${fretNum}`}
-              x1={x} y1={tm - 10}
-              x2={x} y2={tm + 5 * ss + 10}
+              x1={x} y1={tm - 12}
+              x2={x} y2={tm + 5 * ss + 12}
               stroke={isNut ? '#5a4a3a' : '#c4b89c'}
-              strokeWidth={isNut ? 5 : 1.5}
+              strokeWidth={isNut ? 6 : 1.5}
               strokeLinecap="round"
             />
           );
@@ -317,16 +316,14 @@ export default function FretboardDiagram({
           const fretNum = effectiveStartFret + i;
           if (fretNum === 0) return null;
           const x = lm + (i + 0.5) * fs;
-          // Show every fret number for full fretboard, every other for compact
           if (compact && fretNum % 2 !== 0 && fretNum !== effectiveStartFret + 1) return null;
-          // For full fretboard, show all numbers but at even spacing
           if (fullFretboard && !compact && fretRange > 10) {
             if (fretNum % 2 !== 0 && fretNum !== 1 && fretNum !== 12) return null;
           }
           return (
             <text
               key={`fretnum-${fretNum}`}
-              x={x} y={svgHeight - 4}
+              x={x} y={svgHeight - 5}
               textAnchor="middle"
               fill="#8b7355"
               fontSize={compact ? 8 : 10}
@@ -345,12 +342,12 @@ export default function FretboardDiagram({
           return (
             <line
               key={`string-${stringIdx}`}
-              x1={lm - 8} y1={y}
-              x2={lm + fretRange * fs + 8} y2={y}
+              x1={lm - 10} y1={y}
+              x2={lm + fretRange * fs + 10} y2={y}
               stroke="#6b5b47"
               strokeWidth={thickness}
               strokeLinecap="round"
-              opacity={0.7}
+              opacity={0.6}
             />
           );
         })}
@@ -361,10 +358,10 @@ export default function FretboardDiagram({
           return (
             <text
               key={`label-${idx}`}
-              x={lm - 16} y={y + 4}
+              x={lm - 18} y={y + 4}
               textAnchor="middle"
               fill="#6b5b47"
-              fontSize={compact ? 9 : 12}
+              fontSize={compact ? 9 : 13}
               fontWeight="bold"
               fontFamily="'Georgia', serif"
               fontStyle="italic"
@@ -381,40 +378,49 @@ export default function FretboardDiagram({
             x1={line.x1} y1={line.y1}
             x2={line.x2} y2={line.y2}
             stroke={line.color}
-            strokeWidth={line.inPosition ? 1.5 : 0.8}
+            strokeWidth={line.inPosition ? 1.2 : 0.6}
             strokeLinecap="round"
-            opacity={line.inPosition ? (line.isRoot ? 0.3 : 0.2) : 0.08}
+            opacity={line.inPosition ? (line.isRoot ? 0.25 : 0.15) : 0.06}
           />
         ))}
 
-        {/* Exercise path lines (ordered sequence with direction arrows) */}
+        {/* Exercise path lines — bold, clearly visible with arrows */}
         {exercisePathLines.map((line, i) => (
           <g key={`expath-${i}`}>
+            {/* Shadow line for depth */}
+            <line
+              x1={line.x1 + 1} y1={line.y1 + 1}
+              x2={line.x2 + 1} y2={line.y2 + 1}
+              stroke="#2c2c2c"
+              strokeWidth={3}
+              strokeLinecap="round"
+              opacity={0.1}
+            />
+            {/* Main path line */}
             <line
               x1={line.x1} y1={line.y1}
               x2={line.x2} y2={line.y2}
               stroke="#9b3939"
               strokeWidth={2.5}
               strokeLinecap="round"
-              opacity={0.6}
+              opacity={0.55}
             />
             {/* Arrow head */}
             {(() => {
               const dx = line.x2 - line.x1;
               const dy = line.y2 - line.y1;
               const len = Math.sqrt(dx * dx + dy * dy);
-              if (len < 5) return null;
+              if (len < 8) return null;
               const nx = dx / len;
               const ny = dy / len;
-              const arrowSize = 5;
-              // Place arrow at 70% along the line
-              const ax = line.x1 + dx * 0.7;
-              const ay = line.y1 + dy * 0.7;
+              const arrowSize = 6;
+              const ax = line.x1 + dx * 0.65;
+              const ay = line.y1 + dy * 0.65;
               return (
                 <polygon
                   points={`${ax + nx * arrowSize},${ay + ny * arrowSize} ${ax - ny * arrowSize * 0.5 - nx * arrowSize * 0.3},${ay + nx * arrowSize * 0.5 - ny * arrowSize * 0.3} ${ax + ny * arrowSize * 0.5 - nx * arrowSize * 0.3},${ay - nx * arrowSize * 0.5 - ny * arrowSize * 0.3}`}
                   fill="#9b3939"
-                  opacity={0.6}
+                  opacity={0.55}
                 />
               );
             })()}
@@ -426,15 +432,13 @@ export default function FretboardDiagram({
           const color = getIntervalColor(note.intervalLabel);
           const isActive = isNoteActive(note);
           const isHighlight = note.isHighlighted && highlightNotes;
-          const isExercisePath = exercisePath && exercisePath.some(en => en.string === note.string && en.fret === note.fret);
           const isInPos = note.isInPosition;
           
-          // Determine note appearance
-          const isExNote = isHighlight || isExercisePath;
+          const isExNote = isHighlight;
           const dimmed = fullFretboard && !isInPos && !isExNote;
           
-          const r = isActive ? nr + 3 : (isExNote ? nr + 1 : nr);
-          const baseOpacity = dimmed ? 0.35 : 1;
+          const r = isActive ? nr + 3 : (isExNote ? nr + 2 : nr);
+          const baseOpacity = dimmed ? 0.3 : 1;
 
           return (
             <g
@@ -447,72 +451,60 @@ export default function FretboardDiagram({
             >
               {/* Active/hover glow */}
               {isActive && (
-                <circle cx={note.x} cy={note.y} r={r + 8} fill={color} opacity={0.15} />
+                <circle cx={note.x} cy={note.y} r={r + 10} fill={color} opacity={0.12} />
               )}
 
-              {/* Exercise highlight ring */}
+              {/* Exercise highlight ring — thicker and more visible */}
               {isExNote && !isActive && (
                 <circle
-                  cx={note.x} cy={note.y} r={r + 5}
+                  cx={note.x} cy={note.y} r={r + 6}
                   fill="none"
                   stroke={color}
-                  strokeWidth={2.5}
-                  strokeDasharray="5 2"
-                  opacity={0.9}
+                  strokeWidth={3}
+                  strokeDasharray="6 3"
+                  opacity={0.85}
                 />
               )}
 
               {/* Root note double ring */}
               {note.isRoot && !compact && (
                 <circle
-                  cx={note.x} cy={note.y} r={r + 6}
+                  cx={note.x} cy={note.y} r={r + 7}
                   fill="none"
                   stroke={color}
                   strokeWidth={1.5}
-                  opacity={0.4}
+                  opacity={0.35}
                 />
               )}
 
-              {/* Note circle */}
+              {/* Note circle — exercise notes get stronger fill */}
               <circle
                 cx={note.x} cy={note.y} r={r}
-                fill={isActive ? color + '55' : (isExNote ? color + '45' : (note.isRoot ? color + '30' : color + '15'))}
-                stroke={isActive ? color : (isExNote ? color : color + '90')}
-                strokeWidth={isActive ? 2.5 : (isExNote ? 2 : (note.isRoot ? 2 : 1))}
+                fill={isActive ? color + '50' : (isExNote ? color + '35' : (note.isRoot ? color + '22' : color + '10'))}
+                stroke={isActive ? color : (isExNote ? color : color + '80')}
+                strokeWidth={isActive ? 2.5 : (isExNote ? 2.2 : (note.isRoot ? 2 : 1))}
               />
-
-              {/* Crosshatch for root */}
-              {note.isRoot && !compact && (
-                <g opacity={0.15}>
-                  <line x1={note.x - r + 2} y1={note.y - r + 2} x2={note.x + r - 2} y2={note.y + r - 2} stroke={color} strokeWidth={0.7} />
-                  <line x1={note.x - r + 5} y1={note.y - r + 2} x2={note.x + r - 2} y2={note.y + r - 5} stroke={color} strokeWidth={0.7} />
-                  <line x1={note.x - r + 2} y1={note.y - r + 5} x2={note.x + r - 5} y2={note.y + r - 2} stroke={color} strokeWidth={0.7} />
-                  <line x1={note.x + r - 2} y1={note.y - r + 2} x2={note.x - r + 2} y2={note.y + r - 2} stroke={color} strokeWidth={0.7} />
-                  <line x1={note.x + r - 5} y1={note.y - r + 2} x2={note.x - r + 2} y2={note.y + r - 5} stroke={color} strokeWidth={0.7} />
-                  <line x1={note.x + r - 2} y1={note.y - r + 5} x2={note.x - r + 5} y2={note.y + r - 2} stroke={color} strokeWidth={0.7} />
-                </g>
-              )}
 
               {/* Interval label inside note */}
               <text
                 x={note.x} y={note.y + (compact ? 2.5 : 4)}
                 textAnchor="middle"
-                fill={isActive ? '#1a1a1a' : (isExNote ? '#2a2a2a' : '#3a3a3a')}
+                fill={isActive ? '#1a1a1a' : (isExNote ? '#1a1a1a' : '#3a3a3a')}
                 fontSize={note.intervalLabel.length > 2 ? smallFontSize : fontSize}
-                fontWeight="bold"
+                fontWeight={isExNote ? 'bold' : 'bold'}
                 fontFamily="'Georgia', serif"
                 fontStyle="italic"
               >
                 {note.intervalLabel}
               </text>
 
-              {/* Note name on hover/active */}
+              {/* Note name on hover/active or exercise notes */}
               {(isActive || isExNote) && !compact && (
                 <text
-                  x={note.x} y={note.y - r - 5}
+                  x={note.x} y={note.y - r - 6}
                   textAnchor="middle"
                   fill={color}
-                  fontSize={8}
+                  fontSize={9}
                   fontFamily="'Georgia', serif"
                   fontStyle="italic"
                   fontWeight="bold"
@@ -525,25 +517,30 @@ export default function FretboardDiagram({
           );
         })}
 
-        {/* Exercise path sequence numbers */}
+        {/* Exercise path sequence numbers — larger, more visible */}
         {exerciseNotePositions.map((en) => {
           const seqNum = en.sequenceNumber || (en.idx + 1);
-          // Only show every Nth number to avoid clutter, but always show first and last
           const total = exerciseNotePositions.length;
           const showEvery = total > 20 ? 4 : total > 12 ? 3 : total > 6 ? 2 : 1;
           const showThis = seqNum === 1 || seqNum === total || seqNum % showEvery === 0;
           if (!showThis) return null;
           
+          const badgeX = en.x + nr + 4;
+          const badgeY = en.y - nr - 4;
+          const badgeR = 8;
+
           return (
             <g key={`exnum-${en.idx}`}>
               <circle
-                cx={en.x + nr + 3} cy={en.y - nr - 3}
-                r={7}
+                cx={badgeX} cy={badgeY}
+                r={badgeR}
                 fill="#9b3939"
-                opacity={0.8}
+                stroke="#faf6ef"
+                strokeWidth={1.5}
+                opacity={0.9}
               />
               <text
-                x={en.x + nr + 3} y={en.y - nr + 0.5}
+                x={badgeX} y={badgeY + 1}
                 textAnchor="middle"
                 fill="#faf6ef"
                 fontSize={7}
@@ -560,10 +557,10 @@ export default function FretboardDiagram({
         {positionRect && !compact && (
           <text
             x={positionRect.x + positionRect.width / 2}
-            y={positionRect.y - 2}
+            y={positionRect.y - 3}
             textAnchor="middle"
             fill="#8b7355"
-            fontSize={10}
+            fontSize={11}
             fontFamily="'Georgia', serif"
             fontStyle="italic"
             fontWeight="bold"
