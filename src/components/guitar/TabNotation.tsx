@@ -22,14 +22,14 @@ interface TabNotationProps {
   className?: string;
 }
 
-// Layout constants for SVG tab rendering
-const TAB_LEFT_MARGIN = 36;
-const TAB_STRING_SPACING = 20;
-const TAB_CELL_WIDTH = 28;
-const TAB_TOP_MARGIN = 12;
-const TAB_BOTTOM_MARGIN = 16;
-const TAB_ROW_GAP = 20;
-const TAB_NOTES_PER_ROW = 16;
+// Layout constants for SVG tab rendering — compact
+const TAB_LEFT_MARGIN = 24;
+const TAB_STRING_SPACING = 14;
+const TAB_CELL_WIDTH = 20;
+const TAB_TOP_MARGIN = 8;
+const TAB_BOTTOM_MARGIN = 8;
+const TAB_ROW_GAP = 8;
+const TAB_NOTES_PER_ROW = 20;
 const TAB_LINE_HEIGHT = 5 * TAB_STRING_SPACING + TAB_TOP_MARGIN + TAB_BOTTOM_MARGIN;
 
 export default function TabNotation({ exercise, onNoteClick, activeNoteIndex = -1, playingIdx = -1, activePlayingNote = null, className = '' }: TabNotationProps) {
@@ -297,7 +297,7 @@ export default function TabNotation({ exercise, onNoteClick, activeNoteIndex = -
                 {/* String lines */}
                 {stringLabels.map((_, stringIdx) => {
                   const y = TAB_TOP_MARGIN + stringIdx * TAB_STRING_SPACING;
-                  const thickness = stringIdx <= 1 ? 1.8 : stringIdx <= 3 ? 1.2 : 0.8;
+                  const thickness = stringIdx <= 1 ? 1.2 : stringIdx <= 3 ? 0.8 : 0.5;
                   return (
                     <line
                       key={`str-${rowIdx}-${stringIdx}`}
@@ -317,11 +317,11 @@ export default function TabNotation({ exercise, onNoteClick, activeNoteIndex = -
                   return (
                     <text
                       key={`lbl-${rowIdx}-${stringIdx}`}
-                      x={TAB_LEFT_MARGIN - 14}
-                      y={y + 4}
+                      x={TAB_LEFT_MARGIN - 8}
+                      y={y + 3}
                       textAnchor="middle"
                       fill="#6b5b47"
-                      fontSize={11}
+                      fontSize={8}
                       fontWeight="bold"
                       fontFamily="'Georgia', serif"
                       fontStyle="italic"
@@ -333,31 +333,31 @@ export default function TabNotation({ exercise, onNoteClick, activeNoteIndex = -
 
                 {/* Opening bar line */}
                 <line
-                  x1={TAB_LEFT_MARGIN - 4} y1={TAB_TOP_MARGIN - 4}
-                  x2={TAB_LEFT_MARGIN - 4} y2={TAB_TOP_MARGIN + 5 * TAB_STRING_SPACING + 4}
+                  x1={TAB_LEFT_MARGIN - 3} y1={TAB_TOP_MARGIN - 3}
+                  x2={TAB_LEFT_MARGIN - 3} y2={TAB_TOP_MARGIN + 5 * TAB_STRING_SPACING + 3}
                   stroke="#6b5b47"
-                  strokeWidth={2}
+                  strokeWidth={1.5}
                   strokeLinecap="round"
                 />
                 {/* Closing bar line */}
                 <line
-                  x1={TAB_LEFT_MARGIN + noteCount * TAB_CELL_WIDTH + 4}
-                  y1={TAB_TOP_MARGIN - 4}
-                  x2={TAB_LEFT_MARGIN + noteCount * TAB_CELL_WIDTH + 4}
-                  y2={TAB_TOP_MARGIN + 5 * TAB_STRING_SPACING + 4}
+                  x1={TAB_LEFT_MARGIN + noteCount * TAB_CELL_WIDTH + 3}
+                  y1={TAB_TOP_MARGIN - 3}
+                  x2={TAB_LEFT_MARGIN + noteCount * TAB_CELL_WIDTH + 3}
+                  y2={TAB_TOP_MARGIN + 5 * TAB_STRING_SPACING + 3}
                   stroke={isLastRow ? '#6b5b47' : '#c4b89c'}
-                  strokeWidth={isLastRow ? 2.5 : 1.5}
+                  strokeWidth={isLastRow ? 2 : 1}
                   strokeLinecap="round"
                 />
                 {/* Double bar at end of last row */}
                 {isLastRow && (
                   <line
-                    x1={TAB_LEFT_MARGIN + noteCount * TAB_CELL_WIDTH + 8}
-                    y1={TAB_TOP_MARGIN - 4}
-                    x2={TAB_LEFT_MARGIN + noteCount * TAB_CELL_WIDTH + 8}
-                    y2={TAB_TOP_MARGIN + 5 * TAB_STRING_SPACING + 4}
+                    x1={TAB_LEFT_MARGIN + noteCount * TAB_CELL_WIDTH + 6}
+                    y1={TAB_TOP_MARGIN - 3}
+                    x2={TAB_LEFT_MARGIN + noteCount * TAB_CELL_WIDTH + 6}
+                    y2={TAB_TOP_MARGIN + 5 * TAB_STRING_SPACING + 3}
                     stroke="#6b5b47"
-                    strokeWidth={1.5}
+                    strokeWidth={1}
                     strokeLinecap="round"
                   />
                 )}
@@ -374,8 +374,8 @@ export default function TabNotation({ exercise, onNoteClick, activeNoteIndex = -
                   const isActive = isHovered || isCurrentlyPlaying || isPlayingIdx;
                   
                   const fretStr = note.fret.toString();
-                  const fontSize = fretStr.length > 1 ? 11 : 13;
-                  const cellW = fretStr.length > 1 ? TAB_CELL_WIDTH + 4 : TAB_CELL_WIDTH;
+                  const fontSize = fretStr.length > 1 ? 8 : 9;
+                  const cellW = fretStr.length > 1 ? TAB_CELL_WIDTH + 2 : TAB_CELL_WIDTH;
 
                   return (
                     <g
@@ -389,27 +389,27 @@ export default function TabNotation({ exercise, onNoteClick, activeNoteIndex = -
                       {isActive && (
                         <rect
                           x={x - cellW / 2}
-                          y={y - TAB_STRING_SPACING / 2 + 2}
+                          y={y - TAB_STRING_SPACING / 2 + 1}
                           width={cellW}
-                          height={TAB_STRING_SPACING - 4}
-                          fill="rgba(155,57,57,0.15)"
-                          rx={2}
+                          height={TAB_STRING_SPACING - 2}
+                          fill="rgba(155,57,57,0.12)"
+                          rx={1}
                         />
                       )}
                       {/* Playing pulse ring */}
                       {isCurrentlyPlaying && (
                         <circle
                           cx={x} cy={y}
-                          r={14}
+                          r={8}
                           fill="rgba(155,57,57,0.1)"
                           stroke="#9b3939"
-                          strokeWidth={1.5}
+                          strokeWidth={1}
                           opacity={0.6}
                         />
                       )}
                       {/* Fret number */}
                       <text
-                        x={x} y={y + 4.5}
+                        x={x} y={y + 3}
                         textAnchor="middle"
                         fill={isActive ? '#9b3939' : '#3a3a3a'}
                         fontSize={fontSize}
@@ -426,10 +426,10 @@ export default function TabNotation({ exercise, onNoteClick, activeNoteIndex = -
                 {/* Row continuation indicator */}
                 {!isLastRow && (
                   <text
-                    x={TAB_LEFT_MARGIN + noteCount * TAB_CELL_WIDTH + 16}
-                    y={TAB_TOP_MARGIN + 2.5 * TAB_STRING_SPACING + 4}
+                    x={TAB_LEFT_MARGIN + noteCount * TAB_CELL_WIDTH + 10}
+                    y={TAB_TOP_MARGIN + 2.5 * TAB_STRING_SPACING + 3}
                     fill="#8b7355"
-                    fontSize={14}
+                    fontSize={10}
                     fontFamily="'Georgia', serif"
                     fontStyle="italic"
                   >
