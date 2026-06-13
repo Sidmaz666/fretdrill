@@ -1,5 +1,6 @@
 // Exercise Generator for Guitar
 // Generates various practice exercises from scale patterns
+// Enhanced with more exercise types and proper CAGED pattern shapes
 
 import {
   FretboardNote,
@@ -9,6 +10,7 @@ import {
   NOTES,
   NoteName,
   STRING_OPEN_NOTES,
+  FRET_COUNT,
 } from './music-theory';
 
 export interface ExerciseNote {
@@ -17,6 +19,7 @@ export interface ExerciseNote {
   note: string;
   intervalLabel: string;
   isRoot: boolean;
+  sequenceNumber?: number; // Order in the exercise sequence
 }
 
 export interface Exercise {
@@ -25,35 +28,60 @@ export interface Exercise {
   type: ExerciseType;
   notes: ExerciseNote[];
   tabs: string[];
+  patternId?: string; // Which CAGED pattern this exercise belongs to
 }
 
-export type ExerciseType = 'scale-asc' | 'scale-desc' | 'scale-asc-desc' | 'thirds' | 'sequence-3' | 'sequence-4' | 'triads' | 'connecting';
+export type ExerciseType = 
+  | 'scale-asc' 
+  | 'scale-desc' 
+  | 'scale-asc-desc' 
+  | 'thirds' 
+  | 'sequence-3' 
+  | 'sequence-4' 
+  | 'triads' 
+  | 'connecting'
+  | 'string-skip'
+  | 'lateral-run'
+  | 'diagonal'
+  | 'position-shift'
+  | 'pentatonic-run'
+  | 'economy-picking';
 
 export const EXERCISE_TYPES: Record<ExerciseType, { name: string; description: string }> = {
-  'scale-asc': { name: 'Ascending Scale', description: 'Play the scale ascending from root to octave' },
-  'scale-desc': { name: 'Descending Scale', description: 'Play the scale descending from octave to root' },
-  'scale-asc-desc': { name: 'Asc/Desc Scale', description: 'Play the scale ascending then descending' },
-  'thirds': { name: 'Thirds', description: 'Play the scale in diatonic thirds (skip one note)' },
-  'sequence-3': { name: '3-Note Sequences', description: 'Groups of 3 ascending notes, shifting by one scale degree' },
-  'sequence-4': { name: '4-Note Sequences', description: 'Groups of 4 ascending notes, shifting by one scale degree' },
+  'scale-asc': { name: 'Ascending Scale', description: 'Play scale ascending from root to octave' },
+  'scale-desc': { name: 'Descending Scale', description: 'Play scale descending from octave to root' },
+  'scale-asc-desc': { name: 'Asc/Desc Scale', description: 'Play scale ascending then descending' },
+  'thirds': { name: 'Diatonic Thirds', description: 'Play scale in thirds (skip one note each time)' },
+  'sequence-3': { name: '3-Note Sequences', description: 'Groups of 3 ascending notes, shifting by one degree' },
+  'sequence-4': { name: '4-Note Sequences', description: 'Groups of 4 ascending notes, shifting by one degree' },
   'triads': { name: 'Triad Shapes', description: 'Find and play triad shapes within the scale' },
   'connecting': { name: 'Position Connect', description: 'Connect between adjacent CAGED positions' },
+  'string-skip': { name: 'String Skipping', description: 'Skip strings while playing scale notes' },
+  'lateral-run': { name: 'Lateral Run', description: 'Run across strings at the same fret position' },
+  'diagonal': { name: 'Diagonal Pattern', description: 'Play a diagonal pattern across the fretboard' },
+  'position-shift': { name: 'Position Shift', description: 'Shift between CAGED positions smoothly' },
+  'pentatonic-run': { name: 'Pentatonic Run', description: 'Classic 2-notes-per-string pentatonic run' },
+  'economy-picking': { name: 'Economy Picking', description: 'Practice economy/sweep picking patterns' },
 };
 
-function fretboardToExerciseNote(fn: FretboardNote): ExerciseNote {
+function fretboardToExerciseNote(fn: FretboardNote, seqNum?: number): ExerciseNote {
   return {
     string: fn.string,
     fret: fn.fret,
     note: fn.note,
     intervalLabel: fn.intervalLabel,
     isRoot: fn.isRoot,
+    sequenceNumber: seqNum,
   };
 }
 
 // Sort notes for playing: ascending by string (high to low for ascending pitch) then by fret
 function sortNotesAscending(notes: FretboardNote[]): FretboardNote[] {
   return [...notes].sort((a, b) => {
-    // Higher pitch = higher string number OR same string higher fret
+    // Calculate approximate pitch: string * 5 + fret (rough pitch ordering)
+    const pitchA = a.string * 5 + a.fret;
+    const pitchB = b.string * 5 + b.fret;
+    // For same string, sort by fret
     if (a.string !== b.string) return b.string - a.string; // high E first for ascending
     return a.fret - b.fret;
   });
@@ -66,17 +94,19 @@ function sortNotesDescending(notes: FretboardNote[]): FretboardNote[] {
   });
 }
 
+// Add sequence numbers to exercise notes
+function addSequenceNumbers(notes: ExerciseNote[]): ExerciseNote[] {
+  return notes.map((n, i) => ({ ...n, sequenceNumber: i + 1 }));
+}
+
 // Generate tab notation from exercise notes
 function generateTabs(notes: ExerciseNote[], fretCount: number = 20): string[] {
   const stringNames = ['e', 'B', 'G', 'D', 'A', 'E']; // high to low for tab
   const tabs: string[] = stringNames.map(s => s + '|');
   
-  // Group notes by sequential order for tab display
-  // We'll create a simplified representation showing the notes in order
-  const maxDisplayNotes = Math.min(notes.length, 16);
+  const maxDisplayNotes = Math.min(notes.length, 20);
   const displayNotes = notes.slice(0, maxDisplayNotes);
 
-  // Build tab columns
   for (const note of displayNotes) {
     const stringRow = 5 - note.string; // convert string index to tab row (high e = 0)
     for (let row = 0; row < 6; row++) {
@@ -89,7 +119,6 @@ function generateTabs(notes: ExerciseNote[], fretCount: number = 20): string[] {
     }
   }
 
-  // Pad all rows to same length
   const maxLen = Math.max(...tabs.map(t => t.length));
   for (let i = 0; i < tabs.length; i++) {
     while (tabs[i].length < maxLen) tabs[i] += '-';
@@ -107,7 +136,7 @@ function generateAscendingScale(
 ): Exercise {
   const notes = getScaleOnFretboard(key, scaleId, startFret, endFret);
   const sorted = sortNotesAscending(notes);
-  const exerciseNotes = sorted.map(fretboardToExerciseNote);
+  const exerciseNotes = addSequenceNumbers(sorted.map(fretboardToExerciseNote));
 
   return {
     name: EXERCISE_TYPES['scale-asc'].name,
@@ -127,7 +156,7 @@ function generateDescendingScale(
 ): Exercise {
   const notes = getScaleOnFretboard(key, scaleId, startFret, endFret);
   const sorted = sortNotesDescending(notes);
-  const exerciseNotes = sorted.map(fretboardToExerciseNote);
+  const exerciseNotes = addSequenceNumbers(sorted.map(fretboardToExerciseNote));
 
   return {
     name: EXERCISE_TYPES['scale-desc'].name,
@@ -149,7 +178,7 @@ function generateAscDescScale(
   const ascSorted = sortNotesAscending(notes);
   const descSorted = sortNotesDescending(notes);
   const allNotes = [...ascSorted, ...descSorted];
-  const exerciseNotes = allNotes.map(fretboardToExerciseNote);
+  const exerciseNotes = addSequenceNumbers(allNotes.map(fretboardToExerciseNote));
 
   return {
     name: EXERCISE_TYPES['scale-asc-desc'].name,
@@ -170,7 +199,6 @@ function generateThirds(
   const notes = getScaleOnFretboard(key, scaleId, startFret, endFret);
   const sorted = sortNotesAscending(notes);
 
-  // Build thirds: play note i, then note i+2, then advance by 1
   const thirdNotes: FretboardNote[] = [];
   for (let i = 0; i < sorted.length - 2; i++) {
     thirdNotes.push(sorted[i]);
@@ -179,7 +207,7 @@ function generateThirds(
     }
   }
 
-  const exerciseNotes = thirdNotes.map(fretboardToExerciseNote);
+  const exerciseNotes = addSequenceNumbers(thirdNotes.map(fretboardToExerciseNote));
 
   return {
     name: EXERCISE_TYPES['thirds'].name,
@@ -207,7 +235,7 @@ function generateSequence3(
     }
   }
 
-  const exerciseNotes = seqNotes.map(fretboardToExerciseNote);
+  const exerciseNotes = addSequenceNumbers(seqNotes.map(fretboardToExerciseNote));
 
   return {
     name: EXERCISE_TYPES['sequence-3'].name,
@@ -235,7 +263,7 @@ function generateSequence4(
     }
   }
 
-  const exerciseNotes = seqNotes.map(fretboardToExerciseNote);
+  const exerciseNotes = addSequenceNumbers(seqNotes.map(fretboardToExerciseNote));
 
   return {
     name: EXERCISE_TYPES['sequence-4'].name,
@@ -256,24 +284,19 @@ function generateTriads(
   const notes = getScaleOnFretboard(key, scaleId, startFret, endFret);
   const sorted = sortNotesAscending(notes);
 
-  // Group notes into triads (groups of 3 adjacent string pairs)
   const triadNotes: FretboardNote[] = [];
-  // Create triads from adjacent strings
   for (let stringGroup = 0; stringGroup < 4; stringGroup++) {
     const groupNotes = sorted.filter(n => 
       n.string >= stringGroup && n.string <= stringGroup + 2
     );
-    // For each string group, find root and build a triad (R, 3/b3, 5)
     const roots = groupNotes.filter(n => n.isRoot);
     for (const root of roots) {
       triadNotes.push(root);
-      // Find third (2 or 3 semitones from root)
       const third = groupNotes.find(n => 
         n.string >= root.string && n.string <= root.string + 2 &&
         (n.interval === 3 || n.interval === 4) && n !== root
       );
       if (third) triadNotes.push(third);
-      // Find fifth
       const fifth = groupNotes.find(n => 
         n.string >= root.string && n.string <= root.string + 2 &&
         n.interval === 7 && n !== root
@@ -282,7 +305,7 @@ function generateTriads(
     }
   }
 
-  const exerciseNotes = triadNotes.map(fretboardToExerciseNote);
+  const exerciseNotes = addSequenceNumbers(triadNotes.map(fretboardToExerciseNote));
 
   return {
     name: EXERCISE_TYPES['triads'].name,
@@ -304,18 +327,266 @@ function generateConnecting(
   for (let i = 0; i < positions.length - 1; i++) {
     const pos1 = getScaleInPosition(key, scaleId, positions[i]);
     const pos2 = getScaleInPosition(key, scaleId, positions[i + 1]);
-    // Find overlap and transition notes
     const overlapFret = positions[i].fretEnd;
     const transitionNotes = pos1.filter(n => n.fret >= overlapFret - 1);
     connectNotes.push(...sortNotesAscending(transitionNotes).slice(0, 4));
   }
 
-  const exerciseNotes = connectNotes.map(fretboardToExerciseNote);
+  const exerciseNotes = addSequenceNumbers(connectNotes.map(fretboardToExerciseNote));
 
   return {
     name: EXERCISE_TYPES['connecting'].name,
     description: EXERCISE_TYPES['connecting'].description,
     type: 'connecting',
+    notes: exerciseNotes,
+    tabs: generateTabs(exerciseNotes),
+  };
+}
+
+// Generate string skipping exercise
+function generateStringSkip(
+  key: NoteName,
+  scaleId: string,
+  startFret: number,
+  endFret: number
+): Exercise {
+  const notes = getScaleOnFretboard(key, scaleId, startFret, endFret);
+  const sorted = sortNotesAscending(notes);
+
+  // Build string-skip pattern: play note, skip a string, play note, come back
+  const skipNotes: FretboardNote[] = [];
+  for (let i = 0; i < sorted.length; i++) {
+    const current = sorted[i];
+    skipNotes.push(current);
+    // Find a note 2 strings away with similar pitch range
+    const skipString = current.string + (current.string % 2 === 0 ? 2 : -2);
+    if (skipString >= 0 && skipString <= 5) {
+      const skipNote = sorted.find(n => 
+        n.string === skipString && 
+        Math.abs(n.fret - current.fret) <= 3 &&
+        n !== current
+      );
+      if (skipNote) {
+        skipNotes.push(skipNote);
+      }
+    }
+  }
+
+  const exerciseNotes = addSequenceNumbers(skipNotes.map(fretboardToExerciseNote));
+
+  return {
+    name: EXERCISE_TYPES['string-skip'].name,
+    description: EXERCISE_TYPES['string-skip'].description,
+    type: 'string-skip',
+    notes: exerciseNotes,
+    tabs: generateTabs(exerciseNotes),
+  };
+}
+
+// Generate lateral run exercise (across strings at same position)
+function generateLateralRun(
+  key: NoteName,
+  scaleId: string,
+  startFret: number,
+  endFret: number
+): Exercise {
+  const notes = getScaleOnFretboard(key, scaleId, startFret, endFret);
+  
+  // Group notes by string and play them string by string
+  const byString: Map<number, FretboardNote[]> = new Map();
+  for (const note of notes) {
+    if (!byString.has(note.string)) byString.set(note.string, []);
+    byString.get(note.string)!.push(note);
+  }
+  
+  const lateralNotes: FretboardNote[] = [];
+  // Go string by string from high to low then back
+  const stringOrder = [5, 4, 3, 2, 1, 0, 1, 2, 3, 4, 5];
+  for (const stringIdx of stringOrder) {
+    const stringNotes = byString.get(stringIdx);
+    if (stringNotes) {
+      const sorted = [...stringNotes].sort((a, b) => a.fret - b.fret);
+      lateralNotes.push(...sorted);
+    }
+  }
+
+  const exerciseNotes = addSequenceNumbers(lateralNotes.map(fretboardToExerciseNote));
+
+  return {
+    name: EXERCISE_TYPES['lateral-run'].name,
+    description: EXERCISE_TYPES['lateral-run'].description,
+    type: 'lateral-run',
+    notes: exerciseNotes,
+    tabs: generateTabs(exerciseNotes),
+  };
+}
+
+// Generate diagonal pattern exercise
+function generateDiagonal(
+  key: NoteName,
+  scaleId: string,
+  startFret: number,
+  endFret: number
+): Exercise {
+  const notes = getScaleOnFretboard(key, scaleId, startFret, endFret);
+  const sorted = sortNotesAscending(notes);
+
+  // Create a diagonal pattern: play a note on each string, moving up frets
+  const diagNotes: FretboardNote[] = [];
+  const seen = new Set<string>();
+  
+  // Pick one note per string going from high E to low E, shifting frets
+  for (let stringIdx = 5; stringIdx >= 0; stringIdx--) {
+    const stringNotes = sorted.filter(n => n.string === stringIdx);
+    // Pick the note closest to a diagonal line
+    const targetFret = startFret + (5 - stringIdx) * 2; // Diagonal line
+    const closest = stringNotes.reduce((best, n) => {
+      if (!best) return n;
+      return Math.abs(n.fret - targetFret) < Math.abs(best.fret - targetFret) ? n : best;
+    }, null as FretboardNote | null);
+    
+    if (closest) {
+      const key = `${closest.string}-${closest.fret}`;
+      if (!seen.has(key)) {
+        seen.add(key);
+        diagNotes.push(closest);
+      }
+    }
+  }
+  
+  // Then descend diagonally
+  for (let stringIdx = 0; stringIdx <= 5; stringIdx++) {
+    const stringNotes = sorted.filter(n => n.string === stringIdx);
+    const targetFret = endFret - stringIdx * 2;
+    const closest = stringNotes.reduce((best, n) => {
+      if (!best) return n;
+      return Math.abs(n.fret - targetFret) < Math.abs(best.fret - targetFret) ? n : best;
+    }, null as FretboardNote | null);
+    
+    if (closest) {
+      const key = `${closest.string}-${closest.fret}`;
+      if (!seen.has(key)) {
+        seen.add(key);
+        diagNotes.push(closest);
+      }
+    }
+  }
+
+  const exerciseNotes = addSequenceNumbers(diagNotes.map(fretboardToExerciseNote));
+
+  return {
+    name: EXERCISE_TYPES['diagonal'].name,
+    description: EXERCISE_TYPES['diagonal'].description,
+    type: 'diagonal',
+    notes: exerciseNotes,
+    tabs: generateTabs(exerciseNotes),
+  };
+}
+
+// Generate position shift exercise
+function generatePositionShift(
+  key: NoteName,
+  scaleId: string
+): Exercise {
+  const positions = getCAGEDPositions(key, scaleId);
+  const shiftNotes: FretboardNote[] = [];
+
+  // Play ascending through each position, shifting up
+  for (const pos of positions) {
+    const posNotes = getScaleInPosition(key, scaleId, pos);
+    const sorted = sortNotesAscending(posNotes);
+    // Take the first 3-4 notes of each position
+    shiftNotes.push(...sorted.slice(0, 4));
+  }
+
+  const exerciseNotes = addSequenceNumbers(shiftNotes.map(fretboardToExerciseNote));
+
+  return {
+    name: EXERCISE_TYPES['position-shift'].name,
+    description: EXERCISE_TYPES['position-shift'].description,
+    type: 'position-shift',
+    notes: exerciseNotes,
+    tabs: generateTabs(exerciseNotes),
+  };
+}
+
+// Generate pentatonic run exercise
+function generatePentatonicRun(
+  key: NoteName,
+  scaleId: string,
+  startFret: number,
+  endFret: number
+): Exercise {
+  const notes = getScaleOnFretboard(key, scaleId, startFret, endFret);
+  
+  // Build a 2-notes-per-string pattern
+  const byString: Map<number, FretboardNote[]> = new Map();
+  for (const note of notes) {
+    if (!byString.has(note.string)) byString.set(note.string, []);
+    byString.get(note.string)!.push(note);
+  }
+  
+  const runNotes: FretboardNote[] = [];
+  // Ascending: 2 notes per string, low to high string
+  for (let stringIdx = 5; stringIdx >= 0; stringIdx--) {
+    const stringNotes = byString.get(stringIdx);
+    if (stringNotes) {
+      const sorted = [...stringNotes].sort((a, b) => a.fret - b.fret);
+      runNotes.push(...sorted.slice(0, 2));
+    }
+  }
+  // Descending: 2 notes per string, high to low string
+  for (let stringIdx = 0; stringIdx <= 5; stringIdx++) {
+    const stringNotes = byString.get(stringIdx);
+    if (stringNotes) {
+      const sorted = [...stringNotes].sort((a, b) => b.fret - a.fret);
+      runNotes.push(...sorted.slice(0, 2));
+    }
+  }
+
+  const exerciseNotes = addSequenceNumbers(runNotes.map(fretboardToExerciseNote));
+
+  return {
+    name: EXERCISE_TYPES['pentatonic-run'].name,
+    description: EXERCISE_TYPES['pentatonic-run'].description,
+    type: 'pentatonic-run',
+    notes: exerciseNotes,
+    tabs: generateTabs(exerciseNotes),
+  };
+}
+
+// Generate economy picking exercise
+function generateEconomyPicking(
+  key: NoteName,
+  scaleId: string,
+  startFret: number,
+  endFret: number
+): Exercise {
+  const notes = getScaleOnFretboard(key, scaleId, startFret, endFret);
+  
+  // Build 3-note-per-string patterns for economy/sweep picking
+  const byString: Map<number, FretboardNote[]> = new Map();
+  for (const note of notes) {
+    if (!byString.has(note.string)) byString.set(note.string, []);
+    byString.get(note.string)!.push(note);
+  }
+  
+  const econNotes: FretboardNote[] = [];
+  // Play 3 notes on each string going up, sweeping down
+  for (let stringIdx = 5; stringIdx >= 0; stringIdx--) {
+    const stringNotes = byString.get(stringIdx);
+    if (stringNotes) {
+      const sorted = [...stringNotes].sort((a, b) => a.fret - b.fret);
+      econNotes.push(...sorted.slice(0, 3));
+    }
+  }
+
+  const exerciseNotes = addSequenceNumbers(econNotes.map(fretboardToExerciseNote));
+
+  return {
+    name: EXERCISE_TYPES['economy-picking'].name,
+    description: EXERCISE_TYPES['economy-picking'].description,
+    type: 'economy-picking',
     notes: exerciseNotes,
     tabs: generateTabs(exerciseNotes),
   };
@@ -329,7 +600,7 @@ export function generateExercise(
   positionIndex: number = 0
 ): Exercise {
   const positions = getCAGEDPositions(key, scaleId);
-  const position = positions[positionIndex] || { fretStart: 0, fretEnd: 14 };
+  const position = positions[positionIndex] || { fretStart: 0, fretEnd: FRET_COUNT };
   const startFret = position.fretStart;
   const endFret = position.fretEnd;
 
@@ -350,6 +621,18 @@ export function generateExercise(
       return generateTriads(key, scaleId, startFret, endFret);
     case 'connecting':
       return generateConnecting(key, scaleId);
+    case 'string-skip':
+      return generateStringSkip(key, scaleId, startFret, endFret);
+    case 'lateral-run':
+      return generateLateralRun(key, scaleId, startFret, endFret);
+    case 'diagonal':
+      return generateDiagonal(key, scaleId, startFret, endFret);
+    case 'position-shift':
+      return generatePositionShift(key, scaleId);
+    case 'pentatonic-run':
+      return generatePentatonicRun(key, scaleId, startFret, endFret);
+    case 'economy-picking':
+      return generateEconomyPicking(key, scaleId, startFret, endFret);
     default:
       return generateAscendingScale(key, scaleId, startFret, endFret);
   }
@@ -364,4 +647,27 @@ export function generateAllExercises(
   return Object.keys(EXERCISE_TYPES).map(type => 
     generateExercise(type as ExerciseType, key, scaleId, positionIndex)
   );
+}
+
+// Generate CAGED pattern exercises — returns one exercise per CAGED position
+// showing the full scale shape for that position
+export function generatePatternExercises(
+  key: NoteName,
+  scaleId: string
+): Array<{ position: number; fretStart: number; fretEnd: number; notes: ExerciseNote[] }> {
+  const positions = getCAGEDPositions(key, scaleId);
+  
+  return positions.map((pos, idx) => {
+    const notes = getScaleOnFretboard(key, scaleId, pos.fretStart, pos.fretEnd);
+    // Sort by string descending then fret ascending (natural playing order)
+    const sorted = sortNotesAscending(notes);
+    const exerciseNotes = addSequenceNumbers(sorted.map(fretboardToExerciseNote));
+    
+    return {
+      position: idx + 1,
+      fretStart: pos.fretStart,
+      fretEnd: pos.fretEnd,
+      notes: exerciseNotes,
+    };
+  });
 }

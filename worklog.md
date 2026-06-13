@@ -1,53 +1,37 @@
 ---
 Task ID: 1
-Agent: Main Agent
-Task: Complete visual and functional overhaul of FretBoard Forge guitar exercise website
+Agent: main
+Task: Fix guitar exercise website - full fretboard, patterns, exercises, UI/UX
 
 Work Log:
-- Analyzed uploaded reference images using VLM to understand desired layout
-- Read all existing source files (page.tsx, FretboardDiagram.tsx, TabNotation.tsx, globals.css, music-theory.ts, exercise-generator.ts, layout.tsx)
-- Redesigned page.tsx with simple single-page layout (no tabs), everything visible on one page
-- Redesigned FretboardDiagram.tsx with proper rendering, interactive note clicking, exercise note highlighting
-- Fixed critical bug: highlightNotes was REPLACING scale notes instead of being shown alongside them
-- Redesigned TabNotation.tsx with interactive clickable notes that highlight on fretboard
-- Kept the "Conceptual Sketch" aesthetic (light mode, paper texture, pencil-like lines, greyscale tones)
-- Built and tested with agent-browser + VLM verification
-- Tested: key switching, scale switching, position navigation, exercise type switching, note clicking, All Positions view
-- All features verified working correctly
+- Analyzed uploaded reference image showing CAGED pattern diagrams with colored notes, connecting lines, and numbered sequences
+- Rewrote FretboardDiagram component to always show full fretboard (0-15 frets) with `fullFretboard` prop
+- Added position highlight rectangle showing selected CAGED position on the full fretboard
+- Notes outside current position are dimmed (0.35 opacity) while keeping exercise notes prominent
+- Exercise path lines now include arrow heads showing direction of note sequence
+- Sequence numbers displayed on exercise notes with small red numbered circles
+- Created new PatternDiagram component for CAGED position thumbnail diagrams
+  - Shows individual CAGED positions with shape lines connecting notes
+  - Exercise sequence numbers overlaid on notes
+  - Root note double rings and crosshatch patterns
+  - Custom label support for connection diagrams
+- Enhanced exercise-generator.ts with 6 new exercise types:
+  - string-skip, lateral-run, diagonal, position-shift, pentatonic-run, economy-picking
+  - Added sequenceNumber to ExerciseNote interface
+  - Added generatePatternExercises() function for CAGED pattern generation
+- Rewrote page.tsx with improved layout:
+  - Control bar at top with Key (6x2 grid), Scale (dropdown), Position (1-5 + All), Intervals
+  - Scale notes shown in header with interval labels and colors
+  - Exercise selector grouped by categories: Scale Runs, Sequences, Shapes, Technique, Connections
+  - CAGED Patterns section showing 5 position thumbnails with clickable selection
+  - Position Connections section showing bridge diagrams between adjacent positions
+  - Full fretboard always shown (0-15 frets) with exercise overlays
+- All builds successful with Next.js 16.1.3
 
 Stage Summary:
-- Simple, accessible single-page layout — no tab navigation, all controls visible at top
-- Fretboard properly renders with horizontal strings, vertical frets, colored note circles
-- Exercise notes highlighted with dashed rings alongside regular scale notes
-- Tab notation interactive — clicking a note highlights it on fretboard
-- Position thumbnails at bottom, scale reference section at bottom
-- 12 keys × 12 scales × 5 CAGED positions all working
-- Default: A Minor Pentatonic
-
----
-Task ID: 2
-Agent: Main Agent
-Task: Fix UI/UX, improve exercise rendering, add pattern visualization
-
-Work Log:
-- Analyzed uploaded reference image showing desired pattern diagram style
-- Redesigned page.tsx with sidebar layout (240px left sidebar for controls, main content area for fretboard)
-- Controls properly organized in sidebar: Key (4-col grid), Scale (dropdown + notes), Position (numbered buttons), Exercise (vertical list), Intervals legend
-- Added pattern lines to FretboardDiagram: connecting lines between adjacent notes on same string and across strings showing scale shape
-- Added exercise path visualization: dashed red lines connecting notes in exercise sequence order
-- Added exercise sequence numbers: small numbered circles (1, 2, 3...) showing play order on fretboard
-- Exercise highlights use dashed ring around note circles
-- Interactive note clicking works on fretboard (glow effect + note name display)
-- Interactive tab notation clicking highlights corresponding note on fretboard
-- All exercises tested: Ascending, Descending, Thirds, 3-Note/4-Note Sequences, Triads, Position Connect
-- All Positions view shows full fretboard with pattern lines across all positions
-- Position thumbnails at bottom also show pattern lines
-- Built and verified with agent-browser + VLM
-
-Stage Summary:
-- Sidebar layout with clean, organized controls
-- Pattern lines connecting scale notes to show scale shape
-- Exercise path with dashed red lines + sequence numbers
-- All 8 exercise types rendering properly
-- Interactive fretboard and tab notation
-- Light mode sketch aesthetic maintained
+- Full fretboard (0-15) always visible with position highlighting
+- 14 exercise types available (up from 8)
+- CAGED pattern diagrams with numbered sequences
+- Position connection diagrams showing bridges between positions
+- Exercise notes properly highlighted on full fretboard with sequence numbers and arrows
+- Improved UI layout with categorized exercise buttons
