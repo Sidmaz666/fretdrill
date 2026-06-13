@@ -124,7 +124,7 @@ export default function FretboardDiagram({
         ? (note.fret >= positionHighlight.start && note.fret <= positionHighlight.end)
         : true,
     }));
-  }, [notes, effectiveStartFret, highlightSet, positionHighlight]);
+  }, [notes, effectiveStartFret, highlightSet, positionHighlight, lm, fs, ss, tm]);
 
   // Generate pattern lines connecting scale notes into CAGED shapes
   const patternLines = useMemo(() => {
@@ -232,7 +232,7 @@ export default function FretboardDiagram({
         x: lm + (fret - effectiveStartFret + 0.5) * fs,
         isDouble: DOUBLE_MARKERS.includes(fret),
       }));
-  }, [effectiveStartFret, effectiveEndFret]);
+  }, [effectiveStartFret, effectiveEndFret, lm, fs]);
 
   // Position range highlight rectangle
   const positionRect = useMemo(() => {

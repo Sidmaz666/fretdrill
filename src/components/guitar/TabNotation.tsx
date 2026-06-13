@@ -13,6 +13,10 @@ interface TabNotationProps {
 export default function TabNotation({ exercise, onNoteClick, activeNoteIndex = -1, className = '' }: TabNotationProps) {
   const [hoveredIdx, setHoveredIdx] = useState<number | null>(null);
 
+  const isActive = useCallback((noteIdx: number) => {
+    return activeNoteIndex === noteIdx || hoveredIdx === noteIdx;
+  }, [activeNoteIndex, hoveredIdx]);
+
   if (!exercise || !exercise.notes.length) {
     return (
       <div className={`flex items-center justify-center h-32 bg-[#faf6ef] border border-[#c4b89c] rounded-sm ${className}`}>
@@ -40,10 +44,6 @@ export default function TabNotation({ exercise, onNoteClick, activeNoteIndex = -
       }
     }
   }
-
-  const isActive = useCallback((noteIdx: number) => {
-    return activeNoteIndex === noteIdx || hoveredIdx === noteIdx;
-  }, [activeNoteIndex, hoveredIdx]);
 
   return (
     <div className={`bg-[#faf6ef] border border-[#c4b89c] p-3 overflow-x-auto rounded-sm ${className}`}>
