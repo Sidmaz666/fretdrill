@@ -105,86 +105,86 @@ function playGuitarNote(stringIdx: number, fret: number, duration: number = 0.5)
     const baseFreq = STRING_FREQUENCIES[stringIdx];
     const freq = baseFreq * Math.pow(2, fret / 12);
     const now = ctx.currentTime;
-    const sr = ctx.sampleRate;
 
-    // ── Karplus-Strong string synthesis ──
-    // A noise burst circulates through a delay line (1 period long)
-    // with a two-point-average lowpass filter in the feedback loop.
-    // Each pass removes a bit of high-frequency energy, producing a
-    // natural plucked-string timbre that evolves from bright to warm.
-
-    const periodSamples = Math.max(4, Math.round(sr / freq));
-
-    // Per-string feedback gain — higher strings sustain longer
-    const fbGains = [0.970, 0.975, 0.980, 0.985, 0.988, 0.990];
-
-    // ── Excitation: a short filtered noise burst (simulates the pick) ──
-    const excLen = Math.min(periodSamples, Math.round(sr * 0.005));
-    const excBuffer = ctx.createBuffer(1, periodSamples, sr);
-    const exc = excBuffer.getChannelData(0);
-    for (let i = 0; i < periodSamples; i++) {
-      if (i < excLen) {
-        const t = i / excLen;
-        // 4-sample averaged noise for a smoother, band-limited pluck
-        let n = 0;
-        for (let j = 0; j < 4; j++) n += Math.random() * 2 - 1;
-        n *= 0.25;
-        // Shaped attack: quick peak with exponential decay
-        exc[i] = n * Math.exp(-t * 4) * (1 + 3 * (1 - t));
-      } else {
-        exc[i] = 0;
-      }
+    // ── Wavetable: guitar harmonics (measured from a steel-string acoustic) ──
+    // The harmonic structure of a guitar string plucked between soundhole and bridge.
+    // Higher strings are brighter (more upper harmonic content).
+    const brightness = 0.6 + 0.4 * (stringIdx / 5);
+    const h = [
+      [1.00, 0.75, 0.50, 0.32, 0.20, 0.12, 0.08, 0.04, 0.02, 0.01],
+      [1.00, 0.78, 0.53, 0.35, 0.22, 0.14, 0.09, 0.05, 0.03, 0.01],
+      [1.00, 0.80, 0.55, 0.38, 0.25, 0.16, 0.10, 0.06, 0.03, 0.02],
+      [1.00, 0.82, 0.58, 0.40, 0.28, 0.18, 0.12, 0.07, 0.04, 0.02],
+      [1.00, 0.85, 0.60, 0.42, 0.30, 0.20, 0.14, 0.08, 0.05, 0.03],
+      [1.00, 0.87, 0.63, 0.45, 0.32, 0.22, 0.15, 0.09, 0.05, 0.03],
+    ];
+    const harmonics = h[stringIdx];
+    const real = new Float32Array(harmonics.length + 1);
+    const imag = new Float32Array(harmonics.length + 1);
+    real[0] = 0; imag[0] = 0; // DC offset
+    for (let i = 0; i < harmonics.length; i++) {
+      real[i + 1] = harmonics[i];
+      imag[i + 1] = 0;
     }
+    const wave = ctx.createPeriodicWave(real, imag, { disableNormalization: true });
 
-    const noiseSource = ctx.createBufferSource();
-    noiseSource.buffer = excBuffer;
+    // ── Main oscillator ──
+    const osc = ctx.createOscillator();
+    osc.setPeriodicWave(wave);
+    osc.frequency.value = freq;
 
-    // ── Delay line (one period at the note's fundamental) ──
-    const delay = ctx.createDelay(1);
-    delay.delayTime.value = periodSamples / sr;
+    // ── Amplitude envelope ──
+    const env = ctx.createGain();
+    env.gain.setValueAtTime(0, now);
+    env.gain.linearRampToValueAtTime(0.28, now + 0.003);
+    env.gain.exponentialRampToValueAtTime(0.15, now + 0.05);
+    env.gain.exponentialRampToValueAtTime(0.001, now + Math.min(duration, 2.5));
+    osc.connect(env);
 
-    // ── Two-point average lowpass filter ──
-    // H(z) = 0.5 + 0.5*z^-1  →  each pass attenuates upper harmonics
-    const avgFilter = ctx.createBiquadFilter();
-    avgFilter.type = 'lowpass';
-    avgFilter.frequency.value = Math.min(sr * 0.25, 20000);
-    avgFilter.Q.value = 0;
+    // ── Timbre evolution filter ──
+    // Starts bright (high cutoff), then gradually closes as upper harmonics decay.
+    const timbreFilter = ctx.createBiquadFilter();
+    timbreFilter.type = 'lowpass';
+    timbreFilter.frequency.setValueAtTime(6000 + stringIdx * 400, now);
+    timbreFilter.frequency.exponentialRampToValueAtTime(400 + stringIdx * 100, now + Math.min(duration, 2));
+    timbreFilter.Q.value = 0.7;
+    env.connect(timbreFilter);
 
-    // ── DC blocker: prevents low-frequency rumble buildup ──
-    const dcBlock = ctx.createBiquadFilter();
-    dcBlock.type = 'highpass';
-    dcBlock.frequency.value = 30;
-    dcBlock.Q.value = 0.3;
-
-    // ── Feedback gain (controls sustain length) ──
-    const fb = ctx.createGain();
-    fb.gain.value = fbGains[stringIdx];
-
-    // ── Body resonance (warms up the sound with guitar-body-like peaks) ──
+    // ── Body resonance ──
+    // Models the resonant body frequencies of an acoustic guitar.
     const body = ctx.createBiquadFilter();
     body.type = 'bandpass';
-    body.frequency.value = 100 + stringIdx * 25;
-    body.Q.value = 2.5;
+    body.frequency.value = 95 + stringIdx * 22;
+    body.Q.value = 2.2;
+    timbreFilter.connect(body);
 
-    // ── Output envelope ──
-    const output = ctx.createGain();
-    output.gain.setValueAtTime(0, now);
-    output.gain.linearRampToValueAtTime(0.18 + 0.03 * stringIdx, now + 0.003);
-    output.gain.exponentialRampToValueAtTime(0.001, now + Math.min(duration, 2.5));
+    // ── Pluck noise (short burst simulating pick/finger attack) ──
+    const noiseLen = Math.round(ctx.sampleRate * 0.004);
+    const noiseBuf = ctx.createBuffer(1, noiseLen, ctx.sampleRate);
+    const noiseData = noiseBuf.getChannelData(0);
+    for (let i = 0; i < noiseLen; i++) {
+      const t = i / noiseLen;
+      noiseData[i] = (Math.random() * 2 - 1) * Math.exp(-t * 6);
+    }
+    const noiseSrc = ctx.createBufferSource();
+    noiseSrc.buffer = noiseBuf;
+    const noiseGain = ctx.createGain();
+    noiseGain.gain.setValueAtTime(0.08, now);
+    noiseGain.gain.exponentialRampToValueAtTime(0.001, now + 0.008);
+    const noiseHP = ctx.createBiquadFilter();
+    noiseHP.type = 'highpass';
+    noiseHP.frequency.value = 3000;
+    noiseHP.Q.value = 0.5;
+    noiseSrc.connect(noiseHP);
+    noiseHP.connect(noiseGain);
+    noiseGain.connect(master);
 
-    // ── Wire up the Karplus-Strong loop ──
-    noiseSource.connect(delay);
-    delay.connect(avgFilter);
-    avgFilter.connect(dcBlock);
-    dcBlock.connect(fb);
-    fb.connect(delay);
+    // ── Output ──
+    body.connect(master);
 
-    // Tap output after the DC blocker, through body resonance
-    dcBlock.connect(body);
-    body.connect(output);
-    output.connect(master);
-
-    noiseSource.start(now);
+    osc.start(now);
+    osc.stop(now + Math.min(duration + 0.1, 3));
+    noiseSrc.start(now);
   } catch (e) {}
 }
 
