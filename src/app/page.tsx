@@ -105,51 +105,83 @@ function playGuitarNote(stringIdx: number, fret: number, duration: number = 0.5)
     const baseFreq = STRING_FREQUENCIES[stringIdx];
     const freq = baseFreq * Math.pow(2, fret / 12);
     const now = ctx.currentTime;
-    const sampleRate = ctx.sampleRate;
+    const sr = ctx.sampleRate;
 
     // ── Karplus-Strong string synthesis ──
-    // Physical model: a noise burst circulates through a delay line (1 period long)
-    // with a gentle lowpass filter in the feedback loop. Each pass removes a bit
-    // of high-frequency energy, producing a natural plucked-string decay.
+    // A noise burst circulates through a delay line (1 period long)
+    // with a two-point-average lowpass filter in the feedback loop.
+    // Each pass removes a bit of high-frequency energy, producing a
+    // natural plucked-string timbre that evolves from bright to warm.
 
-    const periodSamples = Math.max(2, Math.round(sampleRate / freq));
-    const noiseLen = Math.min(periodSamples, Math.round(sampleRate * 0.008));
+    const periodSamples = Math.max(4, Math.round(sr / freq));
 
-    const noiseBuffer = ctx.createBuffer(1, periodSamples, sampleRate);
-    const noiseData = noiseBuffer.getChannelData(0);
+    // Per-string feedback gain — higher strings sustain longer
+    const fbGains = [0.970, 0.975, 0.980, 0.985, 0.988, 0.990];
+
+    // ── Excitation: a short filtered noise burst (simulates the pick) ──
+    const excLen = Math.min(periodSamples, Math.round(sr * 0.005));
+    const excBuffer = ctx.createBuffer(1, periodSamples, sr);
+    const exc = excBuffer.getChannelData(0);
     for (let i = 0; i < periodSamples; i++) {
-      if (i < noiseLen) {
-        const t = i / noiseLen;
-        noiseData[i] = (Math.random() * 2 - 1) * (1 - t);
+      if (i < excLen) {
+        const t = i / excLen;
+        // 4-sample averaged noise for a smoother, band-limited pluck
+        let n = 0;
+        for (let j = 0; j < 4; j++) n += Math.random() * 2 - 1;
+        n *= 0.25;
+        // Shaped attack: quick peak with exponential decay
+        exc[i] = n * Math.exp(-t * 4) * (1 + 3 * (1 - t));
       } else {
-        noiseData[i] = 0;
+        exc[i] = 0;
       }
     }
 
     const noiseSource = ctx.createBufferSource();
-    noiseSource.buffer = noiseBuffer;
+    noiseSource.buffer = excBuffer;
 
+    // ── Delay line (one period at the note's fundamental) ──
     const delay = ctx.createDelay(1);
-    delay.delayTime.value = periodSamples / sampleRate;
+    delay.delayTime.value = periodSamples / sr;
 
-    const lpFilter = ctx.createBiquadFilter();
-    lpFilter.type = 'lowpass';
-    lpFilter.frequency.value = 2500 + stringIdx * 350;
-    lpFilter.Q.value = 0.3;
+    // ── Two-point average lowpass filter ──
+    // H(z) = 0.5 + 0.5*z^-1  →  each pass attenuates upper harmonics
+    const avgFilter = ctx.createBiquadFilter();
+    avgFilter.type = 'lowpass';
+    avgFilter.frequency.value = Math.min(sr * 0.25, 20000);
+    avgFilter.Q.value = 0;
 
-    const feedback = ctx.createGain();
-    feedback.gain.value = 0.6 + 0.04 * (5 - stringIdx);
+    // ── DC blocker: prevents low-frequency rumble buildup ──
+    const dcBlock = ctx.createBiquadFilter();
+    dcBlock.type = 'highpass';
+    dcBlock.frequency.value = 30;
+    dcBlock.Q.value = 0.3;
 
+    // ── Feedback gain (controls sustain length) ──
+    const fb = ctx.createGain();
+    fb.gain.value = fbGains[stringIdx];
+
+    // ── Body resonance (warms up the sound with guitar-body-like peaks) ──
+    const body = ctx.createBiquadFilter();
+    body.type = 'bandpass';
+    body.frequency.value = 100 + stringIdx * 25;
+    body.Q.value = 2.5;
+
+    // ── Output envelope ──
     const output = ctx.createGain();
-    output.gain.setValueAtTime(0.12 + 0.03 * stringIdx, now);
-    output.gain.exponentialRampToValueAtTime(0.001, now + Math.min(duration, 2));
+    output.gain.setValueAtTime(0, now);
+    output.gain.linearRampToValueAtTime(0.18 + 0.03 * stringIdx, now + 0.003);
+    output.gain.exponentialRampToValueAtTime(0.001, now + Math.min(duration, 2.5));
 
+    // ── Wire up the Karplus-Strong loop ──
     noiseSource.connect(delay);
-    delay.connect(lpFilter);
-    lpFilter.connect(feedback);
-    feedback.connect(delay);
+    delay.connect(avgFilter);
+    avgFilter.connect(dcBlock);
+    dcBlock.connect(fb);
+    fb.connect(delay);
 
-    lpFilter.connect(output);
+    // Tap output after the DC blocker, through body resonance
+    dcBlock.connect(body);
+    body.connect(output);
     output.connect(master);
 
     noiseSource.start(now);
