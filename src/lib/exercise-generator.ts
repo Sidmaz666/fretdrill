@@ -5192,13 +5192,13 @@ export function generateAllExercises(
 export function generatePatternExercises(
   key: NoteName,
   scaleId: string
-): Array<{ position: number; fretStart: number; fretEnd: number; notes: ExerciseNote[] }> {
+): Array<{ position: number; fretStart: number; fretEnd: number; cagedShape: string; octave: number; notes: ExerciseNote[] }> {
   const positions = getCAGEDPositions(key, scaleId);
   return positions.map((pos, idx) => {
     const notes = getScaleOnFretboard(key, scaleId, pos.fretStart, pos.fretEnd);
     const sorted = sortNotesAscending(dedupNotes(notes));
     const exerciseNotes = addSequenceNumbers(sorted.map(fretboardToExerciseNote));
-    return { position: idx + 1, fretStart: pos.fretStart, fretEnd: pos.fretEnd, notes: exerciseNotes };
+    return { position: idx + 1, fretStart: pos.fretStart, fretEnd: pos.fretEnd, cagedShape: pos.cagedShape, octave: pos.octave, notes: exerciseNotes };
   });
 }
 

@@ -161,66 +161,86 @@ export function getScaleOnFretboard(
   return notes;
 }
 
-// CAGED position definitions for minor pentatonic (fret ranges for each position)
+// CAGED position definitions
 export interface CAGEDPosition {
   name: string;
   fretStart: number;
   fretEnd: number;
   rootString: number; // which string has the root note that defines this position
+  cagedShape: string; // C, A, G, E, or D — the CAGED shape this position uses
+  octave: number; // 1 = first octave (frets 0-11), 2 = second octave (frets 12+)
 }
 
+// The 5 CAGED shapes and their offsets from the E-shape root
+// Going UP the neck: E → D → C → A → G → (E repeats at +12)
+// Each shape starts a few frets above the previous one
+const CAGED_SHAPES = [
+  { shape: 'E', offset: 0 },   // E shape = anchor (root on low E string)
+  { shape: 'D', offset: 3 },   // D shape starts 3 frets above E
+  { shape: 'C', offset: 5 },   // C shape starts 5 frets above E
+  { shape: 'A', offset: 7 },   // A shape starts 7 frets above E
+  { shape: 'G', offset: 10 },  // G shape starts 10 frets above E
+] as const;
+
+// Position width in frets (standard CAGED position spans ~5 frets)
+const POSITION_WIDTH = 5;
+
 // Calculate CAGED positions dynamically based on key
-// Generates 5 standard positions spanning the fretboard
-// Based on the well-known minor pentatonic / CAGED position system
+// Generates positions spanning the FULL fretboard from open strings to the last fret
+// The 5 CAGED shapes tile the entire neck and repeat at the 12th fret
 export function getCAGEDPositions(key: NoteName, scaleId: string): CAGEDPosition[] {
   const scale = SCALES[scaleId];
   if (!scale) return [];
 
   const rootIndex = NOTES.indexOf(key);
-  const lowEOpen = NOTES.indexOf(STRING_OPEN_NOTES[0]); // E = index 4
-  // Root fret on low E string (Position 1 anchor)
+  const lowEOpen = NOTES.indexOf(STRING_OPEN_NOTES[0]); // E
+  // Root fret on low E string (E-shape anchor)
   const rootFretLowE = (rootIndex - lowEOpen + 12) % 12;
   
   const isMinor = scaleId.includes('minor') || scaleId === 'blues' || 
                   scaleId === 'dorian' || scaleId === 'phrygian' || scaleId === 'locrian';
   
-  // For minor scales: Position 1 starts at root on low E string
-  // For major scales: Position 1 starts 3 frets below (relative minor position)
+  // For minor scales: E-shape starts at root on low E string
+  // For major scales: E-shape starts 3 frets below (relative minor)
   const baseFret = isMinor ? rootFretLowE : (rootFretLowE - 3 + 12) % 12;
   
-  // Standard 5 position offsets from the base fret (in frets)
-  // These represent the starting fret of each position relative to Position 1
-  // P1→P2: up 3 frets, P2→P3: up 2, P3→P4: up 2, P4→P5: up 3
-  // Cumulative: [0, 3, 5, 7, 10]
-  const offsets = [0, 3, 5, 7, 10];
-  
   const positions: CAGEDPosition[] = [];
+  const seen = new Set<number>(); // track fretStart to avoid duplicates
   
-  for (let i = 0; i < 5; i++) {
-    let fretStart = (baseFret + offsets[i]) % 12;
+  // Generate positions across multiple octave cycles to cover the full fretboard
+  // We try octave offsets of -12, 0, +12 to tile the entire neck
+  for (let octaveShift = -1; octaveShift <= 1; octaveShift++) {
+    const octaveBase = baseFret + octaveShift * 12;
     
-    // Positions that wrap past 12 go to the second octave (frets 12+)
-    // unless they'd be too narrow, in which case keep in first octave
-    if (offsets[i] > 0 && fretStart < baseFret) {
-      // This position wraps around - check if first octave position has enough room
-      if (fretStart + 5 <= 12) {
-        // Keep in first octave (open/low position)
-        fretStart = fretStart;
-      } else {
-        // Move to second octave
-        fretStart = fretStart + 12;
-      }
-    }
-    
-    const fretEnd = Math.min(FRET_COUNT, fretStart + 5);
-    
-    // Only add if we have at least 4 frets of range
-    if (fretEnd - fretStart >= 4) {
+    for (const { shape, offset } of CAGED_SHAPES) {
+      const fretStart = octaveBase + offset;
+      
+      // Skip positions starting at or beyond the fretboard
+      if (fretStart >= FRET_COUNT) continue;
+      // Need at least 3 frets of room
+      if (fretStart + 3 > FRET_COUNT) continue;
+      // Can't start negative
+      if (fretStart < 0) continue;
+      
+      const fretEnd = Math.min(FRET_COUNT, fretStart + POSITION_WIDTH);
+      
+      // Need at least 3 frets of range
+      if (fretEnd - fretStart < 3) continue;
+      
+      // Avoid duplicate fret starts
+      if (seen.has(fretStart)) continue;
+      seen.add(fretStart);
+      
+      // Determine octave
+      const octave = fretStart >= 12 ? 2 : 1;
+      
       positions.push({
         name: '',
         fretStart,
         fretEnd,
         rootString: 0,
+        cagedShape: shape,
+        octave,
       });
     }
   }

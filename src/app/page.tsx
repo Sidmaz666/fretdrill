@@ -581,7 +581,15 @@ export default function Home() {
   const keyNote = KEY_NAMES[keyIndex];
   const scale = SCALES[scaleId];
   const positions = useMemo(() => getCAGEDPositions(keyNote, scaleId), [keyNote, scaleId]);
-  const currentPosition = positions[positionIndex] || { fretStart: 0, fretEnd: FRET_COUNT, name: 'Full Fretboard' };
+
+  // Clamp positionIndex when positions change (e.g., key/scale change reduces available positions)
+  useEffect(() => {
+    if (positionIndex >= positions.length && positions.length > 0) {
+      setPositionIndex(0);
+    }
+  }, [positions.length, positionIndex]);
+
+  const currentPosition = positions[positionIndex] || { fretStart: 0, fretEnd: FRET_COUNT, name: 'Full Fretboard', cagedShape: 'All', octave: 1 };
   const startFret = showAllPositions ? 0 : currentPosition.fretStart;
   const endFret = showAllPositions ? FRET_COUNT : currentPosition.fretEnd;
 
@@ -1043,10 +1051,13 @@ export default function Home() {
           {/* Position */}
           <div className="hidden md:flex items-center gap-1.5 shrink-0">
             <span className="text-[10px] uppercase tracking-[0.1em] text-[#8b7355] font-serif italic font-bold">Pos</span>
-            <div className="flex items-center gap-1">
-              {positions.map((_, idx) => (
-                <button key={idx} className={`h-6 w-7 text-[10px] font-semibold rounded-sm transition-all border p-0 cursor-pointer ${!showAllPositions && positionIndex === idx ? 'sketch-btn-active border-[#6b5b47]' : 'sketch-btn border-[#c4b89c] hover:border-[#8b7355]'}`}
-                  onClick={() => { setPositionIndex(idx); setShowAllPositions(false); stopPlayback(); }}>{idx + 1}</button>
+            <div className="flex items-center gap-0.5 flex-wrap">
+              {positions.map((pos, idx) => (
+                <button key={idx} className={`h-6 min-w-6 px-1 text-[10px] font-semibold rounded-sm transition-all border p-0 cursor-pointer ${!showAllPositions && positionIndex === idx ? 'sketch-btn-active border-[#6b5b47]' : 'sketch-btn border-[#c4b89c] hover:border-[#8b7355]'}`}
+                  onClick={() => { setPositionIndex(idx); setShowAllPositions(false); stopPlayback(); }}
+                  title={`${pos.cagedShape} shape · Octave ${pos.octave}`}>
+                  {idx + 1}
+                </button>
               ))}
               <button className={`h-6 px-2 text-[10px] font-semibold rounded-sm transition-all border p-0 cursor-pointer ${showAllPositions ? 'sketch-btn-active border-[#6b5b47]' : 'sketch-btn border-[#c4b89c] hover:border-[#8b7355]'}`}
                 onClick={() => { setShowAllPositions(true); stopPlayback(); }}>All</button>
@@ -1054,11 +1065,11 @@ export default function Home() {
           </div>
           {/* Mobile context pill */}
           <div className="md:hidden flex-1 flex items-center justify-center">
-            <span className="text-[11px] font-serif italic text-[#4a4a4a] font-bold">{keyNote} {scale.name} · P{positionIndex + 1}</span>
+            <span className="text-[11px] font-serif italic text-[#4a4a4a] font-bold">{keyNote} {scale.name} · P{positionIndex + 1} ({currentPosition.cagedShape})</span>
           </div>
           <div className="flex-1 hidden md:block" />
           <div className="hidden lg:flex items-center gap-1.5 shrink-0">
-            <span className="text-[10px] text-[#8b7355] font-serif italic">{currentPosition.name} · Frets {currentPosition.fretStart}–{currentPosition.fretEnd}</span>
+            <span className="text-[10px] text-[#8b7355] font-serif italic">{currentPosition.name} · {currentPosition.cagedShape} Shape · Frets {currentPosition.fretStart}–{currentPosition.fretEnd}{currentPosition.octave === 2 ? ' (Oct 2)' : ''}</span>
             <span className="text-[10px] text-[#b8a88a] font-serif italic">· {Object.keys(EXERCISE_TYPES).length} exercises</span>
           </div>
           <button className={`sketch-btn px-1.5 py-0.5 text-[10px] flex items-center gap-0.5 shrink-0 ${soundEnabled ? 'border-[#6b5b47]' : 'border-[#c4b89c] opacity-50'}`}
@@ -1389,7 +1400,7 @@ export default function Home() {
                     <div className="grid grid-cols-2 gap-x-4 gap-y-0.5">
                       <div className="flex justify-between text-[9px]"><span className="text-[#8b7355] font-serif italic">Focus</span><span className="text-[#4a4a4a] font-bold">{exerciseMeta.focus}</span></div>
                       <div className="flex justify-between text-[9px]"><span className="text-[#8b7355] font-serif italic">Duration</span><span className="text-[#4a4a4a] font-bold">{exerciseMeta.estimatedTime}</span></div>
-                      <div className="flex justify-between text-[9px]"><span className="text-[#8b7355] font-serif italic">Position</span><span className="text-[#4a4a4a] font-bold">{showAllPositions ? 'All' : `P${positionIndex + 1}`} ({currentPosition.fretStart}–{currentPosition.fretEnd})</span></div>
+                      <div className="flex justify-between text-[9px]"><span className="text-[#8b7355] font-serif italic">Position</span><span className="text-[#4a4a4a] font-bold">{showAllPositions ? 'All' : `P${positionIndex + 1} · ${currentPosition.cagedShape} Shape`} ({currentPosition.fretStart}–{currentPosition.fretEnd})</span></div>
                       <div className="flex justify-between text-[9px]"><span className="text-[#8b7355] font-serif italic">Category</span><span className="text-[#4a4a4a] font-bold">{exerciseStats.patternType}</span></div>
                       <div className="flex justify-between text-[9px]"><span className="text-[#8b7355] font-serif italic">Notes</span><span className="text-[#4a4a4a] font-bold">{exerciseStats.totalNotes}</span></div>
                       <div className="flex justify-between text-[9px]"><span className="text-[#8b7355] font-serif italic">Fret Span</span><span className="text-[#4a4a4a] font-bold">{exerciseStats.fretRange[1] - exerciseStats.fretRange[0] + 1} frets</span></div>
@@ -1420,11 +1431,12 @@ export default function Home() {
                 <div className="mt-1.5">
                   <div className="sketch-card bg-[#faf6ef] p-2">
                     <h4 className="text-[10px] uppercase tracking-[0.12em] text-[#8b7355] font-serif italic font-bold mb-1.5">CAGED Positions</h4>
-                    <div className="grid grid-cols-5 gap-1.5">
+                    <div className="grid grid-cols-3 gap-1.5">
                       {patternExercises.map((pat) => (
                         <button key={pat.position} onClick={() => handlePatternClick(pat.position - 1)} className="text-left">
                           <PatternDiagram keyNote={keyNote} scaleId={scaleId} fretStart={pat.fretStart} fretEnd={pat.fretEnd}
                             positionNumber={pat.position} exerciseNotes={pat.notes}
+                            customLabel={`P${pat.position} ${pat.cagedShape}`}
                             selected={positionIndex === pat.position - 1 && !showAllPositions} />
                         </button>
                       ))}
@@ -1467,6 +1479,7 @@ export default function Home() {
                   <button key={pat.position} onClick={() => handlePatternClick(pat.position - 1)} className="w-full text-left">
                     <PatternDiagram keyNote={keyNote} scaleId={scaleId} fretStart={pat.fretStart} fretEnd={pat.fretEnd}
                       positionNumber={pat.position} exerciseNotes={pat.notes}
+                      customLabel={`P${pat.position} ${pat.cagedShape}${pat.octave === 2 ? ' (Oct 2)' : ''}`}
                       selected={positionIndex === pat.position - 1 && !showAllPositions} />
                   </button>
                 ))}
@@ -2038,7 +2051,7 @@ export default function Home() {
                 </div>
                 <div className="bg-[#f5f0e8] rounded border border-[#c4b89c] p-3">
                   <h3 className="font-bold text-[11px] uppercase tracking-wider text-[#8b7355] mb-1">Step 3: Choose Your Position</h3>
-                  <p className="text-[12px]">The <strong>Position</strong> buttons (1–5 + All) let you focus on a specific CAGED position or view the entire fretboard at once. Positions correspond to the five fundamental scale shapes that every guitarist should know, based on the C-A-G-E-D chord shape system.</p>
+                  <p className="text-[12px]">The <strong>Position</strong> buttons let you focus on a specific CAGED position or view the entire fretboard at once. Positions correspond to the five fundamental CAGED scale shapes (C, A, G, E, D). Because these shapes repeat at the 12th fret, you may see up to 10 positions covering the full fretboard — positions in the upper octave use the same shapes shifted up 12 frets. Hover over any position button to see its CAGED shape and octave.</p>
                 </div>
                 <div className="bg-[#f5f0e8] rounded border border-[#c4b89c] p-3">
                   <h3 className="font-bold text-[11px] uppercase tracking-wider text-[#8b7355] mb-1">Step 4: Pick an Exercise</h3>
@@ -2119,7 +2132,7 @@ export default function Home() {
                 <Layers className="w-4 h-4" /> The CAGED System
               </h2>
               <p className="mb-2">The CAGED system is the most important fretboard navigation concept you will ever learn. It is based on the fact that the five basic open chord shapes — <strong>C, A, G, E, D</strong> — can be moved up the neck as barre chords to play any chord in any position. When applied to scales, these same five shapes give you a complete map of the fretboard.</p>
-              <p className="mb-2">In FretBoard Forge, when you select a key and scale, the five CAGED positions are calculated automatically. Each position covers a 4–5 fret zone and connects to the next position through overlapping notes. Position 1 starts at the root on the low E string, and each subsequent position shifts higher up the neck.</p>
+              <p className="mb-2">In FretBoard Forge, when you select a key and scale, the CAGED positions are calculated automatically across the full fretboard. Each position covers a 4–5 fret zone and connects to the next position through overlapping notes. The five CAGED shapes (E, D, C, A, G) cycle at the 12th fret, so you may see up to 10 positions — the upper octave positions use the same fingerings shifted up an octave. This means you can practice the same shape vocabulary in the lower and upper register.</p>
               <div className="bg-[#f5f0e8] rounded border border-[#c4b89c] p-3 mb-2">
                 <h3 className="font-bold text-[11px] uppercase tracking-wider text-[#8b7355] mb-1">The Five Shapes</h3>
                 <ul className="text-[11px] space-y-1">
@@ -2470,7 +2483,7 @@ export default function Home() {
               <div className="space-y-1 text-[11px]">
                 <div><strong>Level 1:</strong> Beginner. Single-direction scale runs, basic chromatic patterns. Anyone can start here regardless of experience.</div>
                 <div><strong>Level 2:</strong> Early Intermediate. Sequences like thirds, pedal tones, simple triad shapes. Requires comfort with alternate picking and basic position playing.</div>
-                <div><strong>Level 3:</strong> Intermediate. More complex sequences, string skipping, inversions, wider intervals. You should be comfortable with all five CAGED positions.</div>
+                <div><strong>Level 3:</strong> Intermediate. More complex sequences, string skipping, inversions, wider intervals. You should be comfortable with all CAGED positions across the fretboard.</div>
                 <div><strong>Level 4:</strong> Advanced. Extended arpeggios, bebop vocabulary, compound intervals, advanced string crossing. Requires solid technique and fretboard knowledge.</div>
                 <div><strong>Level 5:</strong> Expert. Sweep tapping, 8-finger tapping, complex enclosures, advanced voicings. These push the limits of guitar technique.</div>
               </div>
@@ -2514,7 +2527,7 @@ export default function Home() {
                 </div>
                 <div className="bg-[#f5f0e8] rounded border border-[#c4b89c] p-2">
                   <h4 className="font-bold text-[11px] text-[#6b5b47]">Practice All Positions</h4>
-                  <p className="text-[10px]">Do not get stuck in Position 1. Work through all five CAGED positions. The All Positions view shows you the complete fretboard map — aim to be equally comfortable in every zone.</p>
+                  <p className="text-[10px]">Do not get stuck in Position 1. Work through all CAGED positions across the fretboard. The All Positions view shows you the complete fretboard map — aim to be equally comfortable in every zone, including the upper octave positions.</p>
                 </div>
                 <div className="bg-[#f5f0e8] rounded border border-[#c4b89c] p-2">
                   <h4 className="font-bold text-[11px] text-[#6b5b47]">Practice All Keys</h4>
