@@ -661,12 +661,11 @@ export default function Home() {
     return EXERCISE_CATEGORIES[0];
   }, [exerciseType]);
 
-  // Scale notes for playback
+  // Scale notes for playback (just the scale ascending, no exercise pattern)
   const scaleNotesForPlayback = useMemo(() => {
     const notes = getScaleOnFretboard(keyNote, scaleId, startFret, endFret);
     const sorted = sortNotesAscending(notes);
-    const ascDesc = [...sorted, ...sorted.slice(0, -1).reverse()];
-    return ascDesc.map((n, i) => ({
+    return sorted.map((n, i) => ({
       string: n.string, fret: n.fret, note: n.note, intervalLabel: n.intervalLabel, isRoot: n.isRoot, sequenceNumber: i + 1,
     }));
   }, [keyNote, scaleId, startFret, endFret]);
