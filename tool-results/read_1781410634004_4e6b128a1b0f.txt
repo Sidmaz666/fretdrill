@@ -1,0 +1,502 @@
+     1→     1→     1→'use client';
+     2→     2→     2→
+     3→     3→     3→import React, { useState, useMemo, useCallback, useRef, useEffect } from 'react';
+     4→     4→     4→import {
+     5→     5→     5→  KEY_NAMES,
+     6→     6→     6→  KEY_DISPLAY_NAMES,
+     7→     7→     7→  SCALES,
+     8→     8→     8→  NoteName,
+     9→     9→     9→  getCAGEDPositions,
+    10→    10→    10→  getScaleOnFretboard,
+    11→    11→    11→  FRET_COUNT,
+    12→    12→    12→} from '@/lib/music-theory';
+    13→    13→    13→import {
+    14→    14→    14→  generateExercise,
+    15→    15→    15→  generatePatternExercises,
+    16→    16→    16→  computeExerciseStats,
+    17→    17→    17→  sortNotesAscending,
+    18→    18→    18→  ExerciseType,
+    19→    19→    19→  EXERCISE_TYPES,
+    20→    20→    20→  EXERCISE_CATEGORIES,
+    21→    21→    21→  ExerciseNote,
+    22→    22→    22→} from '@/lib/exercise-generator';
+    23→    23→    23→import FretboardDiagram from '@/components/guitar/FretboardDiagram';
+    24→    24→    24→import PatternDiagram from '@/components/guitar/PatternDiagram';
+    25→    25→    25→import TabNotation from '@/components/guitar/TabNotation';
+    26→    26→    26→import {
+    27→    27→    27→  Select,
+    28→    28→    28→  SelectContent,
+    29→    29→    29→  SelectItem,
+    30→    30→    30→  SelectTrigger,
+    31→    31→    31→  SelectValue,
+    32→    32→    32→} from '@/components/ui/select';
+    33→    33→    33→import { Switch } from '@/components/ui/switch';
+    34→    34→    34→import { Slider } from '@/components/ui/slider';
+    35→    35→    35→
+    36→    36→    36→import { Collapsible, CollapsibleTrigger, CollapsibleContent } from '@/components/ui/collapsible';
+    37→    37→    37→import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
+    38→    38→    38→import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+    39→    39→    39→import {
+    40→    40→    40→  ChevronRight,
+    41→    41→    41→  Shuffle,
+    42→    42→    42→  Music,
+    43→    43→    43→  Zap,
+    44→    44→    44→  GitBranch,
+    45→    45→    45→  Target,
+    46→    46→    46→  Layers,
+    47→    47→    47→  Route,
+    48→    48→    48→  Volume2,
+    49→    49→    49→  VolumeX,
+    50→    50→    50→  Play,
+    51→    51→    51→  Pause,
+    52→    52→    52→  Square,
+    53→    53→    53→  Timer,
+    54→    54→    54→  Drum,
+    55→    55→    55→  Search,
+    56→    56→    56→  Menu,
+    57→    57→    57→  X,
+    58→    58→    58→  Guitar,
+    59→    59→    59→  FileText,
+    60→    60→    60→  BarChart3,
+    61→    61→    61→  Eye,
+    62→    62→    62→  ChevronDown,
+    63→    63→    63→  ChevronUp,
+    64→    64→    64→  Star,
+    65→    65→    65→  ArrowRight,
+    66→    66→    66→  Clock,
+    67→    67→    67→  Signal,
+    68→    68→    68→  Activity,
+    69→    69→    69→  Hash,
+    70→    70→    70→  Ruler,
+    71→    71→    71→  SkipBack, SkipForward, RotateCcw, Repeat, Gauge, Waves, Metronome as MetronomeIcon, Hand, Shuffle as ShuffleIcon, Dice5, TimerReset, Flag, ChevronFirst, ChevronLast, Siren, Disc3, ToggleLeft, Info, BookOpen, ChevronRight as ChevronRightIcon,
+    72→    72→    72→} from 'lucide-react';
+    73→    73→    73→
+    74→    74→    74→// ─── AUDIO ENGINE ───
+    75→    75→    75→// Proper standard guitar tuning frequencies (Hz) — E2, A2, D3, G3, B3, E4
+    76→    76→    76→const STRING_FREQUENCIES = [82.41, 110.00, 146.83, 196.00, 246.94, 329.63];
+    77→    77→    77→
+    78→    78→    78→let audioCtx: AudioContext | null = null;
+    79→    79→    79→let masterCompressor: DynamicsCompressorNode | null = null;
+    80→    80→    80→function getAudioCtx() {
+    81→    81→    81→  if (!audioCtx) audioCtx = new AudioContext();
+    82→    82→    82→  return audioCtx;
+    83→    83→    83→}
+    84→    84→    84→
+    85→    85→    85→// Singleton master compressor
+    86→    86→    86→function getMaster(ctx: AudioContext): DynamicsCompressorNode {
+    87→    87→    87→  if (!masterCompressor) {
+    88→    88→    88→    const comp = ctx.createDynamicsCompressor();
+    89→    89→    89→    comp.threshold.setValueAtTime(-20, ctx.currentTime);
+    90→    90→    90→    comp.knee.setValueAtTime(10, ctx.currentTime);
+    91→    91→    91→    comp.ratio.setValueAtTime(4, ctx.currentTime);
+    92→    92→    92→    comp.attack.setValueAtTime(0.003, ctx.currentTime);
+    93→    93→    93→    comp.release.setValueAtTime(0.15, ctx.currentTime);
+    94→    94→    94→    comp.connect(ctx.destination);
+    95→    95→    95→    masterCompressor = comp;
+    96→    96→    96→  }
+    97→    97→    97→  return masterCompressor;
+    98→    98→    98→}
+    99→    99→    99→
+   100→   100→   100→function playGuitarNote(stringIdx: number, fret: number, duration: number = 0.5) {
+   101→   101→   101→  try {
+   102→   102→   102→    const ctx = getAudioCtx();
+   103→   103→   103→    if (ctx.state === 'suspended') ctx.resume();
+   104→   104→   104→    const master = getMaster(ctx);
+   105→   105→   105→    const baseFreq = STRING_FREQUENCIES[stringIdx];
+   106→   106→   106→    const freq = baseFreq * Math.pow(2, fret / 12);
+   107→   107→   107→    const now = ctx.currentTime;
+   108→   108→   108→
+   109→   109→   109→    // ── Fundamental (pulse wave — close to plucked string) ──
+   110→   110→   110→    const osc1 = ctx.createOscillator();
+   111→   111→   111→    const gain1 = ctx.createGain();
+   112→   112→   112→    osc1.type = 'triangle';
+   113→   113→   113→    osc1.frequency.setValueAtTime(freq, now);
+   114→   114→   114→    // Slight pitch envelope (attack transient — string stretches then settles)
+   115→   115→   115→    osc1.frequency.setValueAtTime(freq * 1.005, now);
+   116→   116→   116→    osc1.frequency.exponentialRampToValueAtTime(freq, now + 0.02);
+   117→   117→   117→    gain1.gain.setValueAtTime(0, now);
+   118→   118→   118→    gain1.gain.linearRampToValueAtTime(0.32, now + 0.004);  // Fast pluck attack
+   119→   119→   119→    gain1.gain.exponentialRampToValueAtTime(0.12, now + 0.08);
+   120→   120→   120→    gain1.gain.exponentialRampToValueAtTime(0.001, now + duration);
+   121→   121→   121→
+   122→   122→   122→    // ── 2nd harmonic (octave above, softer) ──
+   123→   123→   123→    const osc2 = ctx.createOscillator();
+   124→   124→   124→    const gain2 = ctx.createGain();
+   125→   125→   125→    osc2.type = 'sine';
+   126→   126→   126→    osc2.frequency.setValueAtTime(freq * 2, now);
+   127→   127→   127→    gain2.gain.setValueAtTime(0, now);
+   128→   128→   128→    gain2.gain.linearRampToValueAtTime(0.06, now + 0.003);
+   129→   129→   129→    gain2.gain.exponentialRampToValueAtTime(0.001, now + duration * 0.4);
+   130→   130→   130→
+   131→   131→   131→    // ── 3rd harmonic ──
+   132→   132→   132→    const osc3 = ctx.createOscillator();
+   133→   133→   133→    const gain3 = ctx.createGain();
+   134→   134→   134→    osc3.type = 'sine';
+   135→   135→   135→    osc3.frequency.setValueAtTime(freq * 3, now);
+   136→   136→   136→    gain3.gain.setValueAtTime(0, now);
+   137→   137→   137→    gain3.gain.linearRampToValueAtTime(0.025, now + 0.003);
+   138→   138→   138→    gain3.gain.exponentialRampToValueAtTime(0.001, now + duration * 0.25);
+   139→   139→   139→
+   140→   140→   140→    // ── Body resonance (low-pass filtered sub-harmonic) ──
+   141→   141→   141→    const oscBody = ctx.createOscillator();
+   142→   142→   142→    const gainBody = ctx.createGain();
+   143→   143→   143→    const filterBody = ctx.createBiquadFilter();
+   144→   144→   144→    oscBody.type = 'sine';
+   145→   145→   145→    oscBody.frequency.setValueAtTime(freq * 0.5, now);
+   146→   146→   146→    filterBody.type = 'lowpass';
+   147→   147→   147→    filterBody.frequency.setValueAtTime(300, now);
+   148→   148→   148→    filterBody.Q.setValueAtTime(1, now);
+   149→   149→   149→    gainBody.gain.setValueAtTime(0, now);
+   150→   150→   150→    gainBody.gain.linearRampToValueAtTime(0.04, now + 0.01);
+   151→   151→   151→    gainBody.gain.exponentialRampToValueAtTime(0.001, now + duration * 0.4);
+   152→   152→   152→
+   153→   153→   153→    // ── Brightness (sawtooth → lowpass, simulates pick attack brightness) ──
+   154→   154→   154→    const oscBright = ctx.createOscillator();
+   155→   155→   155→    const gainBright = ctx.createGain();
+   156→   156→   156→    const filterBright = ctx.createBiquadFilter();
+   157→   157→   157→    oscBright.type = 'sawtooth';
+   158→   158→   158→    oscBright.frequency.setValueAtTime(freq, now);
+   159→   159→   159→    filterBright.type = 'lowpass';
+   160→   160→   160→    filterBright.frequency.setValueAtTime(4000, now);           // Bright attack
+   161→   161→   161→    filterBright.frequency.exponentialRampToValueAtTime(800, now + 0.15); // Dulls quickly
+   162→   162→   162→    filterBright.Q.setValueAtTime(0.7, now);
+   163→   163→   163→    gainBright.gain.setValueAtTime(0, now);
+   164→   164→   164→    gainBright.gain.linearRampToValueAtTime(0.05, now + 0.002);
+   165→   165→   165→    gainBright.gain.exponentialRampToValueAtTime(0.001, now + duration * 0.3);
+   166→   166→   166→
+   167→   167→   167→    // ── Pluck noise burst (very short, simulates pick/finger noise) ──
+   168→   168→   168→    const noiseLen = 0.015;
+   169→   169→   169→    const noiseBuffer = ctx.createBuffer(1, ctx.sampleRate * noiseLen, ctx.sampleRate);
+   170→   170→   170→    const noiseData = noiseBuffer.getChannelData(0);
+   171→   171→   171→    for (let i = 0; i < noiseData.length; i++) noiseData[i] = (Math.random() * 2 - 1) * 0.3;
+   172→   172→   172→    const noiseSource = ctx.createBufferSource();
+   173→   173→   173→    noiseSource.buffer = noiseBuffer;
+   174→   174→   174→    const noiseGain = ctx.createGain();
+   175→   175→   175→    const noiseFilter = ctx.createBiquadFilter();
+   176→   176→   176→    noiseFilter.type = 'bandpass';
+   177→   177→   177→    noiseFilter.frequency.setValueAtTime(2000 + stringIdx * 500, now); // Higher strings = brighter noise
+   178→   178→   178→    noiseFilter.Q.setValueAtTime(2, now);
+   179→   179→   179→    noiseGain.gain.setValueAtTime(0.12, now);
+   180→   180→   180→    noiseGain.gain.exponentialRampToValueAtTime(0.001, now + noiseLen);
+   181→   181→   181→
+   182→   182→   182→    // Connect everything
+   183→   183→   183→    osc1.connect(gain1); gain1.connect(master);
+   184→   184→   184→    osc2.connect(gain2); gain2.connect(master);
+   185→   185→   185→    osc3.connect(gain3); gain3.connect(master);
+   186→   186→   186→    oscBody.connect(filterBody); filterBody.connect(gainBody); gainBody.connect(master);
+   187→   187→   187→    oscBright.connect(filterBright); filterBright.connect(gainBright); gainBright.connect(master);
+   188→   188→   188→    noiseSource.connect(noiseFilter); noiseFilter.connect(noiseGain); noiseGain.connect(master);
+   189→   189→   189→
+   190→   190→   190→    // Start all
+   191→   191→   191→    const stopTime = now + duration + 0.1;
+   192→   192→   192→    osc1.start(now); osc2.start(now); osc3.start(now); oscBody.start(now); oscBright.start(now); noiseSource.start(now);
+   193→   193→   193→    osc1.stop(stopTime); osc2.stop(stopTime); osc3.stop(stopTime); oscBody.stop(stopTime); oscBright.stop(stopTime);
+   194→   194→   194→  } catch (e) {}
+   195→   195→   195→}
+   196→   196→   196→
+   197→   197→   197→// Professional metronome — wood block sound
+   198→   198→   198→function playMetronomeClick(accent: boolean) {
+   199→   199→   199→  try {
+   200→   200→   200→    const ctx = getAudioCtx();
+   201→   201→   201→    if (ctx.state === 'suspended') ctx.resume();
+   202→   202→   202→    const now = ctx.currentTime;
+   203→   203→   203→
+   204→   204→   204→    // Tone component — short sine burst like a wood block
+   205→   205→   205→    const osc = ctx.createOscillator();
+   206→   206→   206→    const gain = ctx.createGain();
+   207→   207→   207→    osc.type = 'sine';
+   208→   208→   208→    osc.frequency.setValueAtTime(accent ? 1567.98 : 1046.50, now); // G6 (accent) / C6 (normal)
+   209→   209→   209→    gain.gain.setValueAtTime(accent ? 0.35 : 0.18, now);
+   210→   210→   210→    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.04);
+   211→   211→   211→    osc.connect(gain);
+   212→   212→   212→
+   213→   213→   213→    // Click noise burst (the "clack" of the wood block)
+   214→   214→   214→    const noiseLen = 0.008;
+   215→   215→   215→    const noiseBuffer = ctx.createBuffer(1, ctx.sampleRate * noiseLen, ctx.sampleRate);
+   216→   216→   216→    const noiseData = noiseBuffer.getChannelData(0);
+   217→   217→   217→    for (let i = 0; i < noiseData.length; i++) noiseData[i] = (Math.random() * 2 - 1);
+   218→   218→   218→    const noiseSource = ctx.createBufferSource();
+   219→   219→   219→    noiseSource.buffer = noiseBuffer;
+   220→   220→   220→    const noiseGain = ctx.createGain();
+   221→   221→   221→    const noiseFilter = ctx.createBiquadFilter();
+   222→   222→   222→    noiseFilter.type = 'highpass';
+   223→   223→   223→    noiseFilter.frequency.setValueAtTime(accent ? 3000 : 2000, now);
+   224→   224→   224→    noiseGain.gain.setValueAtTime(accent ? 0.15 : 0.07, now);
+   225→   225→   225→    noiseGain.gain.exponentialRampToValueAtTime(0.001, now + noiseLen);
+   226→   226→   226→    noiseSource.connect(noiseFilter); noiseFilter.connect(noiseGain);
+   227→   227→   227→
+   228→   228→   228→    // Resonance body
+   229→   229→   229→    const oscBody = ctx.createOscillator();
+   230→   230→   230→    const gainBody = ctx.createGain();
+   231→   231→   231→    oscBody.type = 'sine';
+   232→   232→   232→    oscBody.frequency.setValueAtTime(accent ? 800 : 600, now);
+   233→   233→   233→    gainBody.gain.setValueAtTime(accent ? 0.08 : 0.04, now);
+   234→   234→   234→    gainBody.gain.exponentialRampToValueAtTime(0.001, now + 0.03);
+   235→   235→   235→    oscBody.connect(gainBody);
+   236→   236→   236→
+   237→   237→   237→    const master = getMaster(ctx);
+   238→   238→   238→    gain.connect(master); noiseGain.connect(master); gainBody.connect(master);
+   239→   239→   239→
+   240→   240→   240→    osc.start(now); noiseSource.start(now); oscBody.start(now);
+   241→   241→   241→    osc.stop(now + 0.05); oscBody.stop(now + 0.04);
+   242→   242→   242→  } catch (e) {}
+   243→   243→   243→}
+   244→   244→   244→
+   245→   245→   245→// Extended metronome sound engine with multiple sound types
+   246→   246→   246→function playMetronomeClickByType(accent: boolean, soundType: MetronomeSound, volume: number = 0.8) {
+   247→   247→   247→  try {
+   248→   248→   248→    const ctx = getAudioCtx();
+   249→   249→   249→    if (ctx.state === 'suspended') ctx.resume();
+   250→   250→   250→    const now = ctx.currentTime;
+   251→   251→   251→    const master = getMaster(ctx);
+   252→   252→   252→    const vol = volume * (accent ? 1.0 : 0.6);
+   253→   253→   253→
+   254→   254→   254→    switch (soundType) {
+   255→   255→   255→      case 'classic':
+   256→   256→   256→      case 'woodblock': {
+   257→   257→   257→        const osc = ctx.createOscillator();
+   258→   258→   258→        const gain = ctx.createGain();
+   259→   259→   259→        osc.type = 'sine';
+   260→   260→   260→        osc.frequency.setValueAtTime(accent ? 1567.98 : 1046.50, now);
+   261→   261→   261→        gain.gain.setValueAtTime(vol * 0.35, now);
+   262→   262→   262→        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.04);
+   263→   263→   263→        osc.connect(gain); gain.connect(master);
+   264→   264→   264→        osc.start(now); osc.stop(now + 0.05);
+   265→   265→   265→        const noiseLen = 0.008;
+   266→   266→   266→        const noiseBuffer = ctx.createBuffer(1, ctx.sampleRate * noiseLen, ctx.sampleRate);
+   267→   267→   267→        const noiseData = noiseBuffer.getChannelData(0);
+   268→   268→   268→        for (let i = 0; i < noiseData.length; i++) noiseData[i] = (Math.random() * 2 - 1);
+   269→   269→   269→        const noiseSrc = ctx.createBufferSource(); noiseSrc.buffer = noiseBuffer;
+   270→   270→   270→        const nGain = ctx.createGain(); const nFilter = ctx.createBiquadFilter();
+   271→   271→   271→        nFilter.type = 'highpass'; nFilter.frequency.setValueAtTime(accent ? 3000 : 2000, now);
+   272→   272→   272→        nGain.gain.setValueAtTime(vol * 0.15, now); nGain.gain.exponentialRampToValueAtTime(0.001, now + noiseLen);
+   273→   273→   273→        noiseSrc.connect(nFilter); nFilter.connect(nGain); nGain.connect(master);
+   274→   274→   274→        noiseSrc.start(now);
+   275→   275→   275→        const oscBody = ctx.createOscillator(); const gainBody = ctx.createGain();
+   276→   276→   276→        oscBody.type = 'sine'; oscBody.frequency.setValueAtTime(accent ? 800 : 600, now);
+   277→   277→   277→        gainBody.gain.setValueAtTime(vol * 0.08, now); gainBody.gain.exponentialRampToValueAtTime(0.001, now + 0.03);
+   278→   278→   278→        oscBody.connect(gainBody); gainBody.connect(master);
+   279→   279→   279→        oscBody.start(now); oscBody.stop(now + 0.04);
+   280→   280→   280→        break;
+   281→   281→   281→      }
+   282→   282→   282→      case 'stick': {
+   283→   283→   283→        const osc = ctx.createOscillator(); const gain = ctx.createGain();
+   284→   284→   284→        osc.type = 'triangle'; osc.frequency.setValueAtTime(accent ? 4000 : 2500, now);
+   285→   285→   285→        gain.gain.setValueAtTime(vol * 0.3, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.015);
+   286→   286→   286→        osc.connect(gain); gain.connect(master);
+   287→   287→   287→        osc.start(now); osc.stop(now + 0.02);
+   288→   288→   288→        const nLen = 0.005; const nBuf = ctx.createBuffer(1, ctx.sampleRate * nLen, ctx.sampleRate);
+   289→   289→   289→        const nD = nBuf.getChannelData(0); for (let i = 0; i < nD.length; i++) nD[i] = (Math.random() * 2 - 1);
+   290→   290→   290→        const nS = ctx.createBufferSource(); nS.buffer = nBuf;
+   291→   291→   291→        const nG = ctx.createGain(); const nF = ctx.createBiquadFilter();
+   292→   292→   292→        nF.type = 'bandpass'; nF.frequency.setValueAtTime(accent ? 6000 : 4000, now); nF.Q.setValueAtTime(2, now);
+   293→   293→   293→        nG.gain.setValueAtTime(vol * 0.2, now); nG.gain.exponentialRampToValueAtTime(0.001, now + nLen);
+   294→   294→   294→        nS.connect(nF); nF.connect(nG); nG.connect(master); nS.start(now);
+   295→   295→   295→        break;
+   296→   296→   296→      }
+   297→   297→   297→      case 'cowbell': {
+   298→   298→   298→        const osc1 = ctx.createOscillator(); const gain1 = ctx.createGain();
+   299→   299→   299→        const osc2 = ctx.createOscillator(); const gain2 = ctx.createGain();
+   300→   300→   300→        osc1.type = 'square'; osc1.frequency.setValueAtTime(accent ? 800 : 540, now);
+   301→   301→   301→        gain1.gain.setValueAtTime(vol * 0.15, now); gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+   302→   302→   302→        osc2.type = 'square'; osc2.frequency.setValueAtTime(accent ? 540 : 360, now);
+   303→   303→   303→        gain2.gain.setValueAtTime(vol * 0.12, now); gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
+   304→   304→   304→        const bp = ctx.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.setValueAtTime(700, now); bp.Q.setValueAtTime(3, now);
+   305→   305→   305→        const bpGain = ctx.createGain(); bpGain.gain.setValueAtTime(vol * 0.3, now); bpGain.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
+   306→   306→   306→        osc1.connect(gain1); gain1.connect(bp); osc2.connect(gain2); gain2.connect(bp); bp.connect(bpGain); bpGain.connect(master);
+   307→   307→   307→        osc1.start(now); osc2.start(now); osc1.stop(now + 0.15); osc2.stop(now + 0.15);
+   308→   308→   308→        break;
+   309→   309→   309→      }
+   310→   310→   310→      case 'digital': {
+   311→   311→   311→        const osc = ctx.createOscillator(); const gain = ctx.createGain();
+   312→   312→   312→        osc.type = 'sine'; osc.frequency.setValueAtTime(accent ? 1200 : 800, now);
+   313→   313→   313→        gain.gain.setValueAtTime(vol * 0.25, now); gain.gain.setValueAtTime(vol * 0.25, now + 0.02);
+   314→   314→   314→        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.06);
+   315→   315→   315→        osc.connect(gain); gain.connect(master);
+   316→   316→   316→        osc.start(now); osc.stop(now + 0.07);
+   317→   317→   317→        break;
+   318→   318→   318→      }
+   319→   319→   319→      case 'drumstick': {
+   320→   320→   320→        const osc = ctx.createOscillator(); const gain = ctx.createGain();
+   321→   321→   321→        osc.type = 'sine'; osc.frequency.setValueAtTime(accent ? 3000 : 1800, now);
+   322→   322→   322→        osc.frequency.exponentialRampToValueAtTime(accent ? 1500 : 900, now + 0.01);
+   323→   323→   323→        gain.gain.setValueAtTime(vol * 0.25, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.025);
+   324→   324→   324→        osc.connect(gain); gain.connect(master);
+   325→   325→   325→        osc.start(now); osc.stop(now + 0.03);
+   326→   326→   326→        const body = ctx.createOscillator(); const bGain = ctx.createGain();
+   327→   327→   327→        body.type = 'sine'; body.frequency.setValueAtTime(accent ? 200 : 150, now);
+   328→   328→   328→        bGain.gain.setValueAtTime(vol * 0.1, now); bGain.gain.exponentialRampToValueAtTime(0.001, now + 0.03);
+   329→   329→   329→        body.connect(bGain); bGain.connect(master);
+   330→   330→   330→        body.start(now); body.stop(now + 0.04);
+   331→   331→   331→        break;
+   332→   332→   332→      }
+   333→   333→   333→      case 'hihat': {
+   334→   334→   334→        const nLen = accent ? 0.06 : 0.03;
+   335→   335→   335→        const nBuf = ctx.createBuffer(1, ctx.sampleRate * nLen, ctx.sampleRate);
+   336→   336→   336→        const nD = nBuf.getChannelData(0); for (let i = 0; i < nD.length; i++) nD[i] = (Math.random() * 2 - 1);
+   337→   337→   337→        const nS = ctx.createBufferSource(); nS.buffer = nBuf;
+   338→   338→   338→        const hp = ctx.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.setValueAtTime(accent ? 8000 : 6000, now);
+   339→   339→   339→        const nG = ctx.createGain(); nG.gain.setValueAtTime(vol * 0.15, now); nG.gain.exponentialRampToValueAtTime(0.001, now + nLen);
+   340→   340→   340→        nS.connect(hp); hp.connect(nG); nG.connect(master); nS.start(now);
+   341→   341→   341→        const osc = ctx.createOscillator(); const g = ctx.createGain();
+   342→   342→   342→        osc.type = 'square'; osc.frequency.setValueAtTime(accent ? 6000 : 4000, now);
+   343→   343→   343→        g.gain.setValueAtTime(vol * 0.04, now); g.gain.exponentialRampToValueAtTime(0.001, now + 0.01);
+   344→   344→   344→        osc.connect(g); g.connect(master); osc.start(now); osc.stop(now + 0.02);
+   345→   345→   345→        break;
+   346→   346→   346→      }
+   347→   347→   347→      case 'electronic': {
+   348→   348→   348→        const osc = ctx.createOscillator(); const gain = ctx.createGain();
+   349→   349→   349→        osc.type = 'square'; osc.frequency.setValueAtTime(accent ? 1000 : 660, now);
+   350→   350→   350→        gain.gain.setValueAtTime(vol * 0.12, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.02);
+   351→   351→   351→        osc.connect(gain); gain.connect(master);
+   352→   352→   352→        osc.start(now); osc.stop(now + 0.025);
+   353→   353→   353→        break;
+   354→   354→   354→      }
+   355→   355→   355→      case 'mechanical': {
+   356→   356→   356→        const osc = ctx.createOscillator(); const gain = ctx.createGain();
+   357→   357→   357→        osc.type = 'sine';
+   358→   358→   358→        const freq = accent ? 2200 : 1600;
+   359→   359→   359→        osc.frequency.setValueAtTime(freq, now);
+   360→   360→   360→        osc.frequency.exponentialRampToValueAtTime(freq * 0.6, now + 0.02);
+   361→   361→   361→        gain.gain.setValueAtTime(vol * 0.3, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
+   362→   362→   362→        const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.setValueAtTime(3000, now);
+   363→   363→   363→        osc.connect(lp); lp.connect(gain); gain.connect(master);
+   364→   364→   364→        osc.start(now); osc.stop(now + 0.06);
+   365→   365→   365→        const res = ctx.createOscillator(); const rGain = ctx.createGain();
+   366→   366→   366→        res.type = 'sine'; res.frequency.setValueAtTime(accent ? 400 : 300, now);
+   367→   367→   367→        rGain.gain.setValueAtTime(vol * 0.06, now); rGain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+   368→   368→   368→        res.connect(rGain); rGain.connect(master);
+   369→   369→   369→        res.start(now); res.stop(now + 0.1);
+   370→   370→   370→        break;
+   371→   371→   371→      }
+   372→   372→   372→    }
+   373→   373→   373→  } catch (e) {}
+   374→   374→   374→}
+   375→   375→   375→
+   376→   376→   376→// ─── INTERVAL COLOR ───
+   377→   377→   377→function getIntervalColor(label: string): string {
+   378→   378→   378→  if (label === 'R') return '#9b3939';
+   379→   379→   379→  if (label.includes('\u266D3') || label.includes('\u266D2')) return '#6b4a7a';
+   380→   380→   380→  if (label === '3' || label === '2') return '#4a7a4a';
+   381→   381→   381→  if (label === '4') return '#4a5a8a';
+   382→   382→   382→  if (label === '5') return '#4a7a7a';
+   383→   383→   383→  if (label.includes('5')) return '#4a7a7a';
+   384→   384→   384→  if (label.includes('6')) return '#8a6a3a';
+   385→   385→   385→  if (label.includes('7')) return '#7a4a6a';
+   386→   386→   386→  if (label.includes('\u266F') || label.includes('\u266D')) return '#6b4a7a';
+   387→   387→   387→  return '#5a5a6a';
+   388→   388→   388→}
+   389→   389→   389→
+   390→   390→   390→// Difficulty stars
+   391→   391→   391→function DifficultyBadge({ level }: { level: number }) {
+   392→   392→   392→  return (
+   393→   393→   393→    <div className="flex items-center gap-0.5">
+   394→   394→   394→      {[1, 2, 3, 4, 5].map(i => (
+   395→   395→   395→        <div key={i} className={`w-1.5 h-1.5 rounded-sm ${i <= level ? 'bg-[#9b3939]' : 'bg-[#e8e2d6]'}`} />
+   396→   396→   396→      ))}
+   397→   397→   397→    </div>
+   398→   398→   398→  );
+   399→   399→   399→}
+   400→   400→   400→
+   401→   401→   401→// ─── VIEW MODES ───
+   402→   402→   402→type ViewMode = 'fretboard' | 'tab' | 'hybrid' | 'analysis';
+   403→   403→   403→
+   404→   404→   404→type MetronomeSound = 'classic' | 'woodblock' | 'stick' | 'cowbell' | 'digital' | 'drumstick' | 'hihat' | 'electronic' | 'mechanical';
+   405→   405→   405→type Subdivision = 'quarter' | 'eighth' | 'triplets' | 'sixteenth' | 'quintuplets' | 'sextuplets';
+   406→   406→   406→type TimeSignatureDisplay = '2/4' | '3/4' | '4/4' | '5/4' | '6/8' | '7/8' | '9/8' | '12/8';
+   407→   407→   407→type AccentMode = 'first' | 'every-n' | 'random' | 'none';
+   408→   408→   408→type PracticeMode = 'none' | 'tempo-trainer' | 'speed-burst' | 'random-tempo';
+   409→   409→   409→
+   410→   410→   410→interface TempoTrainerConfig {
+   411→   411→   411→  startBpm: number;
+   412→   412→   412→  targetBpm: number;
+   413→   413→   413→  stepSize: number;
+   414→   414→   414→  increaseEveryN: number;
+   415→   415→   415→  currentReps: number;
+   416→   416→   416→  isActive: boolean;
+   417→   417→   417→}
+   418→   418→   418→
+   419→   419→   419→interface SpeedBurstConfig {
+   420→   420→   420→  burstBpm: number;
+   421→   421→   421→  burstEveryN: number;
+   422→   422→   422→  burstLength: number;
+   423→   423→   423→  currentCount: number;
+   424→   424→   424→  isInBurst: boolean;
+   425→   425→   425→  isActive: boolean;
+   426→   426→   426→}
+   427→   427→   427→
+   428→   428→   428→interface RandomTempoConfig {
+   429→   429→   429→  minBpm: number;
+   430→   430→   430→  maxBpm: number;
+   431→   431→   431→  isActive: boolean;
+   432→   432→   432→}
+   433→   433→   433→
+   434→   434→   434→interface PracticeGoals {
+   435→   435→   435→  targetReps: number;
+   436→   436→   436→  targetBpm: number;
+   437→   437→   437→  targetDuration: number; // seconds
+   438→   438→   438→}
+   439→   439→   439→
+   440→   440→   440→interface GapClickConfig {
+   441→   441→   441→  barsClick: number;
+   442→   442→   442→  barsSilent: number;
+   443→   443→   443→  currentBar: number;
+   444→   444→   444→  isActive: boolean;
+   445→   445→   445→}
+   446→   446→   446→
+   447→   447→   447→interface PolyrhythmConfig {
+   448→   448→   448→  ratio: '3:2' | '5:4' | '7:4' | '3:4';
+   449→   449→   449→  isActive: boolean;
+   450→   450→   450→}
+   451→   451→   451→
+   452→   452→   452→const METRONOME_SOUNDS: { value: MetronomeSound; label: string }[] = [
+   453→   453→   453→  { value: 'classic', label: 'Classic Click' },
+   454→   454→   454→  { value: 'woodblock', label: 'Wood Block' },
+   455→   455→   455→  { value: 'stick', label: 'Stick Click' },
+   456→   456→   456→  { value: 'cowbell', label: 'Cowbell' },
+   457→   457→   457→  { value: 'digital', label: 'Digital Beep' },
+   458→   458→   458→  { value: 'drumstick', label: 'Drum Stick' },
+   459→   459→   459→  { value: 'hihat', label: 'Hi-Hat' },
+   460→   460→   460→  { value: 'electronic', label: 'Electronic Click' },
+   461→   461→   461→  { value: 'mechanical', label: 'Mechanical' },
+   462→   462→   462→];
+   463→   463→   463→
+   464→   464→   464→const SUBDIVISIONS: { value: Subdivision; label: string; factor: number }[] = [
+   465→   465→   465→  { value: 'quarter', label: 'Quarter', factor: 1 },
+   466→   466→   466→  { value: 'eighth', label: 'Eighth', factor: 2 },
+   467→   467→   467→  { value: 'triplets', label: 'Triplets', factor: 3 },
+   468→   468→   468→  { value: 'sixteenth', label: '16th', factor: 4 },
+   469→   469→   469→  { value: 'quintuplets', label: '5-tuplet', factor: 5 },
+   470→   470→   470→  { value: 'sextuplets', label: '6-tuplet', factor: 6 },
+   471→   471→   471→];
+   472→   472→   472→
+   473→   473→   473→const TIME_SIGNATURES: { value: TimeSignatureDisplay; beats: number; noteValue: number }[] = [
+   474→   474→   474→  { value: '2/4', beats: 2, noteValue: 4 },
+   475→   475→   475→  { value: '3/4', beats: 3, noteValue: 4 },
+   476→   476→   476→  { value: '4/4', beats: 4, noteValue: 4 },
+   477→   477→   477→  { value: '5/4', beats: 5, noteValue: 4 },
+   478→   478→   478→  { value: '6/8', beats: 6, noteValue: 8 },
+   479→   479→   479→  { value: '7/8', beats: 7, noteValue: 8 },
+   480→   480→   480→  { value: '9/8', beats: 9, noteValue: 8 },
+   481→   481→   481→  { value: '12/8', beats: 12, noteValue: 8 },
+   482→   482→   482→];
+   483→   483→   483→
+   484→   484→   484→const POLYRHYTHM_RATIOS = ['3:2', '5:4', '7:4', '3:4'] as const;
+   485→   485→   485→
+   486→   486→   486→// ─── MAIN COMPONENT ───
+   487→   487→   487→export default function Home() {
+   488→   488→   488→  // Core state
+   489→   489→   489→  const [keyIndex, setKeyIndex] = useState(9);
+   490→   490→   490→  const [scaleId, setScaleId] = useState('minor-pentatonic');
+   491→   491→   491→  const [positionIndex, setPositionIndex] = useState(0);
+   492→   492→   492→  const [exerciseType, setExerciseType] = useState<ExerciseType>('scale-asc-desc');
+   493→   493→   493→  const [showAllPositions, setShowAllPositions] = useState(false);
+   494→   494→   494→  const [soundEnabled, setSoundEnabled] = useState(true);
+   495→   495→   495→  const [viewMode, setViewMode] = useState<ViewMode>('hybrid');
+   496→   496→   496→
+   497→   497→   497→  // Playback state
+   498→   498→   498→  const [isPlaying, setIsPlaying] = useState(false);
+   499→   499→   499→  const [isPaused, setIsPaused] = useState(false);
+   500→   500→   500→  const [playingIdx, setPlayingIdx] = useState(-1);
+
+[showing lines 1-500 of 2002; use offset=501 with limit to continue reading]

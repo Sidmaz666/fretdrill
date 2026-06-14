@@ -14,9 +14,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "FretBoard Forge — Guitar Exercise Generator",
-  description: "Procedural guitar exercise generator with fretboard diagrams, scale patterns, and tab notation. Inspired by Ricky's Guitar teaching method.",
-  keywords: ["guitar", "exercises", "scales", "pentatonic", "fretboard", "tabs", "CAGED", "music theory"],
+  title: "ScaleForge — Exercise Generator",
+  description: "Procedural exercise generator with scale patterns, tab notation, and practice tools. Master the neck, one pattern at a time.",
+  keywords: ["exercises", "scales", "pentatonic", "fretboard", "tabs", "CAGED", "music theory", "practice"],
   icons: {
     icon: "https://z-cdn.chatglm.cn/z-ai/static/logo.svg",
   },

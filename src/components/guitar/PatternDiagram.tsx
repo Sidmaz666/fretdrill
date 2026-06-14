@@ -25,12 +25,18 @@ interface PatternDiagramProps {
   customLabel?: string;
 }
 
+// Fixed layout constants — all cards have the SAME dimensions
+const FIXED_FRET_RANGE = 6; // Normalize to 6-fret width for all positions
 const SS = 22; // string spacing
-const FS = 32; // fret spacing
+const FS = 28; // fret spacing (slightly smaller to fit 6 frets comfortably)
 const LM = 28; // left margin
 const TM = 20; // top margin
 const BM = 18; // bottom margin
 const NR = 8;  // note radius
+
+// Fixed SVG dimensions so all cards are identical size
+const SVG_WIDTH = LM + FIXED_FRET_RANGE * FS + 16;
+const SVG_HEIGHT = TM + 5 * SS + BM;
 
 // Interval color palette
 function getIntervalColor(label: string): string {
@@ -60,12 +66,12 @@ export default function PatternDiagram({
   const fretRange = fretEnd - fretStart;
   const stringLabels = ['E', 'A', 'D', 'G', 'B', 'e'];
 
+  // Dynamic fret spacing to fit within the fixed SVG width
+  const effectiveFS = Math.min(FS, (SVG_WIDTH - LM - 16) / Math.max(fretRange, 1));
+
   const notes = useMemo(() => {
     return getScaleOnFretboard(keyNote, scaleId, fretStart, fretEnd);
   }, [keyNote, scaleId, fretStart, fretEnd]);
-
-  const svgWidth = LM + fretRange * FS + 16;
-  const svgHeight = TM + 5 * SS + BM;
 
   // Exercise note set for highlighting
   const exerciseSet = useMemo(() => {
@@ -86,19 +92,19 @@ export default function PatternDiagram({
     return map;
   }, [exerciseNotes]);
 
-  // Calculate note positions
+  // Calculate note positions using dynamic fret spacing
   const notePositions = useMemo(() => {
     return notes.map(note => {
       const key = `${note.string}-${note.fret}`;
       return {
         ...note,
-        x: LM + (note.fret - fretStart + 0.5) * FS,
+        x: LM + (note.fret - fretStart + 0.5) * effectiveFS,
         y: TM + (5 - note.string) * SS,
         isExNote: exerciseSet.has(key),
         seqNum: exerciseSeqMap.get(key),
       };
     });
-  }, [notes, fretStart, exerciseSet, exerciseSeqMap]);
+  }, [notes, fretStart, exerciseSet, exerciseSeqMap, effectiveFS]);
 
   // Pattern shape lines - connect adjacent notes on same string and across strings
   const shapeLines = useMemo(() => {
@@ -156,15 +162,15 @@ export default function PatternDiagram({
     for (let i = 0; i < exerciseNotes.length - 1; i++) {
       const curr = exerciseNotes[i];
       const next = exerciseNotes[i + 1];
-      const cx = LM + (curr.fret - fretStart + 0.5) * FS;
+      const cx = LM + (curr.fret - fretStart + 0.5) * effectiveFS;
       const cy = TM + (5 - curr.string) * SS;
-      const nx = LM + (next.fret - fretStart + 0.5) * FS;
+      const nx = LM + (next.fret - fretStart + 0.5) * effectiveFS;
       const ny = TM + (5 - next.string) * SS;
       lines.push({ x1: cx, y1: cy, x2: nx, y2: ny });
     }
     
     return lines;
-  }, [exerciseNotes, fretStart]);
+  }, [exerciseNotes, fretStart, effectiveFS]);
 
   // Fret markers
   const fretMarkerPositions = useMemo(() => {
@@ -172,10 +178,10 @@ export default function PatternDiagram({
       .filter(f => f >= fretStart && f <= fretEnd)
       .map(fret => ({
         fret,
-        x: LM + (fret - fretStart + 0.5) * FS,
+        x: LM + (fret - fretStart + 0.5) * effectiveFS,
         isDouble: DOUBLE_MARKERS.includes(fret),
       }));
-  }, [fretStart, fretEnd]);
+  }, [fretStart, fretEnd, effectiveFS]);
 
   return (
     <div
@@ -197,13 +203,13 @@ export default function PatternDiagram({
       </div>
 
       <svg
-        width={svgWidth}
-        height={svgHeight}
-        viewBox={`0 0 ${svgWidth} ${svgHeight}`}
+        width={SVG_WIDTH}
+        height={SVG_HEIGHT}
+        viewBox={`0 0 ${SVG_WIDTH} ${SVG_HEIGHT}`}
         className="w-full h-auto"
       >
         {/* Background */}
-        <rect x={0} y={0} width={svgWidth} height={svgHeight} fill="#faf6ef" />
+        <rect x={0} y={0} width={SVG_WIDTH} height={SVG_HEIGHT} fill="#faf6ef" />
 
         {/* Fret markers */}
         {fretMarkerPositions.map(marker => (
@@ -220,7 +226,7 @@ export default function PatternDiagram({
         {/* Fret lines */}
         {Array.from({ length: fretRange + 1 }, (_, i) => {
           const fretNum = fretStart + i;
-          const x = LM + i * FS;
+          const x = LM + i * effectiveFS;
           const isNut = fretNum === 0;
           return (
             <line
@@ -238,12 +244,12 @@ export default function PatternDiagram({
         {Array.from({ length: fretRange + 1 }, (_, i) => {
           const fretNum = fretStart + i;
           if (fretNum === 0) return null;
-          const x = LM + (i + 0.5) * FS;
+          const x = LM + (i + 0.5) * effectiveFS;
           if (fretNum % 2 !== 0 && fretNum !== fretStart + 1 && fretNum !== 12) return null;
           return (
             <text
               key={`fn-${fretNum}`}
-              x={x} y={svgHeight - 2}
+              x={x} y={SVG_HEIGHT - 2}
               textAnchor="middle"
               fill="#8b7355"
               fontSize={10}
@@ -263,7 +269,7 @@ export default function PatternDiagram({
             <line
               key={`s-${stringIdx}`}
               x1={LM - 6} y1={y}
-              x2={LM + fretRange * FS + 6} y2={y}
+              x2={LM + fretRange * effectiveFS + 6} y2={y}
               stroke="#6b5b47"
               strokeWidth={thickness}
               strokeLinecap="round"

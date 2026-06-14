@@ -123,3 +123,20 @@ Stage Summary:
 - Info page comprehensively documents all 232+ exercise types
 - All new categories have detailed descriptions explaining technique value
 - No tech stack/framework information in documentation
+---
+Task ID: 1
+Agent: Main
+Task: Fix P6 card sizing, add localStorage persistence + random state, rename app
+
+Work Log:
+- Fixed PatternDiagram.tsx: replaced variable SVG width with FIXED_FRET_RANGE (6 frets) and dynamic effectiveFS, so all position cards (P1-P6+) render at identical size
+- Added localStorage persistence to page.tsx: on first mount, checks for saved `scaleforge_state` in localStorage; if found, restores keyIndex/scaleId/positionIndex/exerciseType; if not, picks random scale, key, and exercise
+- Added useEffect to persist state to localStorage on every change of keyIndex, scaleId, positionIndex, exerciseType
+- Renamed app from "FretBoard Forge" to "ScaleForge" across layout.tsx and page.tsx (all 10 occurrences)
+- Updated metadata title, description, and keywords in layout.tsx
+- Build passes successfully
+
+Stage Summary:
+- P6 card normalization: DONE - all position cards now have fixed SVG dimensions
+- Random initial state + persistence: DONE - first visit gets random; return visits restore last state
+- App name: ScaleForge (no "fret" or "guitar" in name)
