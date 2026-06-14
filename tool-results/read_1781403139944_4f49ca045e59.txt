@@ -1,0 +1,653 @@
+   501→   501→      const intervals = [];
+   502→   502→      for (let i = 1; i < tapTimes.current.length; i++) intervals.push(tapTimes.current[i] - tapTimes.current[i - 1]);
+   503→   503→      const avgInterval = intervals.reduce((a, b) => a + b, 0) / intervals.length;
+   504→   504→      setBpm(Math.max(40, Math.min(220, Math.round(60000 / avgInterval))));
+   505→   505→    }
+   506→   506→  }, []);
+   507→   507→
+   508→   508→  const bpmPresets = [40, 50, 60, 70, 80, 90, 100, 110, 120, 130, 140, 160, 180, 200, 220];
+   509→   509→
+   510→   510→  // Filtered exercises for search
+   511→   511→  const filteredCategories = useMemo(() => {
+   512→   512→    if (!exerciseSearch.trim()) return EXERCISE_CATEGORIES;
+   513→   513→    const q = exerciseSearch.toLowerCase();
+   514→   514→    return EXERCISE_CATEGORIES.map(cat => ({
+   515→   515→      ...cat,
+   516→   516→      types: cat.types.filter(t => EXERCISE_TYPES[t].name.toLowerCase().includes(q) || EXERCISE_TYPES[t].description.toLowerCase().includes(q)),
+   517→   517→    })).filter(cat => cat.types.length > 0);
+   518→   518→  }, [exerciseSearch]);
+   519→   519→
+   520→   520→  // Group categories by section
+   521→   521→  const sectionGroups = useMemo(() => {
+   522→   522→    const groups: Array<{ section: string; categories: typeof EXERCISE_CATEGORIES }> = [];
+   523→   523→    for (const cat of filteredCategories) {
+   524→   524→      const existing = groups.find(g => g.section === cat.section);
+   525→   525→      if (existing) existing.categories.push(cat);
+   526→   526→      else groups.push({ section: cat.section, categories: [cat] });
+   527→   527→    }
+   528→   528→    return groups;
+   529→   529→  }, [filteredCategories]);
+   530→   530→
+   531→   531→  // ─── RENDER ───
+   532→   532→  return (
+   533→   533→    <div className="h-screen flex flex-col bg-[#f5f0e8] text-[#2c2c2c] overflow-hidden">
+   534→   534→
+   535→   535→      {/* ═══ TOP STICKY GLOBAL CONTEXT BAR ═══ */}
+   536→   536→      <header className="border-b-2 border-[#8b7355] bg-[#faf6ef] shrink-0 z-40">
+   537→   537→        <div className="px-3 py-1.5 flex items-center gap-2">
+   538→   538→          <button className="lg:hidden sketch-btn p-1 border-[#c4b89c]" onClick={() => setSidebarOpen(!sidebarOpen)}>
+   539→   539→            <Menu className="w-3.5 h-3.5" />
+   540→   540→          </button>
+   541→   541→          <div className="flex items-center gap-1.5 shrink-0">
+   542→   542→            <div className="w-6 h-6 rounded-sm border-2 border-[#8b7355] flex items-center justify-center bg-[#f5f0e8]">
+   543→   543→              <Guitar className="w-3.5 h-3.5 text-[#6b5b47]" />
+   544→   544→            </div>
+   545→   545→            <h1 className="text-[12px] font-bold text-[#2c2c2c] hidden sm:block" style={{ fontFamily: "'Georgia', serif", fontStyle: 'italic' }}>FretBoard Forge</h1>
+   546→   546→          </div>
+   547→   547→          <div className="w-px h-5 bg-[#c4b89c] hidden md:block" />
+   548→   548→          {/* Key */}
+   549→   549→          <div className="hidden md:flex items-center gap-1 shrink-0">
+   550→   550→            <span className="text-[10px] uppercase tracking-[0.1em] text-[#8b7355] font-serif italic font-bold">Key</span>
+   551→   551→            <div className="flex gap-0.5">
+   552→   552→              {KEY_DISPLAY_NAMES.map((key, idx) => (
+   553→   553→                <button key={idx} className={`h-6 min-w-[24px] px-0.5 text-[10px] font-semibold border transition-all rounded-sm ${keyIndex === idx ? 'sketch-btn-active border-[#6b5b47]' : 'sketch-btn border-[#c4b89c] hover:border-[#8b7355]'}`}
+   554→   554→                  onClick={() => { setKeyIndex(idx); setPositionIndex(0); stopPlayback(); }}>{key}</button>
+   555→   555→              ))}
+   556→   556→            </div>
+   557→   557→          </div>
+   558→   558→          <div className="w-px h-5 bg-[#c4b89c] hidden md:block" />
+   559→   559→          {/* Scale */}
+   560→   560→          <div className="hidden md:flex items-center gap-1 shrink-0">
+   561→   561→            <span className="text-[10px] uppercase tracking-[0.1em] text-[#8b7355] font-serif italic font-bold">Scale</span>
+   562→   562→            <Select value={scaleId} onValueChange={(v) => { setScaleId(v); setPositionIndex(0); stopPlayback(); }}>
+   563→   563→              <SelectTrigger className="bg-[#f5f0e8] border-[#c4b89c] text-[#2c2c2c] text-[11px] rounded-sm h-6 w-[150px]"><SelectValue /></SelectTrigger>
+   564→   564→              <SelectContent className="bg-[#faf6ef] border-[#c4b89c]">
+   565→   565→                {Object.entries(SCALES).map(([id, s]) => (
+   566→   566→                  <SelectItem key={id} value={id} className="text-[11px] text-[#2c2c2c]">{s.name} ({s.intervals.length})</SelectItem>
+   567→   567→                ))}
+   568→   568→              </SelectContent>
+   569→   569→            </Select>
+   570→   570→          </div>
+   571→   571→          <div className="w-px h-5 bg-[#c4b89c] hidden md:block" />
+   572→   572→          {/* Position */}
+   573→   573→          <div className="hidden md:flex items-center gap-0.5 shrink-0">
+   574→   574→            <span className="text-[10px] uppercase tracking-[0.1em] text-[#8b7355] font-serif italic font-bold">Pos</span>
+   575→   575→            <button className="sketch-btn w-4 h-5 flex items-center justify-center border-[#c4b89c] p-0" onClick={handlePrevPosition} disabled={positionIndex <= 0}><ChevronLeft className="h-2.5 w-2.5" /></button>
+   576→   576→            {positions.map((_, idx) => (
+   577→   577→              <button key={idx} className={`h-6 w-6 text-[10px] font-semibold rounded-sm transition-all border p-0 ${!showAllPositions && positionIndex === idx ? 'sketch-btn-active border-[#6b5b47]' : 'sketch-btn border-[#c4b89c] hover:border-[#8b7355]'}`}
+   578→   578→                onClick={() => { setPositionIndex(idx); setShowAllPositions(false); stopPlayback(); }}>{idx + 1}</button>
+   579→   579→            ))}
+   580→   580→            <button className={`h-6 px-1 text-[10px] font-semibold rounded-sm transition-all border p-0 ${showAllPositions ? 'sketch-btn-active border-[#6b5b47]' : 'sketch-btn border-[#c4b89c] hover:border-[#8b7355]'}`}
+   581→   581→              onClick={() => { setShowAllPositions(true); stopPlayback(); }}>All</button>
+   582→   582→            <button className="sketch-btn w-4 h-5 flex items-center justify-center border-[#c4b89c] p-0" onClick={handleNextPosition} disabled={positionIndex >= positions.length - 1}><ChevronRight className="h-2.5 w-2.5" /></button>
+   583→   583→          </div>
+   584→   584→          {/* Mobile context pill */}
+   585→   585→          <div className="md:hidden flex-1 flex items-center justify-center">
+   586→   586→            <span className="text-[11px] font-serif italic text-[#4a4a4a] font-bold">{keyNote} {scale.name} · P{positionIndex + 1}</span>
+   587→   587→          </div>
+   588→   588→          <div className="flex-1 hidden md:block" />
+   589→   589→          <div className="hidden lg:flex items-center gap-1.5 shrink-0">
+   590→   590→            <span className="text-[10px] text-[#8b7355] font-serif italic">{currentPosition.name} · Frets {currentPosition.fretStart}–{currentPosition.fretEnd}</span>
+   591→   591→            <span className="text-[10px] text-[#b8a88a] font-serif italic">· {Object.keys(EXERCISE_TYPES).length} exercises</span>
+   592→   592→          </div>
+   593→   593→          <button className={`sketch-btn px-1.5 py-0.5 text-[10px] flex items-center gap-0.5 shrink-0 ${soundEnabled ? 'border-[#6b5b47]' : 'border-[#c4b89c] opacity-50'}`}
+   594→   594→            onClick={() => setSoundEnabled(!soundEnabled)}>
+   595→   595→            {soundEnabled ? <Volume2 className="w-2.5 h-2.5" /> : <VolumeX className="w-2.5 h-2.5" />}
+   596→   596→          </button>
+   597→   597→        </div>
+   598→   598→      </header>
+   599→   599→
+   600→   600→      {/* ═══ MAIN WORK AREA ═══ */}
+   601→   601→      <div className="flex-1 flex overflow-hidden">
+   602→   602→
+   603→   603→        {/* ─── LEFT SIDEBAR ─── */}
+   604→   604→        {sidebarOpen && <div className="lg:hidden fixed inset-0 z-30 bg-black/30" onClick={() => setSidebarOpen(false)} />}
+   605→   605→        <aside className={`fixed lg:relative inset-y-0 left-0 z-30 lg:z-0 w-[250px] lg:w-[250px] shrink-0 bg-[#faf6ef] border-r-2 border-[#8b7355] overflow-y-auto transform transition-transform duration-200 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'} pt-[38px] lg:pt-0`}>
+   606→   606→          <div className="p-2.5 pb-16 space-y-1.5">
+   607→   607→            <div className="flex items-center justify-between">
+   608→   608→              <h3 className="text-[11px] uppercase tracking-[0.15em] text-[#8b7355] font-serif italic font-bold">Exercise Library</h3>
+   609→   609→              <button className="lg:hidden" onClick={() => setSidebarOpen(false)}><X className="w-3.5 h-3.5 text-[#8b7355]" /></button>
+   610→   610→            </div>
+   611→   611→            {/* Search */}
+   612→   612→            <div className="relative">
+   613→   613→              <Search className="absolute left-1.5 top-1/2 -translate-y-1/2 w-2.5 h-2.5 text-[#8b7355]" />
+   614→   614→              <input type="text" placeholder="Search..." value={exerciseSearch} onChange={e => setExerciseSearch(e.target.value)}
+   615→   615→                className="w-full pl-5 pr-2 py-1 text-[10px] bg-[#f5f0e8] border border-[#c4b89c] rounded-sm focus:outline-none focus:border-[#8b7355] font-serif italic" />
+   616→   616→            </div>
+   617→   617→            {/* Random */}
+   618→   618→            <button className="sketch-btn w-full text-[10px] py-1 border-[#8b7355] text-[#6b5b47] font-semibold flex items-center justify-center gap-1" onClick={handleRandomize}>
+   619→   619→              <Shuffle className="w-2.5 h-2.5" /> Random Exercise
+   620→   620→            </button>
+   621→   621→
+   622→   622→            {/* Category groups by section */}
+   623→   623→            {sectionGroups.map(group => (
+   624→   624→              <div key={group.section}>
+   625→   625→                <div className="text-[9px] uppercase tracking-[0.2em] text-[#9b3939] font-serif italic font-bold pt-2 pb-0.5 border-b border-[#e8e2d6] mb-0.5">
+   626→   626→                  {group.section}
+   627→   627→                </div>
+   628→   628→                {group.categories.map(cat => {
+   629→   629→                  const isActiveCat = cat.types.includes(exerciseType);
+   630→   630→                  const isExpanded = expandedCategory === cat.id;
+   631→   631→                  return (
+   632→   632→                    <div key={cat.id}>
+   633→   633→                      <button className={`w-full flex items-center gap-1 px-1.5 py-1 rounded-sm text-[10px] font-serif italic font-bold transition-all ${isActiveCat ? 'bg-[rgba(155,57,57,0.08)] text-[#9b3939]' : 'text-[#6b5b47] hover:bg-[rgba(139,115,85,0.06)]'}`}
+   634→   634→                        onClick={() => setExpandedCategory(isExpanded ? '' : cat.id)}>
+   635→   635→                        <span className="flex-1 text-left">{cat.label}</span>
+   636→   636→                        <span className="text-[8px] opacity-50">{cat.types.length}</span>
+   637→   637→                        {isExpanded ? <ChevronUp className="w-2.5 h-2.5 opacity-40" /> : <ChevronDown className="w-2.5 h-2.5 opacity-40" />}
+   638→   638→                      </button>
+   639→   639→                      {(isExpanded || isActiveCat) && (
+   640→   640→                        <div className="ml-3 mt-0.5 space-y-0.5">
+   641→   641→                          {cat.types.map(typeId => {
+   642→   642→                            const info = EXERCISE_TYPES[typeId];
+   643→   643→                            const isSelected = exerciseType === typeId;
+   644→   644→                            return (
+   645→   645→                              <button key={typeId} className={`w-full text-left flex items-center gap-1 text-[9px] py-0.5 px-1.5 rounded-sm transition-all ${isSelected ? 'bg-[rgba(155,57,57,0.12)] text-[#9b3939] font-bold' : 'text-[#4a4a4a] hover:bg-[rgba(139,115,85,0.08)]'}`}
+   646→   646→                                onClick={() => { setExerciseType(typeId); stopPlayback(); setSidebarOpen(false); }}>
+   647→   647→                                <DifficultyBadge level={info.difficulty} />
+   648→   648→                                <span className="flex-1 truncate">{info.name}</span>
+   649→   649→                              </button>
+   650→   650→                            );
+   651→   651→                          })}
+   652→   652→                        </div>
+   653→   653→                      )}
+   654→   654→                    </div>
+   655→   655→                  );
+   656→   656→                })}
+   657→   657→              </div>
+   658→   658→            ))}
+   659→   659→
+   660→   660→            {/* Intervals legend */}
+   661→   661→            <div className="border-t border-[#e8e2d6] pt-2 mt-2">
+   662→   662→              <h4 className="text-[10px] uppercase tracking-[0.12em] text-[#8b7355] font-serif italic font-bold mb-1">Intervals</h4>
+   663→   663→              <div className="flex flex-wrap gap-0.5">
+   664→   664→                {scale.intervalLabels.map((label, idx) => (
+   665→   665→                  <span key={idx} className="inline-flex items-center justify-center px-1.5 py-0.5 text-[9px] font-bold font-serif italic border rounded-sm"
+   666→   666→                    style={{ borderColor: getIntervalColor(label) + '55', color: getIntervalColor(label), backgroundColor: getIntervalColor(label) + '12' }}>{label}</span>
+   667→   667→                ))}
+   668→   668→              </div>
+   669→   669→            </div>
+   670→   670→            {/* Scale notes */}
+   671→   671→            <div className="border-t border-[#e8e2d6] pt-2 mt-1">
+   672→   672→              <h4 className="text-[10px] uppercase tracking-[0.12em] text-[#8b7355] font-serif italic font-bold mb-1">Scale Notes</h4>
+   673→   673→              <div className="flex flex-wrap gap-0.5">
+   674→   674→                {scaleNotes.map((note, idx) => {
+   675→   675→                  const label = scale.intervalLabels[idx]; const color = getIntervalColor(label);
+   676→   676→                  return (
+   677→   677→                    <span key={idx} className="inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[9px] font-serif italic border rounded-sm"
+   678→   678→                      style={{ borderColor: color + '40', color, backgroundColor: color + '08' }}>
+   679→   679→                      <span className="font-bold">{note}</span><span className="opacity-40 text-[8px]">{label}</span>
+   680→   680→                    </span>
+   681→   681→                  );
+   682→   682→                })}
+   683→   683→              </div>
+   684→   684→            </div>
+   685→   685→          </div>
+   686→   686→        </aside>
+   687→   687→
+   688→   688→        {/* ─── CENTER PANEL ─── */}
+   689→   689→        <main className="flex-1 overflow-y-auto min-w-0 pb-[64px]">
+   690→   690→          <div className="p-2.5 lg:p-3 space-y-2">
+   691→   691→
+   692→   692→            {/* Exercise Header (Sticky within center) */}
+   693→   693→            <div className="sticky top-0 z-10 bg-[#faf6ef] border-b-2 border-[#8b7355] -mx-2.5 lg:-mx-3 px-2.5 lg:px-3 pb-2 pt-1">
+   694→   694→              {/* Breadcrumb */}
+   695→   695→              <div className="flex items-center gap-1 text-[9px] text-[#8b7355] font-serif italic mb-0.5">
+   696→   696→                <span>{exerciseCategory.section}</span>
+   697→   697→                <ChevronRight className="w-2 h-2" />
+   698→   698→                <span>{exerciseCategory.label}</span>
+   699→   699→                <ChevronRight className="w-2 h-2" />
+   700→   700→                <span className="text-[#9b3939] font-bold">{exerciseMeta.name}</span>
+   701→   701→              </div>
+   702→   702→              {/* Title + metadata */}
+   703→   703→              <div className="flex items-start justify-between gap-2">
+   704→   704→                <div className="min-w-0">
+   705→   705→                  <div className="flex items-center gap-1.5">
+   706→   706→                    <span className="text-[12px] font-bold text-[#9b3939] font-serif italic truncate">{currentExercise?.name}</span>
+   707→   707→                    <DifficultyBadge level={exerciseMeta.difficulty} />
+   708→   708→                  </div>
+   709→   709→                  <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+   710→   710→                    <span className="text-[9px] text-[#6b5b47] font-serif italic font-semibold">{keyNote} {scale.name} · {showAllPositions ? 'All Pos' : `P${positionIndex + 1}`}</span>
+   711→   711→                    <span className="text-[9px] text-[#b8a88a] font-serif italic">{exerciseMeta.focus}</span>
+   712→   712→                    <span className="text-[9px] text-[#b8a88a] font-serif italic">~{exerciseMeta.estimatedTime}</span>
+   713→   713→                    {isPlaying && playbackActiveNote && (
+   714→   714→                      <span className="text-[9px] text-[#9b3939] font-serif italic font-bold">▸ {playingIdx + 1}/{playbackMode === 'exercise' ? currentExercise.notes.length : scaleNotesForPlayback.length}</span>
+   715→   715→                    )}
+   716→   716→                  </div>
+   717→   717→                </div>
+   718→   718→                {/* Quick actions */}
+   719→   719→                <div className="flex items-center gap-1 shrink-0">
+   720→   720→                  <button className="sketch-btn h-6 px-1 text-[9px] border-[#c4b89c] text-[#8b7355]" onClick={handleRandomize} title="Random"><Shuffle className="w-3 h-3" /></button>
+   721→   721→                </div>
+   722→   722→              </div>
+   723→   723→            </div>
+   724→   724→
+   725→   725→            {/* View Switcher + Inline play */}
+   726→   726→            <div className="flex items-center gap-1">
+   727→   727→              {([
+   728→   728→                { mode: 'fretboard' as ViewMode, icon: Guitar, label: 'Fretboard' },
+   729→   729→                { mode: 'tab' as ViewMode, icon: FileText, label: 'Tab' },
+   730→   730→                { mode: 'hybrid' as ViewMode, icon: Eye, label: 'Hybrid' },
+   731→   731→                { mode: 'analysis' as ViewMode, icon: BarChart3, label: 'Analysis' },
+   732→   732→              ]).map(({ mode, icon: Icon, label }) => (
+   733→   733→                <button key={mode} className={`flex items-center gap-0.5 px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-wider border-2 rounded-sm transition-all ${viewMode === mode ? 'sketch-btn-active border-[#6b5b47] text-[#2c2c2c]' : 'sketch-btn border-[#c4b89c] text-[#8b7355] hover:border-[#8b7355]'}`}
+   734→   734→                  onClick={() => setViewMode(mode)}>
+   735→   735→                  <Icon className="w-2.5 h-2.5" /><span className="hidden sm:inline">{label}</span>
+   736→   736→                </button>
+   737→   737→              ))}
+   738→   738→              <div className="flex-1" />
+   739→   739→              <button className={`px-2 py-1 text-[10px] font-bold flex items-center gap-0.5 border-2 rounded-sm transition-all ${isPlaying && playbackMode === 'exercise' && !isPaused ? 'bg-[#9b3939] text-white border-[#9b3939]' : 'sketch-btn border-[#6b5b47]'}`} onClick={handlePlayExercise}>
+   740→   740→                {isPlaying && playbackMode === 'exercise' && !isPaused ? <Pause className="w-2.5 h-2.5" /> : <Play className="w-2.5 h-2.5" />}
+   741→   741→              </button>
+   742→   742→              <button className={`px-2 py-1 text-[10px] font-bold flex items-center gap-0.5 border-2 rounded-sm transition-all ${isPlaying && playbackMode === 'scale' && !isPaused ? 'bg-[#4a5a8a] text-white border-[#4a5a8a]' : 'sketch-btn border-[#4a5a8a]'}`} onClick={handlePlayScale}>
+   743→   743→                {isPlaying && playbackMode === 'scale' && !isPaused ? <Pause className="w-2.5 h-2.5" /> : <Music className="w-2.5 h-2.5" />}
+   744→   744→              </button>
+   745→   745→              {isPlaying && <button className="px-2 py-1 text-[10px] font-bold flex items-center gap-0.5 border-2 rounded-sm bg-[#4a4a4a] text-white border-[#4a4a4a]" onClick={stopPlayback}><Square className="w-3 h-3" /></button>}
+   746→   746→            </div>
+   747→   747→
+   748→   748→            {/* ─── View Content ─── */}
+   749→   749→
+   750→   750→            {/* Fretboard Only */}
+   751→   751→            {viewMode === 'fretboard' && (
+   752→   752→              <div className="sketch-card bg-[#faf6ef] overflow-hidden">
+   753→   753→                <div className="px-1 py-1 overflow-x-auto">
+   754→   754→                  <FretboardDiagram keyNote={keyNote} scaleId={scaleId} startFret={startFret} endFret={endFret}
+   755→   755→                    showAllPositions={showAllPositions} positionIndex={positionIndex}
+   756→   756→                    highlightNotes={exerciseHighlightNotes}
+   757→   757→                    exercisePath={exercisePath}
+   758→   758→                    activeNote={effectiveActiveNote} onNoteClick={handleFretboardNoteClick}
+   759→   759→                    showPatternLines={true} fullFretboard={true} />
+   760→   760→                </div>
+   761→   761→              </div>
+   762→   762→            )}
+   763→   763→
+   764→   764→            {/* Tab Only */}
+   765→   765→            {viewMode === 'tab' && (
+   766→   766→              <TabNotation exercise={currentExercise} onNoteClick={handleTabNoteClick} playingIdx={playingIdx}
+   767→   767→                isPlaying={isPlaying} isPaused={isPaused} playbackMode={playbackMode}
+   768→   768→                activePlayingNote={playbackActiveNote}
+   769→   769→                onPlayExercise={handlePlayExercise} onPlayScale={handlePlayScale} onPause={togglePausePlayback} onStop={stopPlayback} />
+   770→   770→            )}
+   771→   771→
+   772→   772→            {/* Hybrid — Fretboard + Tab */}
+   773→   773→            {viewMode === 'hybrid' && (
+   774→   774→              <>
+   775→   775→                <div className="sketch-card bg-[#faf6ef] overflow-hidden">
+   776→   776→                  <div className="px-1 py-1 overflow-x-auto">
+   777→   777→                    <FretboardDiagram keyNote={keyNote} scaleId={scaleId} startFret={startFret} endFret={endFret}
+   778→   778→                      showAllPositions={showAllPositions} positionIndex={positionIndex}
+   779→   779→                      highlightNotes={exerciseHighlightNotes}
+   780→   780→                      exercisePath={exercisePath}
+   781→   781→                      activeNote={effectiveActiveNote} onNoteClick={handleFretboardNoteClick}
+   782→   782→                      showPatternLines={true} fullFretboard={true} />
+   783→   783→                  </div>
+   784→   784→                </div>
+   785→   785→                <TabNotation exercise={currentExercise} onNoteClick={handleTabNoteClick} playingIdx={playingIdx}
+   786→   786→                  isPlaying={isPlaying} isPaused={isPaused} playbackMode={playbackMode}
+   787→   787→                  activePlayingNote={playbackActiveNote}
+   788→   788→                  onPlayExercise={handlePlayExercise} onPlayScale={handlePlayScale} onPause={togglePausePlayback} onStop={stopPlayback} />
+   789→   789→              </>
+   790→   790→            )}
+   791→   791→
+   792→   792→            {/* Analysis — Verbose Nerdy Stats */}
+   793→   793→            {viewMode === 'analysis' && (
+   794→   794→              <div className="sketch-card bg-[#faf6ef] p-3 space-y-3">
+   795→   795→                {/* Overview Stats Grid */}
+   796→   796→                <div>
+   797→   797→                  <h3 className="text-[11px] uppercase tracking-[0.15em] text-[#8b7355] font-serif italic font-bold mb-1.5 flex items-center gap-1"><Activity className="w-3 h-3" /> Exercise Overview</h3>
+   798→   798→                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
+   799→   799→                    {[
+   800→   800→                      { label: 'Total Notes', value: exerciseStats.totalNotes, icon: Hash },
+   801→   801→                      { label: 'Fret Range', value: `${exerciseStats.fretRange[0]}–${exerciseStats.fretRange[1]}`, icon: Ruler },
+   802→   802→                      { label: 'String Changes', value: exerciseStats.stringChanges, icon: ArrowRight },
+   803→   803→                      { label: 'Pos. Shifts', value: exerciseStats.positionShifts, icon: Zap },
+   804→   804→                    ].map(({ label, value, icon: Icon }) => (
+   805→   805→                      <div key={label} className="bg-[#f5f0e8] border border-[#e8e2d6] rounded-sm p-1.5">
+   806→   806→                        <div className="flex items-center gap-0.5 text-[9px] text-[#8b7355] font-serif italic uppercase"><Icon className="w-3 h-3" />{label}</div>
+   807→   807→                        <div className="text-[14px] font-bold text-[#2c2c2c] font-serif italic">{value}</div>
+   808→   808→                      </div>
+   809→   809→                    ))}
+   810→   810→                  </div>
+   811→   811→                </div>
+   812→   812→
+   813→   813→                {/* Deep Stats */}
+   814→   814→                <div>
+   815→   815→                  <h3 className="text-[11px] uppercase tracking-[0.15em] text-[#8b7355] font-serif italic font-bold mb-1.5 flex items-center gap-1"><Signal className="w-3.5 h-3.5" /> Detailed Metrics</h3>
+   816→   816→                  <div className="grid grid-cols-3 sm:grid-cols-6 gap-1.5">
+   817→   817→                    {[
+   818→   818→                      { label: 'Avg Jump', value: exerciseStats.avgFretJump },
+   819→   819→                      { label: 'Max Jump', value: exerciseStats.maxFretJump },
+   820→   820→                      { label: 'Strings Used', value: `${exerciseStats.uniqueStrings}/6` },
+   821→   821→                      { label: 'Unique Frets', value: exerciseStats.uniqueFrets },
+   822→   822→                      { label: 'Difficulty', value: `${exerciseStats.difficulty}/5` },
+   823→   823→                      { label: 'Pattern', value: exerciseStats.patternType },
+   824→   824→                    ].map(({ label, value }) => (
+   825→   825→                      <div key={label} className="bg-[#f5f0e8] border border-[#e8e2d6] rounded-sm p-1.5">
+   826→   826→                        <div className="text-[8px] text-[#8b7355] font-serif italic uppercase">{label}</div>
+   827→   827→                        <div className="text-[12px] font-bold text-[#2c2c2c] font-serif italic">{value}</div>
+   828→   828→                      </div>
+   829→   829→                    ))}
+   830→   830→                  </div>
+   831→   831→                </div>
+   832→   832→
+   833→   833→                {/* Interval Distribution */}
+   834→   834→                <div>
+   835→   835→                  <h3 className="text-[11px] uppercase tracking-[0.15em] text-[#8b7355] font-serif italic font-bold mb-1.5">Interval Distribution</h3>
+   836→   836→                  <div className="flex flex-wrap gap-1">
+   837→   837→                    {Object.entries(exerciseStats.intervalDistribution).sort((a, b) => b[1] - a[1]).map(([label, count]) => {
+   838→   838→                      const color = getIntervalColor(label);
+   839→   839→                      const maxCount = Math.max(...Object.values(exerciseStats.intervalDistribution));
+   840→   840→                      const width = Math.max(20, (count / maxCount) * 100);
+   841→   841→                      return (
+   842→   842→                        <div key={label} className="flex items-center gap-1">
+   843→   843→                          <div className="h-3 rounded-sm overflow-hidden" style={{ width: `${width}px`, backgroundColor: color + '20', border: `1px solid ${color}40` }}>
+   844→   844→                            <div className="h-full rounded-sm" style={{ width: `${(count / maxCount) * 100}%`, backgroundColor: color + '60' }} />
+   845→   845→                          </div>
+   846→   846→                          <span className="text-[9px] font-serif italic" style={{ color }}>{label}: <b>{count}</b></span>
+   847→   847→                        </div>
+   848→   848→                      );
+   849→   849→                    })}
+   850→   850→                  </div>
+   851→   851→                </div>
+   852→   852→
+   853→   853→                {/* String Coverage */}
+   854→   854→                <div>
+   855→   855→                  <h3 className="text-[11px] uppercase tracking-[0.15em] text-[#8b7355] font-serif italic font-bold mb-1.5">String Coverage</h3>
+   856→   856→                  <div className="flex gap-1.5">
+   857→   857→                    {['E', 'A', 'D', 'G', 'B', 'e'].map((s, idx) => {
+   858→   858→                      const used = currentExercise.notes.some(n => n.string === idx);
+   859→   859→                      const noteCount = currentExercise.notes.filter(n => n.string === idx).length;
+   860→   860→                      return (
+   861→   861→                        <div key={s} className={`flex flex-col items-center w-8 rounded-sm border-2 p-1 ${used ? 'border-[#8b7355] bg-[rgba(139,115,85,0.1)]' : 'border-[#e8e2d6]'}`}>
+   862→   862→                          <span className={`text-[11px] font-bold font-serif italic ${used ? 'text-[#4a4a4a]' : 'text-[#c4b89c]'}`}>{s}</span>
+   863→   863→                          {used && <span className="text-[8px] text-[#8b7355] font-serif italic">{noteCount}n</span>}
+   864→   864→                        </div>
+   865→   865→                      );
+   866→   866→                    })}
+   867→   867→                  </div>
+   868→   868→                </div>
+   869→   869→
+   870→   870→                {/* Scale Formula */}
+   871→   871→                <div>
+   872→   872→                  <h3 className="text-[11px] uppercase tracking-[0.15em] text-[#8b7355] font-serif italic font-bold mb-1.5">Scale Formula</h3>
+   873→   873→                  <div className="flex flex-wrap gap-1 mb-1">
+   874→   874→                    {scaleNotes.map((note, idx) => {
+   875→   875→                      const label = scale.intervalLabels[idx]; const color = getIntervalColor(label);
+   876→   876→                      return (
+   877→   877→                        <span key={idx} className="inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[10px] font-serif italic border rounded-sm"
+   878→   878→                          style={{ borderColor: color + '50', color, backgroundColor: color + '0a' }}>
+   879→   879→                          <span className="font-bold">{note}</span><span className="opacity-50 text-[8px]">{label}</span>
+   880→   880→                        </span>
+   881→   881→                      );
+   882→   882→                    })}
+   883→   883→                  </div>
+   884→   884→                  <p className="text-[9px] text-[#8b7355] font-serif italic">
+   885→   885→                    Steps: {scale.intervals.slice(1).map((interval, idx) => {
+   886→   886→                      const prevInterval = idx === 0 ? 0 : scale.intervals[idx]; const step = interval - prevInterval;
+   887→   887→                      return step === 1 ? 'H' : step === 2 ? 'W' : `${step}H`;
+   888→   888→                    }).join(' − ')}
+   889→   889→                  </p>
+   890→   890→                </div>
+   891→   891→
+   892→   892→                {/* Picking Direction */}
+   893→   893→                <div>
+   894→   894→                  <h3 className="text-[11px] uppercase tracking-[0.15em] text-[#8b7355] font-serif italic font-bold mb-1.5">Suggested Picking</h3>
+   895→   895→                  <div className="flex flex-wrap gap-px">
+   896→   896→                    {exerciseStats.pickingDirection.slice(0, 40).map((dir, idx) => (
+   897→   897→                      <span key={idx} className={`w-4 h-4 rounded-sm flex items-center justify-center text-[8px] font-bold border ${
+   898→   898→                        dir === 'D' ? 'border-[#4a7a4a] text-[#4a7a4a] bg-[rgba(74,122,74,0.06)]' : 'border-[#4a5a8a] text-[#4a5a8a] bg-[rgba(74,90,138,0.06)]'
+   899→   899→                      }`}>{dir}</span>
+   900→   900→                    ))}
+   901→   901→                    {exerciseStats.pickingDirection.length > 40 && <span className="text-[8px] text-[#8b7355] font-serif italic ml-0.5">+{exerciseStats.pickingDirection.length - 40}</span>}
+   902→   902→                  </div>
+   903→   903→                  <div className="flex items-center gap-3 mt-0.5">
+   904→   904→                    <span className="text-[8px] text-[#4a7a4a] font-serif italic">D = Downstroke</span>
+   905→   905→                    <span className="text-[8px] text-[#4a5a8a] font-serif italic">U = Upstroke</span>
+   906→   906→                  </div>
+   907→   907→                </div>
+   908→   908→
+   909→   909→                {/* Exercise Metadata */}
+   910→   910→                <div>
+   911→   911→                  <h3 className="text-[11px] uppercase tracking-[0.15em] text-[#8b7355] font-serif italic font-bold mb-1.5 flex items-center gap-1"><Clock className="w-3.5 h-3.5" /> Exercise Info</h3>
+   912→   912→                  <div className="bg-[#f5f0e8] border border-[#e8e2d6] rounded-sm p-2 space-y-1">
+   913→   913→                    <div className="grid grid-cols-2 gap-x-4 gap-y-0.5">
+   914→   914→                      <div className="flex justify-between text-[9px]"><span className="text-[#8b7355] font-serif italic">Focus</span><span className="text-[#4a4a4a] font-bold">{exerciseMeta.focus}</span></div>
+   915→   915→                      <div className="flex justify-between text-[9px]"><span className="text-[#8b7355] font-serif italic">Duration</span><span className="text-[#4a4a4a] font-bold">{exerciseMeta.estimatedTime}</span></div>
+   916→   916→                      <div className="flex justify-between text-[9px]"><span className="text-[#8b7355] font-serif italic">Position</span><span className="text-[#4a4a4a] font-bold">{showAllPositions ? 'All' : `P${positionIndex + 1}`} ({currentPosition.fretStart}–{currentPosition.fretEnd})</span></div>
+   917→   917→                      <div className="flex justify-between text-[9px]"><span className="text-[#8b7355] font-serif italic">Category</span><span className="text-[#4a4a4a] font-bold">{exerciseStats.patternType}</span></div>
+   918→   918→                      <div className="flex justify-between text-[9px]"><span className="text-[#8b7355] font-serif italic">Notes</span><span className="text-[#4a4a4a] font-bold">{exerciseStats.totalNotes}</span></div>
+   919→   919→                      <div className="flex justify-between text-[9px]"><span className="text-[#8b7355] font-serif italic">Fret Span</span><span className="text-[#4a4a4a] font-bold">{exerciseStats.fretRange[1] - exerciseStats.fretRange[0] + 1} frets</span></div>
+   920→   920→                    </div>
+   921→   921→                    <div className="flex flex-wrap gap-0.5 pt-1 border-t border-[#e8e2d6]">
+   922→   922→                      {exerciseMeta.tags.map(tag => (
+   923→   923→                        <span key={tag} className="px-1.5 py-0.5 text-[8px] font-serif italic bg-[rgba(139,115,85,0.08)] text-[#6b5b47] border border-[#e8e2d6] rounded-sm">{tag}</span>
+   924→   924→                      ))}
+   925→   925→                    </div>
+   926→   926→                    <p className="text-[9px] text-[#4a4a4a] font-serif italic pt-1 border-t border-[#e8e2d6]">
+   927→   927→                      {exerciseStats.positionShifts > 0 ? 'Contains position shifts — practice slowly, focus on smooth transitions.' :
+   928→   928→                        exerciseStats.stringChanges > exerciseStats.totalNotes * 0.6 ? 'High string-crossing density — keep picking hand relaxed, use efficient alternate picking.' :
+   929→   929→                        'Focus on clean articulation and consistent timing with the metronome.'}
+   930→   930→                    </p>
+   931→   931→                  </div>
+   932→   932→                </div>
+   933→   933→              </div>
+   934→   934→            )}
+   935→   935→
+   936→   936→            {/* Mobile: Explorer section */}
+   937→   937→            <div className="xl:hidden">
+   938→   938→              <button className="w-full sketch-card bg-[#faf6ef] px-2 py-1 flex items-center justify-between"
+   939→   939→                onClick={() => setRightPanelExpanded(!rightPanelExpanded)}>
+   940→   940→                <span className="text-[10px] uppercase tracking-[0.12em] text-[#8b7355] font-serif italic font-bold">Scale Explorer</span>
+   941→   941→                {rightPanelExpanded ? <ChevronUp className="w-2.5 h-2.5 text-[#8b7355]" /> : <ChevronDown className="w-2.5 h-2.5 text-[#8b7355]" />}
+   942→   942→              </button>
+   943→   943→              {rightPanelExpanded && (
+   944→   944→                <div className="mt-1.5">
+   945→   945→                  <div className="sketch-card bg-[#faf6ef] p-2">
+   946→   946→                    <h4 className="text-[10px] uppercase tracking-[0.12em] text-[#8b7355] font-serif italic font-bold mb-1.5">CAGED Positions</h4>
+   947→   947→                    <div className="grid grid-cols-5 gap-1.5">
+   948→   948→                      {patternExercises.map((pat) => (
+   949→   949→                        <button key={pat.position} onClick={() => handlePatternClick(pat.position - 1)} className="text-left">
+   950→   950→                          <PatternDiagram keyNote={keyNote} scaleId={scaleId} fretStart={pat.fretStart} fretEnd={pat.fretEnd}
+   951→   951→                            positionNumber={pat.position} exerciseNotes={pat.notes}
+   952→   952→                            selected={positionIndex === pat.position - 1 && !showAllPositions} />
+   953→   953→                        </button>
+   954→   954→                      ))}
+   955→   955→                    </div>
+   956→   956→                  </div>
+   957→   957→                </div>
+   958→   958→              )}
+   959→   959→            </div>
+   960→   960→          </div>
+   961→   961→        </main>
+   962→   962→
+   963→   963→        {/* ─── RIGHT SIDEBAR ─── */}
+   964→   964→        <aside className="hidden xl:block w-[280px] shrink-0 border-l-2 border-[#8b7355] bg-[#faf6ef] overflow-y-auto">
+   965→   965→          <div className="p-2.5 pb-16 space-y-2.5">
+   966→   966→
+   967→   967→            {/* Card 1: Current Scale */}
+   968→   968→            <div className="sketch-card bg-[#f5f0e8] p-2.5">
+   969→   969→              <h4 className="text-[10px] uppercase tracking-[0.12em] text-[#8b7355] font-serif italic font-bold mb-1.5">Current Scale</h4>
+   970→   970→              <div className="text-[13px] font-bold text-[#9b3939] font-serif italic mb-1">{keyNote} {scale.name}</div>
+   971→   971→              <div className="flex flex-wrap gap-0.5 mb-1.5">
+   972→   972→                {scaleNotes.map((note, idx) => {
+   973→   973→                  const label = scale.intervalLabels[idx]; const color = getIntervalColor(label);
+   974→   974→                  return <span key={idx} className="inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[9px] font-serif italic border rounded-sm"
+   975→   975→                    style={{ borderColor: color + '40', color, backgroundColor: color + '08' }}>
+   976→   976→                    <span className="font-bold">{note}</span><span className="opacity-40 text-[8px]">{label}</span>
+   977→   977→                  </span>;
+   978→   978→                })}
+   979→   979→              </div>
+   980→   980→              <p className="text-[8px] text-[#8b7355] font-serif italic">{scale.intervals.length} notes · Steps: {scale.intervals.slice(1).map((interval, idx) => {
+   981→   981→                const prevInterval = idx === 0 ? 0 : scale.intervals[idx]; const step = interval - prevInterval;
+   982→   982→                return step === 1 ? 'H' : step === 2 ? 'W' : `${step}H`;
+   983→   983→              }).join('−')}</p>
+   984→   984→            </div>
+   985→   985→
+   986→   986→            {/* Card 2: Current Position */}
+   987→   987→            <div className="sketch-card bg-[#f5f0e8] p-2.5">
+   988→   988→              <h4 className="text-[10px] uppercase tracking-[0.12em] text-[#8b7355] font-serif italic font-bold mb-1.5">Current Position</h4>
+   989→   989→              <div className="space-y-1.5">
+   990→   990→                {patternExercises.map((pat) => (
+   991→   991→                  <button key={pat.position} onClick={() => handlePatternClick(pat.position - 1)} className="w-full text-left">
+   992→   992→                    <PatternDiagram keyNote={keyNote} scaleId={scaleId} fretStart={pat.fretStart} fretEnd={pat.fretEnd}
+   993→   993→                      positionNumber={pat.position} exerciseNotes={pat.notes}
+   994→   994→                      selected={positionIndex === pat.position - 1 && !showAllPositions} />
+   995→   995→                  </button>
+   996→   996→                ))}
+   997→   997→              </div>
+   998→   998→            </div>
+   999→   999→
+  1000→  1000→            {/* Card 3: Related Exercises */}
+  1001→  1001→            <div className="sketch-card bg-[#f5f0e8] p-2.5">
+  1002→  1002→              <h4 className="text-[10px] uppercase tracking-[0.12em] text-[#8b7355] font-serif italic font-bold mb-1.5">Related Exercises</h4>
+  1003→  1003→              <div className="space-y-0.5">
+  1004→  1004→                {exerciseCategory.types.filter(t => t !== exerciseType).slice(0, 5).map(typeId => {
+  1005→  1005→                  const info = EXERCISE_TYPES[typeId];
+  1006→  1006→                  return (
+  1007→  1007→                    <button key={typeId} className="w-full text-left flex items-center gap-1 px-1.5 py-1 rounded-sm text-[9px] text-[#4a4a4a] hover:bg-[rgba(139,115,85,0.08)] transition-all"
+  1008→  1008→                      onClick={() => { setExerciseType(typeId); stopPlayback(); }}>
+  1009→  1009→                      <ArrowRight className="w-2 h-2 text-[#8b7355] shrink-0" />
+  1010→  1010→                      <div className="flex-1 min-w-0">
+  1011→  1011→                        <span className="font-serif italic">{info.name}</span>
+  1012→  1012→                        <span className="text-[8px] text-[#8b7355] ml-1">{info.focus}</span>
+  1013→  1013→                      </div>
+  1014→  1014→                      <DifficultyBadge level={info.difficulty} />
+  1015→  1015→                    </button>
+  1016→  1016→                  );
+  1017→  1017→                })}
+  1018→  1018→              </div>
+  1019→  1019→            </div>
+  1020→  1020→
+  1021→  1021→            {/* Card 4: Next Suggested */}
+  1022→  1022→            <div className="sketch-card bg-[#f5f0e8] p-2.5">
+  1023→  1023→              <h4 className="text-[10px] uppercase tracking-[0.12em] text-[#8b7355] font-serif italic font-bold mb-1.5">Suggested Next</h4>
+  1024→  1024→              {(() => {
+  1025→  1025→                const currentIdx = exerciseCategory.types.indexOf(exerciseType);
+  1026→  1026→                const nextType = currentIdx >= 0 && currentIdx < exerciseCategory.types.length - 1 ? exerciseCategory.types[currentIdx + 1] : null;
+  1027→  1027→                const nextMeta = nextType ? EXERCISE_TYPES[nextType] : null;
+  1028→  1028→                if (!nextType || !nextMeta) return <p className="text-[9px] text-[#b8a88a] font-serif italic">Complete!</p>;
+  1029→  1029→                return (
+  1030→  1030→                  <button className="w-full text-left bg-[rgba(155,57,57,0.05)] border border-[#9b393930] rounded-sm p-1.5 hover:bg-[rgba(155,57,57,0.1)] transition-all"
+  1031→  1031→                    onClick={() => { setExerciseType(nextType); stopPlayback(); }}>
+  1032→  1032→                    <div className="flex items-center gap-1">
+  1033→  1033→                      <Play className="w-2.5 h-2.5 text-[#9b3939]" />
+  1034→  1034→                      <span className="text-[10px] font-bold text-[#9b3939] font-serif italic">{nextMeta.name}</span>
+  1035→  1035→                    </div>
+  1036→  1036→                    <p className="text-[8px] text-[#8b7355] font-serif italic mt-0.5">{nextMeta.description} · {nextMeta.focus}</p>
+  1037→  1037→                  </button>
+  1038→  1038→                );
+  1039→  1039→              })()}
+  1040→  1040→            </div>
+  1041→  1041→
+  1042→  1042→            {/* Card 5: Session */}
+  1043→  1043→            <div className="sketch-card bg-[#f5f0e8] p-2.5">
+  1044→  1044→              <h4 className="text-[10px] uppercase tracking-[0.12em] text-[#8b7355] font-serif italic font-bold mb-1.5 flex items-center gap-1"><Clock className="w-3 h-3" /> Session</h4>
+  1045→  1045→              <div className="grid grid-cols-2 gap-1.5">
+  1046→  1046→                <div><div className="text-[8px] text-[#8b7355] font-serif italic uppercase">Time</div><div className="text-[13px] font-bold text-[#2c2c2c] font-mono">{formatTime(sessionElapsed)}</div></div>
+  1047→  1047→                <div><div className="text-[8px] text-[#8b7355] font-serif italic uppercase">Played</div><div className="text-[13px] font-bold text-[#2c2c2c] font-mono">{exercisesPlayed}</div></div>
+  1048→  1048→                <div><div className="text-[8px] text-[#8b7355] font-serif italic uppercase">Tempo</div><div className="text-[13px] font-bold text-[#2c2c2c] font-mono">{bpm}</div></div>
+  1049→  1049→                <div><div className="text-[8px] text-[#8b7355] font-serif italic uppercase">Library</div><div className="text-[13px] font-bold text-[#2c2c2c] font-mono">{Object.keys(EXERCISE_TYPES).length}</div></div>
+  1050→  1050→              </div>
+  1051→  1051→            </div>
+  1052→  1052→          </div>
+  1053→  1053→        </aside>
+  1054→  1054→      </div>
+  1055→  1055→
+  1056→  1056→      {/* ═══ BOTTOM STICKY PRACTICE BAR ═══ */}
+  1057→  1057→      <div className="fixed bottom-0 left-0 right-0 z-40 border-t-2 border-[#8b7355] bg-[#faf6ef]">
+  1058→  1058→        <div className="px-2.5 py-1.5 flex items-center gap-2">
+  1059→  1059→
+  1060→  1060→          {/* TRANSPORT */}
+  1061→  1061→          <div className="flex items-center gap-1 shrink-0">
+  1062→  1062→            <button className={`w-7 h-7 flex items-center justify-center border-2 rounded-sm transition-all ${isPlaying && playbackMode === 'exercise' && !isPaused ? 'bg-[#9b3939] text-white border-[#9b3939]' : 'sketch-btn border-[#6b5b47]'}`}
+  1063→  1063→              onClick={handlePlayExercise} title="Play exercise">
+  1064→  1064→              {isPlaying && playbackMode === 'exercise' && !isPaused ? <Pause className="w-3 h-3" /> : <Play className="w-3 h-3" />}
+  1065→  1065→            </button>
+  1066→  1066→            <button className={`w-7 h-7 flex items-center justify-center border-2 rounded-sm transition-all ${isPlaying && playbackMode === 'scale' && !isPaused ? 'bg-[#4a5a8a] text-white border-[#4a5a8a]' : 'sketch-btn border-[#4a5a8a]'}`}
+  1067→  1067→              onClick={handlePlayScale} title="Play scale">
+  1068→  1068→              {isPlaying && playbackMode === 'scale' && !isPaused ? <Pause className="w-3 h-3" /> : <Music className="w-3 h-3" />}
+  1069→  1069→            </button>
+  1070→  1070→            {isPlaying && <button className="w-7 h-7 flex items-center justify-center border-2 rounded-sm bg-[#4a4a4a] text-white border-[#4a4a4a]" onClick={stopPlayback}><Square className="w-3 h-3" /></button>}
+  1071→  1071→          </div>
+  1072→  1072→
+  1073→  1073→          <div className="w-px h-5 bg-[#e8e2d6]" />
+  1074→  1074→
+  1075→  1075→          {/* TEMPO */}
+  1076→  1076→          <div className="flex items-center gap-1 min-w-0">
+  1077→  1077→            <div className="flex items-center gap-0.5 shrink-0">
+  1078→  1078→              <Timer className="w-2.5 h-2.5 text-[#8b7355]" />
+  1079→  1079→              <button className="sketch-btn w-5 h-5 flex items-center justify-center border-[#c4b89c] p-0 text-[10px] font-bold" onClick={() => setBpm(Math.max(40, bpm - 1))} title="-1 BPM">−</button>
+  1080→  1080→              <span className="text-[13px] font-mono font-bold text-[#4a4a4a] w-7 text-center">{bpm}</span>
+  1081→  1081→              <button className="sketch-btn w-5 h-5 flex items-center justify-center border-[#c4b89c] p-0 text-[10px] font-bold" onClick={() => setBpm(Math.min(220, bpm + 1))} title="+1 BPM">+</button>
+  1082→  1082→              <span className="text-[9px] text-[#8b7355] font-serif italic hidden sm:inline">BPM</span>
+  1083→  1083→            </div>
+  1084→  1084→            <input type="range" min={40} max={220} step={1} value={bpm} onChange={e => setBpm(Number(e.target.value))}
+  1085→  1085→              className="w-12 sm:w-18 h-1 cursor-pointer" style={{ accentColor: '#8b7355' }} />
+  1086→  1086→            <div className="hidden md:flex items-center gap-px overflow-x-auto max-w-[240px]">
+  1087→  1087→              {bpmPresets.map(preset => (
+  1088→  1088→                <button key={preset} className={`text-[8px] px-1 py-0.5 border rounded-sm transition-all whitespace-nowrap ${bpm === preset ? 'sketch-btn-active border-[#6b5b47]' : 'sketch-btn border-[#c4b89c] hover:border-[#8b7355]'}`}
+  1089→  1089→                  onClick={() => setBpm(preset)}>{preset}</button>
+  1090→  1090→              ))}
+  1091→  1091→            </div>
+  1092→  1092→            <button className="sketch-btn text-[9px] px-1.5 py-0.5 border-[#8b7355] text-[#6b5b47] font-semibold hidden sm:block" onClick={handleTapTempo}>TAP</button>
+  1093→  1093→          </div>
+  1094→  1094→
+  1095→  1095→          <div className="w-px h-5 bg-[#e8e2d6]" />
+  1096→  1096→
+  1097→  1097→          {/* METRONOME */}
+  1098→  1098→          <div className="flex items-center gap-1.5 shrink-0">
+  1099→  1099→            <button className={`px-2 py-1 text-[10px] font-bold flex items-center gap-0.5 border-2 rounded-sm transition-all ${metronomeOn ? 'bg-[#9b3939] text-white border-[#9b3939]' : 'sketch-btn border-[#6b5b47]'}`}
+  1100→  1100→              onClick={toggleMetronome}>
+  1101→  1101→              <Drum className="w-2.5 h-2.5" />
+  1102→  1102→              <span className="hidden sm:inline">{metronomeOn ? 'STOP' : 'MET'}</span>
+  1103→  1103→            </button>
+  1104→  1104→            <div className="hidden sm:flex items-center gap-0.5">
+  1105→  1105→              {Array.from({ length: timeSignature }, (_, i) => (
+  1106→  1106→                <div key={i} className={`w-2.5 h-2.5 rounded-full border-2 transition-all duration-75 ${metronomeOn && currentBeat === i ? 'bg-[#9b3939] border-[#9b3939] scale-110' : 'bg-transparent border-[#c4b89c]'}`} />
+  1107→  1107→              ))}
+  1108→  1108→            </div>
+  1109→  1109→            <div className="hidden md:flex gap-0.5">
+  1110→  1110→              {[3, 4, 5, 6].map(ts => (
+  1111→  1111→                <button key={ts} className={`text-[9px] px-1 py-0.5 border rounded-sm transition-all ${timeSignature === ts ? 'sketch-btn-active border-[#6b5b47]' : 'sketch-btn border-[#c4b89c] hover:border-[#8b7355]'}`}
+  1112→  1112→                  onClick={() => setTimeSignature(ts)}>{ts}/4</button>
+  1113→  1113→              ))}
+  1114→  1114→            </div>
+  1115→  1115→          </div>
+  1116→  1116→
+  1117→  1117→          <div className="flex-1" />
+  1118→  1118→
+  1119→  1119→          {/* SESSION */}
+  1120→  1120→          <div className="hidden sm:flex items-center gap-2 shrink-0">
+  1121→  1121→            <div className="text-right">
+  1122→  1122→              <div className="text-[10px] text-[#8b7355] font-serif italic leading-none">Session</div>
+  1123→  1123→              <div className="text-[12px] font-mono font-bold text-[#4a4a4a]">{formatTime(sessionElapsed)}</div>
+  1124→  1124→            </div>
+  1125→  1125→            <div className="text-right">
+  1126→  1126→              <div className="text-[10px] text-[#8b7355] font-serif italic leading-none">Played</div>
+  1127→  1127→              <div className="text-[12px] font-mono font-bold text-[#4a4a4a]">{exercisesPlayed}</div>
+  1128→  1128→            </div>
+  1129→  1129→          </div>
+  1130→  1130→
+  1131→  1131→          {/* Playback status */}
+  1132→  1132→          {isPlaying && (
+  1133→  1133→            <div className="hidden md:flex items-center gap-0.5 shrink-0">
+  1134→  1134→              <span className="text-[9px] text-[#9b3939] font-serif italic font-bold">{playbackMode === 'exercise' ? 'EX' : 'SC'}</span>
+  1135→  1135→              <span className="text-[9px] text-[#4a4a4a] font-mono">{playingIdx + 1}/{playbackMode === 'exercise' ? currentExercise.notes.length : scaleNotesForPlayback.length}</span>
+  1136→  1136→            </div>
+  1137→  1137→          )}
+  1138→  1138→
+  1139→  1139→          {/* Mobile scale selector */}
+  1140→  1140→          <div className="md:hidden shrink-0">
+  1141→  1141→            <Select value={scaleId} onValueChange={(v) => { setScaleId(v); setPositionIndex(0); stopPlayback(); }}>
+  1142→  1142→              <SelectTrigger className="bg-[#f5f0e8] border-[#c4b89c] text-[10px] rounded-sm h-6 w-[110px]"><SelectValue /></SelectTrigger>
+  1143→  1143→              <SelectContent className="bg-[#faf6ef] border-[#c4b89c]">
+  1144→  1144→                {Object.entries(SCALES).map(([id, s]) => (<SelectItem key={id} value={id} className="text-[10px] text-[#2c2c2c]">{s.name}</SelectItem>))}
+  1145→  1145→              </SelectContent>
+  1146→  1146→            </Select>
+  1147→  1147→          </div>
+  1148→  1148→        </div>
+  1149→  1149→      </div>
+  1150→  1150→    </div>
+  1151→  1151→  );
+  1152→  1152→}
+  1153→  1153→
