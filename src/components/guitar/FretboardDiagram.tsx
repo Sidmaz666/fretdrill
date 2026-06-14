@@ -85,7 +85,7 @@ export default function FretboardDiagram({
   }, [keyNote, scaleId, effectiveStartFret, effectiveEndFret]);
 
   const fretRange = effectiveEndFret - effectiveStartFret;
-  const stringLabels = ['E', 'A', 'D', 'G', 'B', 'e'];
+  const stringLabels = ['e', 'B', 'G', 'D', 'A', 'E'];
 
   const ss = compact ? COMPACT_STRING_SPACING : FULL_STRING_SPACING;
   const fs = compact ? COMPACT_FRET_SPACING : FULL_FRET_SPACING;
