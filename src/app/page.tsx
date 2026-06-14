@@ -2036,7 +2036,7 @@ export default function Home() {
                 </div>
                 <div className="bg-[#f5f0e8] rounded border border-[#c4b89c] p-3">
                   <h3 className="font-bold text-[11px] uppercase tracking-wider text-[#8b7355] mb-1">Step 4: Pick an Exercise</h3>
-                  <p className="text-[12px]">Browse the <strong>Exercise Library</strong> in the left sidebar. With 174+ exercise types across 30 categories, you will find exercises for every skill level and focus area. Click any exercise to see it visualized on the fretboard with tab notation and detailed stats.</p>
+                  <p className="text-[12px]">Browse the <strong>Exercise Library</strong> in the left sidebar. With 232+ exercise types across 43 categories and 700+ variations, you will find exercises for every skill level and focus area — from complete beginner chromatic warmups to advanced modal runs and odd groupings. Click any exercise to see it visualized on the fretboard with tab notation and detailed stats.</p>
                 </div>
                 <div className="bg-[#f5f0e8] rounded border border-[#c4b89c] p-3">
                   <h3 className="font-bold text-[11px] uppercase tracking-wider text-[#8b7355] mb-1">Step 5: Play Along</h3>
@@ -2134,7 +2134,7 @@ export default function Home() {
               <h2 className="text-base font-bold text-[#9b3939] mb-3 flex items-center gap-2" style={{ fontFamily: "'Georgia', serif", fontStyle: 'italic' }}>
                 <FileText className="w-4 h-4" /> Exercise Library — Complete Reference
               </h2>
-              <p className="mb-3">FretBoard Forge includes 174+ exercise types organized into 30+ categories across four sections. Every exercise is dynamically generated based on your selected key, scale, and position. Here is a complete breakdown:</p>
+              <p className="mb-3">FretBoard Forge includes 232+ exercise types organized into 43+ categories across four sections, with over 700+ variations. Every exercise is dynamically generated based on your selected key, scale, and position. This is one of the most comprehensive guitar exercise libraries available anywhere. Here is a complete breakdown:</p>
 
               <div className="space-y-4">
                 <div>
@@ -2169,8 +2169,16 @@ export default function Home() {
                       <p className="text-[10px] text-[#4a4a4a]">2NPS, 4NPS, Offset Runs, Spiral Patterns, Box Run Connections. Different note-per-string approaches change how you navigate the fretboard and open new melodic possibilities.</p>
                     </div>
                     <div className="bg-[#f5f0e8] rounded border border-[#c4b89c] p-2">
-                      <h4 className="font-bold text-[11px] text-[#6b5b47]">Blues (3 types)</h4>
-                      <p className="text-[10px] text-[#4a4a4a]">Blues Lick 1, Blues Lick 2, Blues Turnaround. Essential vocabulary for blues and rock playing. Turnarounds are the signature move that signals the end of a 12-bar blues progression.</p>
+                      <h4 className="font-bold text-[11px] text-[#6b5b47]">Blues (7 types)</h4>
+                      <p className="text-[10px] text-[#4a4a4a]">Blues Lick 1, Blues Lick 2, Blues Turnaround, Blues Shuffle, Blues Bend Lick, Blues Rake, Blues Grace Notes. Essential vocabulary for blues and rock playing. The shuffle pattern is the backbone of blues rhythm. Turnarounds are the signature move that signals the end of a 12-bar progression. Rakes and grace notes add authentic blues expression.</p>
+                    </div>
+                    <div className="bg-[#f5f0e8] rounded border border-[#c4b89c] p-2">
+                      <h4 className="font-bold text-[11px] text-[#6b5b47]">Open String Exercises (4 types)</h4>
+                      <p className="text-[10px] text-[#4a4a4a]">Alternate Picking Across Open Strings, Open + Fretted Combo, Open String Bass Run, Open String Arpeggio. Open string exercises develop picking hand coordination, teach the relationship between open and fretted notes, and build fingerstyle arpeggiation skills. Great for beginners and essential for fingerstyle players.</p>
+                    </div>
+                    <div className="bg-[#f5f0e8] rounded border border-[#c4b89c] p-2">
+                      <h4 className="font-bold text-[11px] text-[#6b5b47]">Chord Exercises (5 types)</h4>
+                      <p className="text-[10px] text-[#4a4a4a]">Triad Chords Ascending/Descending, Power Fifth Shapes, Shell Voicing Comping, Barre Chord Drill. Chord exercises bridge the gap between single-note playing and rhythm guitar. Power chords are the foundation of rock, shell voicings are essential for jazz comping, and barre drills build hand strength and chord vocabulary.</p>
                     </div>
                   </div>
                 </div>
@@ -2226,6 +2234,22 @@ export default function Home() {
                       <h4 className="font-bold text-[11px] text-[#6b5b47]">Speed and Agility (3 types)</h4>
                       <p className="text-[10px] text-[#4a4a4a]">Speed Ladder, 16th Note Speed Bursts, Triplet Speed Runs. Designed specifically to push your maximum tempo higher with structured progressive exercises.</p>
                     </div>
+                    <div className="bg-[#f5f0e8] rounded border border-[#c4b89c] p-2">
+                      <h4 className="font-bold text-[11px] text-[#6b5b47]">Finger Independence Drills (6 types)</h4>
+                      <p className="text-[10px] text-[#4a4a4a]">1-2-1-3, 1-2-1-4, 1-3-1-4, 2-1-2-3, 2-1-2-4, 3-1-3-2 Drill. These alternating finger pair exercises specifically target the independence between each finger combination. They isolate problem pairs like ring-pinky and middle-ring that most guitarists struggle with.</p>
+                    </div>
+                    <div className="bg-[#f5f0e8] rounded border border-[#c4b89c] p-2">
+                      <h4 className="font-bold text-[11px] text-[#6b5b47]">Slide Exercises (3 types)</h4>
+                      <p className="text-[10px] text-[#4a4a4a]">Slide Up 1 Fret, Slide Up 2 Frets, Slide Down 1 Fret. Slides are one of the most expressive legato techniques on guitar. These exercises develop precise sliding technique with accurate target note arrival.</p>
+                    </div>
+                    <div className="bg-[#f5f0e8] rounded border border-[#c4b89c] p-2">
+                      <h4 className="font-bold text-[11px] text-[#6b5b47]">Picking Drills (4 types)</h4>
+                      <p className="text-[10px] text-[#4a4a4a]">Alternate Picking 1 String, Alternate Picking 2 Strings, Sweep Pick Drill, Cross Picking Drill. Isolated picking exercises that target specific picking mechanics. The single-string drill builds raw speed, cross-picking develops bluegrass vocabulary, and sweep drills form the foundation for arpeggio technique.</p>
+                    </div>
+                    <div className="bg-[#f5f0e8] rounded border border-[#c4b89c] p-2">
+                      <h4 className="font-bold text-[11px] text-[#6b5b47]">Tremolo and Trill (3 types)</h4>
+                      <p className="text-[10px] text-[#4a4a4a]">Single String Tremolo, Chord Tremolo, Trill Speed Drill. Tremolo technique is essential for classical and flamenco playing. The trill drill builds the rapid hammer-pull speed that makes legato passages effortless.</p>
+                    </div>
                   </div>
                 </div>
 
@@ -2256,6 +2280,18 @@ export default function Home() {
                       <h4 className="font-bold text-[11px] text-[#6b5b47]">Fretboard Navigation (8 types)</h4>
                       <p className="text-[10px] text-[#4a4a4a]">Note Finder, Octave Drill, Unison Drill, Interval Matrix, CAGED Shapes, Note Triplets, Relative Note Finding, Fretboard Mapping. These drills build deep fretboard knowledge that makes everything easier.</p>
                     </div>
+                    <div className="bg-[#f5f0e8] rounded border border-[#c4b89c] p-2">
+                      <h4 className="font-bold text-[11px] text-[#6b5b47]">Advanced String Skipping (4 types)</h4>
+                      <p className="text-[10px] text-[#4a4a4a]">Skip 3rd String, Skip 4th String, Octave String Skip, Scale String Skip. Advanced string skipping exercises that push beyond basic skipping patterns. Octave skips develop your ear for intervals across wide distances, while scale skipping patterns build true fretboard freedom.</p>
+                    </div>
+                    <div className="bg-[#f5f0e8] rounded border border-[#c4b89c] p-2">
+                      <h4 className="font-bold text-[11px] text-[#6b5b47]">Modal Exercises (4 types)</h4>
+                      <p className="text-[10px] text-[#4a4a4a]">Dorian Modal Run, Mixolydian Modal Run, Lydian Modal Run, Phrygian Modal Run. Each modal run emphasizes the characteristic note that defines that mode — the natural 6th in Dorian, the flat 7th in Mixolydian, the sharp 4th in Lydian, and the flat 2nd in Phrygian. Understanding modes is essential for improvising over chord changes.</p>
+                    </div>
+                    <div className="bg-[#f5f0e8] rounded border border-[#c4b89c] p-2">
+                      <h4 className="font-bold text-[11px] text-[#6b5b47]">Odd Groupings (4 types)</h4>
+                      <p className="text-[10px] text-[#4a4a4a]">5-Note Groupings, 7-Note Groupings, 9-Note Groupings, Rhythmic Displacement. Playing in groups of 5, 7, or 9 against a 4/4 beat creates fascinating rhythmic tension and release. Rhythmic displacement shifts the same phrase to start on different beats, creating entirely new musical feels from the same notes. These are advanced concepts used by virtuoso players like John McLaughlin and Allan Holdsworth.</p>
+                    </div>
                   </div>
                 </div>
 
@@ -2267,12 +2303,16 @@ export default function Home() {
                       <p className="text-[10px] text-[#4a4a4a]">Classic 1-2-3-4, Reverse 4-3-2-1, plus 10 finger permutation patterns (1-3-2-4, 1-4-2-3, 2-4-1-3, 2-3-4-1, 3-1-4-2, 4-1-3-2, 3-2-4-1, and more), descending chromatic warmup, and full-range chromatic runs. These are the most fundamental warmup exercises and should be part of every practice session.</p>
                     </div>
                     <div className="bg-[#f5f0e8] rounded border border-[#c4b89c] p-2">
+                      <h4 className="font-bold text-[11px] text-[#6b5b47]">Complete Chromatic Permutations (14 types)</h4>
+                      <p className="text-[10px] text-[#4a4a4a]">The remaining 14 of all 24 possible permutations of fingers 1-2-3-4: 1-2-4-3, 1-3-4-2, 1-4-3-2, 2-1-3-4, 2-1-4-3, 2-3-1-4, 2-4-3-1, 3-1-2-4, 3-2-1-4, 3-4-1-2, 3-4-2-1, 4-1-2-3, 4-2-1-3, 4-2-3-1. Together with the Chromatic Drills, every single one of the 24 possible finger permutations is covered. No gaps.</p>
+                    </div>
+                    <div className="bg-[#f5f0e8] rounded border border-[#c4b89c] p-2">
                       <h4 className="font-bold text-[11px] text-[#6b5b47]">Warmups (4 types)</h4>
                       <p className="text-[10px] text-[#4a4a4a]">Chromatic Warmup, Spider Warmup, Finger Gym, String Cross Warmup. General warmup exercises to get blood flowing and fingers limber before serious practice.</p>
                     </div>
                     <div className="bg-[#f5f0e8] rounded border border-[#c4b89c] p-2">
-                      <h4 className="font-bold text-[11px] text-[#6b5b47]">Finger Stretch</h4>
-                      <p className="text-[10px] text-[#4a4a4a]">Progressive stretch patterns that build finger independence and reach. Essential for playing wide intervallic leaps and chord voicings.</p>
+                      <h4 className="font-bold text-[11px] text-[#6b5b47]">Finger Stretch (4 types)</h4>
+                      <p className="text-[10px] text-[#4a4a4a]">Progressive stretch patterns plus dedicated 1-4 stretch exercises with 1-fret, 2-fret, and wide stretch variations. These build the finger independence and reach needed for wide intervallic leaps and chord voicings.</p>
                     </div>
                   </div>
                 </div>

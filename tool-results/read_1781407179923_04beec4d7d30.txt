@@ -1,0 +1,502 @@
+   160→   160→  | 'unison-drill'
+   161→   161→  | 'interval-matrix'
+   162→   162→  // Extended Warmups (6)
+   163→   163→  | 'chromatic-1234'
+   164→   164→  | 'chromatic-4321'
+   165→   165→  | 'chromatic-1324'
+   166→   166→  | 'chromatic-1423'
+   167→   167→  | 'chromatic-2413'
+   168→   168→  | 'finger-stretch'
+   169→   169→  // New Chromatic Drills (6)
+   170→   170→  | 'chromatic-2341'
+   171→   171→  | 'chromatic-3142'
+   172→   172→  | 'chromatic-4132'
+   173→   173→  | 'chromatic-3241'
+   174→   174→  | 'chromatic-desc-warmup'
+   175→   175→  | 'chromatic-all-strings'
+   176→   176→  // Spider Exercises (5)
+   177→   177→  | 'chromatic-spider-walk'
+   178→   178→  | 'spider-cross-1'
+   179→   179→  | 'spider-cross-2'
+   180→   180→  | 'spider-inward'
+   181→   181→  | 'spider-outward'
+   182→   182→  // String Crossing (4)
+   183→   183→  | 'string-cross-asc'
+   184→   184→  | 'string-cross-desc'
+   185→   185→  | 'string-cross-skip'
+   186→   186→  | 'string-cross-alternate'
+   187→   187→  // Sweep Picking (4)
+   188→   188→  | 'sweep-3string'
+   189→   189→  | 'sweep-5string'
+   190→   190→  | 'sweep-minor'
+   191→   191→  | 'sweep-major'
+   192→   192→  // Legato (5)
+   193→   193→  | 'legato-hammer-asc'
+   194→   194→  | 'legato-hammer-desc'
+   195→   195→  | 'legato-pull-asc'
+   196→   196→  | 'legato-pull-desc'
+   197→   197→  | 'legato-trill'
+   198→   198→  // Position Shifting (3)
+   199→   199→  | 'pos-shift-1-fret'
+   200→   200→  | 'pos-shift-2-fret'
+   201→   201→  | 'pos-shift-3-fret'
+   202→   202→  // Scale Patterns (5)
+   203→   203→  | 'scale-2nps'
+   204→   204→  | 'scale-4nps'
+   205→   205→  | 'scale-offset-run'
+   206→   206→  | 'scale-spiral'
+   207→   207→  | 'scale-box-run'
+   208→   208→  // Interval Studies (4)
+   209→   209→  | 'intervals-octave'
+   210→   210→  | 'intervals-tritone'
+   211→   211→  | 'intervals-compound'
+   212→   212→  | 'intervals-chromatic'
+   213→   213→  // Arpeggio Studies (6)
+   214→   214→  | 'arp-diminished'
+   215→   215→  | 'arp-augmented'
+   216→   216→  | 'arp-minor7'
+   217→   217→  | 'arp-dom7'
+   218→   218→  | 'arp-maj7'
+   219→   219→  | 'arp-min9'
+   220→   220→  // Rhythm & Timing (3)
+   221→   221→  | 'rhythm-gallop'
+   222→   222→  | 'rhythm-triplet'
+   223→   223→  | 'rhythm-dotted'
+   224→   224→  // Bending & Expression (3)
+   225→   225→  | 'bend-release'
+   226→   226→  | 'bend-1step'
+   227→   227→  | 'bend-1half'
+   228→   228→  // Harmonics (2)
+   229→   229→  | 'harmonics-tap'
+   230→   230→  | 'harmonics-pinch-scale'
+   231→   231→  // Tapping (3)
+   232→   232→  | 'tap-8finger'
+   233→   233→  | 'tap-sweep'
+   234→   234→  | 'tap-tap-pull'
+   235→   235→  // Blues (3)
+   236→   236→  | 'blues-lick-1'
+   237→   237→  | 'blues-lick-2'
+   238→   238→  | 'blues-turnaround'
+   239→   239→  // Fretboard Knowledge (4)
+   240→   240→  | 'caged-shapes'
+   241→   241→  | 'note-triplets'
+   242→   242→  | 'relative-note'
+   243→   243→  | 'fretboard-map'
+   244→   244→  // Speed & Agility (3)
+   245→   245→  | 'speed-ladder'
+   246→   246→  | 'speed-burst-16th'
+   247→   247→  | 'speed-triplet-run';
+   248→   248→
+   249→   249→// ─── EXTENDED METADATA ───
+   250→   250→
+   251→   251→export interface ExerciseTypeMeta {
+   252→   252→  name: string;
+   253→   253→  description: string;
+   254→   254→  difficulty: 1 | 2 | 3 | 4 | 5;
+   255→   255→  focus: string;
+   256→   256→  estimatedTime: string;
+   257→   257→  tags: string[];
+   258→   258→}
+   259→   259→
+   260→   260→export const EXERCISE_TYPES: Record<ExerciseType, ExerciseTypeMeta> = {
+   261→   261→  // ── Scale Runs ──
+   262→   262→  'scale-asc': { name: 'Ascending Scale', description: 'Play scale ascending from root to octave', difficulty: 1, focus: 'Alternate Picking', estimatedTime: '2-3 min', tags: ['picking', 'basics', 'scale'] },
+   263→   263→  'scale-desc': { name: 'Descending Scale', description: 'Play scale descending from octave to root', difficulty: 1, focus: 'Alternate Picking', estimatedTime: '2-3 min', tags: ['picking', 'basics', 'scale'] },
+   264→   264→  'scale-asc-desc': { name: 'Asc/Desc Scale', description: 'Play scale ascending then descending', difficulty: 1, focus: 'Alternate Picking', estimatedTime: '3-5 min', tags: ['picking', 'basics', 'scale'] },
+   265→   265→  'scale-desc-asc': { name: 'Desc/Asc Scale', description: 'Play scale descending then ascending', difficulty: 2, focus: 'Alternate Picking', estimatedTime: '3-5 min', tags: ['picking', 'scale', 'direction'] },
+   266→   266→  'reverse-pentatonic': { name: 'Reverse Pentatonic', description: 'Pentatonic pattern descending then ascending', difficulty: 2, focus: 'Alternate Picking', estimatedTime: '3-5 min', tags: ['picking', 'pentatonic', 'direction'] },
+   267→   267→  'scale-skip-note': { name: 'Skip Note Scale', description: 'Play every other note of the scale', difficulty: 2, focus: 'Ear Training', estimatedTime: '3-5 min', tags: ['ear', 'intervals', 'scale'] },
+   268→   268→  'scale-fragment-3': { name: '3-Note Fragments', description: '3-note ascending groups from each scale degree', difficulty: 3, focus: 'Dexterity', estimatedTime: '3-5 min', tags: ['dexterity', 'sequence', 'scale'] },
+   269→   269→  'scale-fragment-4': { name: '4-Note Fragments', description: '4-note ascending groups from each scale degree', difficulty: 3, focus: 'Dexterity', estimatedTime: '3-5 min', tags: ['dexterity', 'sequence', 'scale'] },
+   270→   270→
+   271→   271→  // ── Sequences ──
+   272→   272→  'thirds': { name: 'Diatonic Thirds', description: 'Play scale in thirds (skip one note each time)', difficulty: 2, focus: 'Ear Training', estimatedTime: '3-5 min', tags: ['ear', 'intervals', 'sequence'] },
+   273→   273→  'fourths': { name: 'Diatonic Fourths', description: 'Play scale in fourths (skip two notes)', difficulty: 3, focus: 'Ear Training', estimatedTime: '3-5 min', tags: ['ear', 'intervals', 'sequence'] },
+   274→   274→  'fifths': { name: 'Diatonic Fifths', description: 'Play scale in fifths (skip three notes)', difficulty: 3, focus: 'Ear Training', estimatedTime: '3-5 min', tags: ['ear', 'intervals', 'sequence'] },
+   275→   275→  'sixths': { name: 'Diatonic Sixths', description: 'Play scale in sixths (skip four notes)', difficulty: 4, focus: 'Ear Training', estimatedTime: '3-5 min', tags: ['ear', 'intervals', 'sequence'] },
+   276→   276→  'sevenths': { name: 'Diatonic Sevenths', description: 'Play scale in sevenths (skip five notes)', difficulty: 4, focus: 'Ear Training', estimatedTime: '3-5 min', tags: ['ear', 'intervals', 'sequence'] },
+   277→   277→  'sequence-3': { name: '3-Note Sequences', description: 'Groups of 3 ascending notes, shifting by one degree', difficulty: 2, focus: 'Alternate Picking', estimatedTime: '3-5 min', tags: ['picking', 'sequence', 'speed'] },
+   278→   278→  'sequence-4': { name: '4-Note Sequences', description: 'Groups of 4 ascending notes, shifting by one degree', difficulty: 3, focus: 'Alternate Picking', estimatedTime: '3-5 min', tags: ['picking', 'sequence', 'speed'] },
+   279→   279→  'sequence-5': { name: '5-Note Sequences', description: 'Groups of 5 ascending notes, shifting by one degree', difficulty: 3, focus: 'Alternate Picking', estimatedTime: '4-6 min', tags: ['picking', 'sequence', 'speed'] },
+   280→   280→  'sequence-6': { name: '6-Note Sequences', description: 'Groups of 6 ascending notes, shifting by one degree', difficulty: 4, focus: 'Alternate Picking', estimatedTime: '4-6 min', tags: ['picking', 'sequence', 'speed'] },
+   281→   281→  'sequence-7': { name: '7-Note Sequences', description: 'Groups of 7 ascending notes, shifting by one degree', difficulty: 4, focus: 'Alternate Picking', estimatedTime: '4-6 min', tags: ['picking', 'sequence', 'speed'] },
+   282→   282→  'pedal-tone': { name: 'Pedal Tone', description: 'Alternate root with each scale degree', difficulty: 2, focus: 'Timing', estimatedTime: '3-5 min', tags: ['timing', 'root', 'control'] },
+   283→   283→  'pedal-tone-inv': { name: 'Pedal Tone (5th)', description: 'Alternate 5th with each scale degree', difficulty: 3, focus: 'Timing', estimatedTime: '3-5 min', tags: ['timing', 'fifth', 'control'] },
+   284→   284→
+   285→   285→  // ── Shapes ──
+   286→   286→  'triads': { name: 'Triad Shapes', description: 'Find and play triad shapes within the scale', difficulty: 2, focus: 'Chord Knowledge', estimatedTime: '3-5 min', tags: ['chords', 'triads', 'shapes'] },
+   287→   287→  'triads-inv1': { name: 'Triads 1st Inversion', description: 'First inversion triad shapes within the scale', difficulty: 3, focus: 'Chord Knowledge', estimatedTime: '3-5 min', tags: ['chords', 'triads', 'inversion'] },
+   288→   288→  'triads-inv2': { name: 'Triads 2nd Inversion', description: 'Second inversion triad shapes within the scale', difficulty: 3, focus: 'Chord Knowledge', estimatedTime: '3-5 min', tags: ['chords', 'triads', 'inversion'] },
+   289→   289→  'arpeggios': { name: 'Arpeggios', description: 'Arpeggiated patterns built from scale degrees', difficulty: 3, focus: 'Sweep Picking', estimatedTime: '3-5 min', tags: ['sweep', 'arpeggio', 'chords'] },
+   290→   290→  'octave-shapes': { name: 'Octave Shapes', description: 'Root and octave pairs across the fretboard', difficulty: 2, focus: 'Fretboard Knowledge', estimatedTime: '2-3 min', tags: ['fretboard', 'octaves', 'navigation'] },
+   291→   291→  'double-stops': { name: 'Double Stops', description: 'Two-note pairs on adjacent strings', difficulty: 2, focus: 'Hybrid Picking', estimatedTime: '3-5 min', tags: ['picking', 'double-stops', 'harmony'] },
+   292→   292→  'shell-voicings': { name: 'Shell Voicings', description: 'Root-3rd-7th or Root-7th-3rd chord shells', difficulty: 3, focus: 'Chord Knowledge', estimatedTime: '3-5 min', tags: ['chords', 'jazz', 'voicings'] },
+   293→   293→  'dyads': { name: 'Dyads', description: 'Two-note combinations on adjacent strings', difficulty: 2, focus: 'Ear Training', estimatedTime: '2-4 min', tags: ['ear', 'intervals', 'harmony'] },
+   294→   294→  'chord-scale': { name: 'Chord Scale', description: 'Chords built on each scale degree', difficulty: 4, focus: 'Chord Knowledge', estimatedTime: '5-8 min', tags: ['chords', 'harmony', 'progression'] },
+   295→   295→  'power-shapes': { name: 'Power Shapes', description: 'Root-5th power chord shapes across the neck', difficulty: 1, focus: 'Rhythm', estimatedTime: '2-3 min', tags: ['rhythm', 'power-chords', 'basics'] },
+   296→   296→
+   297→   297→  // ── Technique ──
+   298→   298→  'string-skip': { name: 'String Skipping', description: 'Skip strings while playing scale notes', difficulty: 3, focus: 'Alternate Picking', estimatedTime: '3-5 min', tags: ['picking', 'string-skip', 'accuracy'] },
+   299→   299→  'lateral-run': { name: 'Lateral Run', description: 'Run across strings at the same fret position', difficulty: 2, focus: 'Alternate Picking', estimatedTime: '2-4 min', tags: ['picking', 'lateral', 'speed'] },
+   300→   300→  'diagonal': { name: 'Diagonal Pattern', description: 'Play a diagonal pattern across the fretboard', difficulty: 3, focus: 'Position Playing', estimatedTime: '3-5 min', tags: ['position', 'diagonal', 'navigation'] },
+   301→   301→  'position-shift': { name: 'Position Shift', description: 'Shift between CAGED positions smoothly', difficulty: 3, focus: 'Position Playing', estimatedTime: '3-5 min', tags: ['position', 'shift', 'caged'] },
+   302→   302→  'pentatonic-run': { name: 'Pentatonic Run', description: 'Classic 2-notes-per-string pentatonic run', difficulty: 2, focus: 'Alternate Picking', estimatedTime: '3-5 min', tags: ['picking', 'pentatonic', 'speed'] },
+   303→   303→  'economy-picking': { name: 'Economy Picking', description: 'Practice economy/sweep picking patterns', difficulty: 4, focus: 'Economy Picking', estimatedTime: '3-5 min', tags: ['economy', 'sweep', 'picking'] },
+   304→   304→  'spider-walk': { name: 'Spider Walk', description: 'Walking pattern across strings building finger independence', difficulty: 2, focus: 'Finger Independence', estimatedTime: '3-5 min', tags: ['independence', 'dexterity', 'fingers'] },
+   305→   305→  'interval-jump': { name: 'Interval Jump', description: 'Jump between different intervals within the scale', difficulty: 3, focus: 'Ear Training', estimatedTime: '3-5 min', tags: ['ear', 'intervals', 'accuracy'] },
+   306→   306→  'hammer-pull': { name: 'Hammer-Pull', description: 'Hammer-on and pull-off patterns across strings', difficulty: 2, focus: 'Legato', estimatedTime: '3-5 min', tags: ['legato', 'hammer-on', 'pull-off'] },
+   307→   307→  'slide-exercise': { name: 'Slide Exercise', description: 'Slide between positions on the same string', difficulty: 3, focus: 'Sliding', estimatedTime: '2-4 min', tags: ['slide', 'legato', 'position'] },
+   308→   308→  'cross-string': { name: 'Cross-String Picking', description: 'Cross-string alternate picking patterns', difficulty: 3, focus: 'Alternate Picking', estimatedTime: '3-5 min', tags: ['picking', 'cross-string', 'accuracy'] },
+   309→   309→  'speed-burst': { name: 'Speed Burst', description: 'Fast repeated pattern bursts for speed development', difficulty: 4, focus: 'Speed', estimatedTime: '2-4 min', tags: ['speed', 'burst', 'picking'] },
+   310→   310→
+   311→   311→  // ── Connections ──
+   312→   312→  'connecting': { name: 'Position Connect', description: 'Connect between adjacent CAGED positions', difficulty: 3, focus: 'Fretboard Knowledge', estimatedTime: '3-5 min', tags: ['caged', 'navigation', 'connection'] },
+   313→   313→  'position-sweep': { name: 'Position Sweep', description: 'Sweep through all CAGED positions', difficulty: 4, focus: 'Fretboard Knowledge', estimatedTime: '4-6 min', tags: ['caged', 'sweep', 'navigation'] },
+   314→   314→  'caged-cycle': { name: 'CAGED Cycle', description: 'Play through all 5 CAGED shapes', difficulty: 4, focus: 'Fretboard Knowledge', estimatedTime: '4-6 min', tags: ['caged', 'shapes', 'cycle'] },
+   315→   315→  'caged-run': { name: 'CAGED Run', description: 'Run connecting CAGED positions across the neck', difficulty: 5, focus: 'Fretboard Knowledge', estimatedTime: '5-8 min', tags: ['caged', 'run', 'advanced'] },
+   316→   316→
+   317→   317→  // ── Intervals ──
+   318→   318→  'intervals-2nd': { name: '2nd Intervals', description: 'Focus on 2nd interval recognition and playing', difficulty: 2, focus: 'Ear Training', estimatedTime: '3-5 min', tags: ['ear', 'intervals', '2nd'] },
+   319→   319→  'intervals-3rd': { name: '3rd Intervals', description: 'Focus on 3rd interval recognition and playing', difficulty: 2, focus: 'Ear Training', estimatedTime: '3-5 min', tags: ['ear', 'intervals', '3rd'] },
+   320→   320→  'intervals-4th': { name: '4th Intervals', description: 'Focus on 4th interval recognition and playing', difficulty: 3, focus: 'Ear Training', estimatedTime: '3-5 min', tags: ['ear', 'intervals', '4th'] },
+   321→   321→  'intervals-5th': { name: '5th Intervals', description: 'Focus on 5th interval recognition and playing', difficulty: 3, focus: 'Ear Training', estimatedTime: '3-5 min', tags: ['ear', 'intervals', '5th'] },
+   322→   322→  'intervals-6th': { name: '6th Intervals', description: 'Focus on 6th interval recognition and playing', difficulty: 4, focus: 'Ear Training', estimatedTime: '3-5 min', tags: ['ear', 'intervals', '6th'] },
+   323→   323→  'intervals-7th': { name: '7th Intervals', description: 'Focus on 7th interval recognition and playing', difficulty: 4, focus: 'Ear Training', estimatedTime: '3-5 min', tags: ['ear', 'intervals', '7th'] },
+   324→   324→
+   325→   325→  // ── Arpeggios ──
+   326→   326→  'arp-sweep': { name: 'Sweep Arpeggio', description: 'Sweep picking arpeggio pattern', difficulty: 4, focus: 'Sweep Picking', estimatedTime: '3-5 min', tags: ['sweep', 'arpeggio', 'technique'] },
+   327→   327→  'arp-string-skip': { name: 'String-Skip Arpeggio', description: 'String-skipped arpeggio pattern', difficulty: 4, focus: 'String Skipping', estimatedTime: '3-5 min', tags: ['string-skip', 'arpeggio', 'technique'] },
+   328→   328→  'arp-triad-up': { name: 'Triad Arp Ascending', description: 'Triad arpeggio ascending across strings', difficulty: 3, focus: 'Sweep Picking', estimatedTime: '3-5 min', tags: ['sweep', 'triad', 'ascending'] },
+   329→   329→  'arp-seventh': { name: '7th Chord Arpeggio', description: 'Seventh chord arpeggio pattern', difficulty: 4, focus: 'Sweep Picking', estimatedTime: '4-6 min', tags: ['sweep', 'seventh', 'jazz'] },
+   330→   330→  'arp-inverted': { name: 'Inverted Arpeggio', description: 'Inverted arpeggio shapes across the neck', difficulty: 4, focus: 'Sweep Picking', estimatedTime: '3-5 min', tags: ['sweep', 'inversion', 'arpeggio'] },
+   331→   331→  'arp-connect': { name: 'Connected Arpeggios', description: 'Connect arpeggio shapes across the neck', difficulty: 5, focus: 'Fretboard Knowledge', estimatedTime: '5-8 min', tags: ['arpeggio', 'connection', 'advanced'] },
+   332→   332→
+   333→   333→  // ── Warmups ──
+   334→   334→  'chromatic-warmup': { name: 'Chromatic Warmup', description: '1-2-3-4 chromatic pattern across strings', difficulty: 1, focus: 'Warmup', estimatedTime: '2-3 min', tags: ['warmup', 'chromatic', 'basics'] },
+   335→   335→  'spider-warmup': { name: 'Spider Warmup', description: 'Spider-style warmup for finger independence', difficulty: 1, focus: 'Warmup', estimatedTime: '2-3 min', tags: ['warmup', 'spider', 'independence'] },
+   336→   336→  'finger-gym': { name: 'Finger Gym', description: 'Finger independence exercise', difficulty: 2, focus: 'Finger Independence', estimatedTime: '2-4 min', tags: ['independence', 'dexterity', 'fingers'] },
+   337→   337→  'string-cross-warmup': { name: 'String Cross Warmup', description: 'String crossing warmup pattern', difficulty: 1, focus: 'Warmup', estimatedTime: '2-3 min', tags: ['warmup', 'string-cross', 'basics'] },
+   338→   338→
+   339→   339→  // ── Rhythm ──
+   340→   340→  'rhythm-subdivisions': { name: 'Subdivision Practice', description: 'Play scale notes switching between quarter, eighth, triplet, and sixteenth subdivisions', difficulty: 2, focus: 'Timing', estimatedTime: '3-5 min', tags: ['rhythm', 'subdivision', 'timing'] },
+   341→   341→  'rhythm-syncopation': { name: 'Syncopation', description: 'Accent off-beat notes while maintaining steady rhythm', difficulty: 3, focus: 'Timing', estimatedTime: '3-5 min', tags: ['rhythm', 'syncopation', 'groove'] },
+   342→   342→  'rhythm-rest': { name: 'Rest Placement', description: 'Practice playing with strategic rests — hear the silence between notes', difficulty: 3, focus: 'Timing', estimatedTime: '3-5 min', tags: ['rhythm', 'rests', 'control'] },
+   343→   343→  'rhythm-accent': { name: 'Accent Patterns', description: 'Shift accents across different beats to build rhythmic awareness', difficulty: 2, focus: 'Timing', estimatedTime: '3-5 min', tags: ['rhythm', 'accents', 'control'] },
+   344→   344→  'rhythm-swing': { name: 'Swing Feel', description: 'Play scale with swung eighth note feel for blues and jazz', difficulty: 3, focus: 'Feel', estimatedTime: '3-5 min', tags: ['rhythm', 'swing', 'blues'] },
+   345→   345→  'rhythm-tied': { name: 'Tied Notes', description: 'Practice tied notes across bar lines to develop longer phrasing', difficulty: 3, focus: 'Timing', estimatedTime: '3-5 min', tags: ['rhythm', 'tied', 'phrasing'] },
+   346→   346→
+   347→   347→  // ── Bending & Expression ──
+   348→   348→  'bend-unison': { name: 'Unison Bends', description: 'Bend one string to match the pitch of the adjacent string', difficulty: 3, focus: 'Bending', estimatedTime: '3-5 min', tags: ['bending', 'expression', 'pitch'] },
+   349→   349→  'bend-half': { name: 'Half-Step Bends', description: 'Practice precise half-step bends to target notes', difficulty: 3, focus: 'Bending', estimatedTime: '3-5 min', tags: ['bending', 'half-step', 'pitch'] },
+   350→   350→  'bend-full': { name: 'Full-Step Bends', description: 'Practice precise whole-step bends to target notes', difficulty: 3, focus: 'Bending', estimatedTime: '3-5 min', tags: ['bending', 'full-step', 'pitch'] },
+   351→   351→  'bend-pre': { name: 'Pre-Bends', description: 'Bend the string before striking, then release to pitch', difficulty: 4, focus: 'Bending', estimatedTime: '3-5 min', tags: ['bending', 'pre-bend', 'advanced'] },
+   352→   352→  'vibrato-control': { name: 'Vibrato Control', description: 'Practice different vibrato speeds and widths on sustained notes', difficulty: 3, focus: 'Expression', estimatedTime: '3-5 min', tags: ['vibrato', 'expression', 'control'] },
+   353→   353→
+   354→   354→  // ── Tapping ──
+   355→   355→  'tap-basic': { name: 'Basic Tapping', description: 'Two-hand tapping pattern using right-hand index finger', difficulty: 3, focus: 'Tapping', estimatedTime: '3-5 min', tags: ['tapping', 'two-hand', 'technique'] },
+   356→   356→  'tap-arpeggio': { name: 'Tapped Arpeggio', description: 'Arpeggio patterns using tapping technique across strings', difficulty: 4, focus: 'Tapping', estimatedTime: '4-6 min', tags: ['tapping', 'arpeggio', 'advanced'] },
+   357→   357→  'tap-scale': { name: 'Tapped Scale Run', description: 'Full scale run using tapping with hammer-ons from nowhere', difficulty: 4, focus: 'Tapping', estimatedTime: '3-5 min', tags: ['tapping', 'scale', 'speed'] },
+   358→   358→  'tap-harmonic': { name: 'Tap Harmonics', description: 'Produce harmonics by tapping directly on the fretwire', difficulty: 4, focus: 'Tapping', estimatedTime: '3-5 min', tags: ['tapping', 'harmonics', 'technique'] },
+   359→   359→
+   360→   360→  // ── Harmonics ──
+   361→   361→  'harmonics-natural': { name: 'Natural Harmonics', description: 'Play natural harmonics at 5th, 7th, and 12th frets', difficulty: 2, focus: 'Harmonics', estimatedTime: '2-3 min', tags: ['harmonics', 'natural', 'bell-tone'] },
+   362→   362→  'harmonics-artificial': { name: 'Artificial Harmonics', description: 'Produce harmonics by touching string at specific interval above fretted note', difficulty: 4, focus: 'Harmonics', estimatedTime: '3-5 min', tags: ['harmonics', 'artificial', 'advanced'] },
+   363→   363→  'harmonics-pinch': { name: 'Pinch Harmonics', description: 'Squeal harmonics using thumb attack on picked notes', difficulty: 4, focus: 'Harmonics', estimatedTime: '3-5 min', tags: ['harmonics', 'pinch', 'rock'] },
+   364→   364→
+   365→   365→  // ── Extended Sequences ──
+   366→   366→  'enclosure': { name: 'Enclosures', description: 'Approach target notes from above and below — chromatic and diatonic', difficulty: 4, focus: 'Ear Training', estimatedTime: '4-6 min', tags: ['enclosure', 'approach', 'jazz'] },
+   367→   367→  'bebop-scale': { name: 'Bebop Scale Pattern', description: 'Practice bebop scale with passing tone on the downbeat', difficulty: 4, focus: 'Jazz Vocabulary', estimatedTime: '4-6 min', tags: ['bebop', 'jazz', 'chromatic'] },
+   368→   368→  'cycle-of-4ths': { name: 'Cycle of 4ths', description: 'Play root movement through the cycle of fourths', difficulty: 4, focus: 'Fretboard Knowledge', estimatedTime: '4-6 min', tags: ['cycle', 'fourths', 'navigation'] },
+   369→   369→  'cycle-of-5ths': { name: 'Cycle of 5ths', description: 'Play root movement through the cycle of fifths', difficulty: 4, focus: 'Fretboard Knowledge', estimatedTime: '4-6 min', tags: ['cycle', 'fifths', 'navigation'] },
+   370→   370→  'chromatic-enclosure': { name: 'Chromatic Enclosure', description: 'Enclose target notes with chromatic approach from both sides', difficulty: 5, focus: 'Jazz Vocabulary', estimatedTime: '4-6 min', tags: ['chromatic', 'enclosure', 'jazz'] },
+   371→   371→
+   372→   372→  // ── Extended Scale Runs ──
+   373→   373→  'scale-3nps': { name: '3 Notes Per String', description: 'Scale played with 3 notes on each string — essential for speed picking', difficulty: 3, focus: 'Alternate Picking', estimatedTime: '3-5 min', tags: ['3nps', 'speed', 'picking'] },
+   374→   374→  'scale-single-string': { name: 'Single String Scale', description: 'Play the entire scale on one string — learn the fretboard vertically', difficulty: 2, focus: 'Fretboard Knowledge', estimatedTime: '3-5 min', tags: ['single-string', 'vertical', 'navigation'] },
+   375→   375→  'scale-zigzag': { name: 'Zigzag Pattern', description: 'Move up one string, down the next — zigzag across the fretboard', difficulty: 3, focus: 'String Crossing', estimatedTime: '3-5 min', tags: ['zigzag', 'crossing', 'control'] },
+   376→   376→  'scale-wide-skip': { name: 'Wide Interval Skips', description: 'Jump across large intervals within the scale for ear training', difficulty: 4, focus: 'Ear Training', estimatedTime: '3-5 min', tags: ['wide-skip', 'interval', 'ear'] },
+   377→   377→  'scale-chromatic-passing': { name: 'Chromatic Passing', description: 'Add chromatic passing tones between scale degrees', difficulty: 3, focus: 'Ear Training', estimatedTime: '3-5 min', tags: ['chromatic', 'passing', 'jazz'] },
+   378→   378→
+   379→   379→  // ── Extended Technique ──
+   380→   380→  'hybrid-picking': { name: 'Hybrid Picking', description: 'Combine flatpick with fingers for simultaneous string attack', difficulty: 3, focus: 'Hybrid Picking', estimatedTime: '3-5 min', tags: ['hybrid', 'picking', 'country'] },
+   381→   381→  'chicken-pick': { name: 'Chicken Picking', description: 'Country-style hybrid picking with muted plucks and snaps', difficulty: 4, focus: 'Hybrid Picking', estimatedTime: '3-5 min', tags: ['chicken', 'country', 'snap'] },
+   382→   382→  'banjo-roll': { name: 'Banjo Roll', description: 'Three-finger roll pattern across adjacent strings', difficulty: 3, focus: 'Fingerpicking', estimatedTime: '3-5 min', tags: ['banjo', 'roll', 'fingerpicking'] },
+   383→   383→  'palm-mute': { name: 'Palm Mute Patterns', description: 'Alternate between palm-muted and open notes for dynamic control', difficulty: 2, focus: 'Rhythm', estimatedTime: '3-5 min', tags: ['palm-mute', 'rhythm', 'dynamic'] },
+   384→   384→  'staccato': { name: 'Staccato Exercise', description: 'Play short detached notes for precision and muting control', difficulty: 2, focus: 'Control', estimatedTime: '3-5 min', tags: ['staccato', 'muting', 'control'] },
+   385→   385→  'sweep-tap': { name: 'Sweep + Tap', description: 'Combine sweep picking with right-hand tapping for extended arpeggios', difficulty: 5, focus: 'Advanced', estimatedTime: '5-8 min', tags: ['sweep', 'tapping', 'advanced'] },
+   386→   386→
+   387→   387→  // ── Extended Shapes ──
+   388→   388→  'barre-shapes': { name: 'Barre Chord Shapes', description: 'Root-6 and root-5 barre chord shapes within the scale', difficulty: 2, focus: 'Chord Knowledge', estimatedTime: '3-5 min', tags: ['barre', 'chords', 'shapes'] },
+   389→   389→  'drop2-voicings': { name: 'Drop-2 Voicings', description: 'Drop-2 chord voicings on the top 4 strings', difficulty: 4, focus: 'Chord Knowledge', estimatedTime: '4-6 min', tags: ['drop-2', 'jazz', 'voicings'] },
+   390→   390→  'guide-tones': { name: 'Guide Tones', description: 'Root, 3rd, and 7th — the essential tones for chord outlining', difficulty: 3, focus: 'Chord Knowledge', estimatedTime: '3-5 min', tags: ['guide-tones', 'jazz', 'outline'] },
+   391→   391→  'quartal-voicings': { name: 'Quartal Voicings', description: 'Chords built in fourths instead of thirds for modern sound', difficulty: 4, focus: 'Chord Knowledge', estimatedTime: '4-6 min', tags: ['quartal', 'modern', 'voicings'] },
+   392→   392→  'stacked-fourths': { name: 'Stacked Fourths', description: 'Stack perfect fourth intervals across adjacent strings', difficulty: 4, focus: 'Ear Training', estimatedTime: '3-5 min', tags: ['fourths', 'stacked', 'modern'] },
+   393→   393→
+   394→   394→  // ── Fretboard Navigation ──
+   395→   395→  'note-finder': { name: 'Note Finder', description: 'Find a specific note on every string across the fretboard', difficulty: 2, focus: 'Fretboard Knowledge', estimatedTime: '3-5 min', tags: ['note-finder', 'navigation', 'memory'] },
+   396→   396→  'octave-drill': { name: 'Octave Drill', description: 'Find all octave locations of the root note across the neck', difficulty: 2, focus: 'Fretboard Knowledge', estimatedTime: '2-4 min', tags: ['octaves', 'navigation', 'root'] },
+   397→   397→  'unison-drill': { name: 'Unison Drill', description: 'Find the same pitch at different string/fret locations', difficulty: 3, focus: 'Fretboard Knowledge', estimatedTime: '3-5 min', tags: ['unison', 'navigation', 'positions'] },
+   398→   398→  'interval-matrix': { name: 'Interval Matrix', description: 'Play every interval from the root across multiple strings', difficulty: 4, focus: 'Ear Training', estimatedTime: '4-6 min', tags: ['intervals', 'matrix', 'ear'] },
+   399→   399→
+   400→   400→  // ── Extended Warmups ──
+   401→   401→  'chromatic-1234': { name: 'Chromatic 1-2-3-4', description: 'Classic 1-2-3-4 chromatic pattern across all strings ascending', difficulty: 1, focus: 'Warmup', estimatedTime: '2-3 min', tags: ['warmup', 'chromatic', 'basics'] },
+   402→   402→  'chromatic-4321': { name: 'Chromatic 4-3-2-1', description: 'Reverse chromatic pattern across all strings descending', difficulty: 1, focus: 'Warmup', estimatedTime: '2-3 min', tags: ['warmup', 'chromatic', 'reverse'] },
+   403→   403→  'chromatic-1324': { name: 'Chromatic 1-3-2-4', description: 'Finger independence pattern 1-3-2-4 across strings', difficulty: 2, focus: 'Finger Independence', estimatedTime: '2-4 min', tags: ['warmup', 'chromatic', 'independence'] },
+   404→   404→  'chromatic-1423': { name: 'Chromatic 1-4-2-3', description: 'Finger independence pattern 1-4-2-3 across strings', difficulty: 2, focus: 'Finger Independence', estimatedTime: '2-4 min', tags: ['warmup', 'chromatic', 'independence'] },
+   405→   405→  'chromatic-2413': { name: 'Chromatic 2-4-1-3', description: 'Finger independence pattern 2-4-1-3 — advanced separation', difficulty: 2, focus: 'Finger Independence', estimatedTime: '2-4 min', tags: ['warmup', 'chromatic', 'independence'] },
+   406→   406→  'finger-stretch': { name: 'Finger Stretch', description: 'Wide-fret spacing exercises to build finger span and flexibility', difficulty: 2, focus: 'Flexibility', estimatedTime: '2-3 min', tags: ['warmup', 'stretch', 'flexibility'] },
+   407→   407→
+   408→   408→  // ── New Chromatic Drills ──
+   409→   409→  'chromatic-2341': { name: 'Chromatic 2-3-4-1', description: 'Chromatic permutation pattern 2-3-4-1 for finger independence', difficulty: 2, focus: 'Finger Independence', estimatedTime: '2-4 min', tags: ['warmup', 'chromatic', 'permutation'] },
+   410→   410→  'chromatic-3142': { name: 'Chromatic 3-1-4-2', description: 'Chromatic permutation pattern 3-1-4-2 for finger independence', difficulty: 2, focus: 'Finger Independence', estimatedTime: '2-4 min', tags: ['warmup', 'chromatic', 'permutation'] },
+   411→   411→  'chromatic-4132': { name: 'Chromatic 4-1-3-2', description: 'Chromatic permutation pattern 4-1-3-2 for finger independence', difficulty: 3, focus: 'Finger Independence', estimatedTime: '2-4 min', tags: ['warmup', 'chromatic', 'permutation'] },
+   412→   412→  'chromatic-3241': { name: 'Chromatic 3-2-4-1', description: 'Chromatic permutation pattern 3-2-4-1 for finger independence', difficulty: 3, focus: 'Finger Independence', estimatedTime: '2-4 min', tags: ['warmup', 'chromatic', 'permutation'] },
+   413→   413→  'chromatic-desc-warmup': { name: 'Descending Chromatic Warmup', description: 'Descending chromatic 4-3-2-1 pattern per string for warmup', difficulty: 1, focus: 'Warmup', estimatedTime: '2-3 min', tags: ['warmup', 'chromatic', 'descending'] },
+   414→   414→  'chromatic-all-strings': { name: 'Full Chromatic Run', description: 'Chromatic run across all strings ascending then descending', difficulty: 2, focus: 'Alternate Picking', estimatedTime: '3-5 min', tags: ['chromatic', 'full-run', 'picking'] },
+   415→   415→
+   416→   416→  // ── Spider Exercises ──
+   417→   417→  'chromatic-spider-walk': { name: 'Spider Walk', description: 'Classic spider walk: one finger per string then cross back', difficulty: 2, focus: 'Finger Independence', estimatedTime: '3-5 min', tags: ['spider', 'independence', 'warmup'] },
+   418→   418→  'spider-cross-1': { name: 'Spider Cross Ascending', description: 'Spider exercise crossing strings 1-2-3-4 ascending', difficulty: 3, focus: 'String Crossing', estimatedTime: '3-5 min', tags: ['spider', 'crossing', 'dexterity'] },
+   419→   419→  'spider-cross-2': { name: 'Spider Cross Descending', description: 'Spider exercise crossing strings 4-3-2-1 descending', difficulty: 3, focus: 'String Crossing', estimatedTime: '3-5 min', tags: ['spider', 'crossing', 'dexterity'] },
+   420→   420→  'spider-inward': { name: 'Spider Inward', description: 'Spider walking inward from outside strings toward center', difficulty: 3, focus: 'String Crossing', estimatedTime: '3-5 min', tags: ['spider', 'inward', 'dexterity'] },
+   421→   421→  'spider-outward': { name: 'Spider Outward', description: 'Spider walking outward from middle strings toward edges', difficulty: 3, focus: 'String Crossing', estimatedTime: '3-5 min', tags: ['spider', 'outward', 'dexterity'] },
+   422→   422→
+   423→   423→  // ── String Crossing ──
+   424→   424→  'string-cross-asc': { name: 'Ascending String Cross', description: 'Ascending string crossing pattern for smooth transitions', difficulty: 2, focus: 'String Crossing', estimatedTime: '3-5 min', tags: ['crossing', 'ascending', 'picking'] },
+   425→   425→  'string-cross-desc': { name: 'Descending String Cross', description: 'Descending string crossing pattern for smooth transitions', difficulty: 2, focus: 'String Crossing', estimatedTime: '3-5 min', tags: ['crossing', 'descending', 'picking'] },
+   426→   426→  'string-cross-skip': { name: 'String Cross Skip', description: 'String crossing while skipping strings for accuracy', difficulty: 3, focus: 'String Crossing', estimatedTime: '3-5 min', tags: ['crossing', 'skip', 'accuracy'] },
+   427→   427→  'string-cross-alternate': { name: 'Alternate String Cross', description: 'Alternating string crossing direction for versatility', difficulty: 3, focus: 'String Crossing', estimatedTime: '3-5 min', tags: ['crossing', 'alternate', 'versatility'] },
+   428→   428→
+   429→   429→  // ── Sweep Picking ──
+   430→   430→  'sweep-3string': { name: '3-String Sweep', description: '3-string sweep arpeggio for fundamental sweep technique', difficulty: 3, focus: 'Sweep Picking', estimatedTime: '3-5 min', tags: ['sweep', 'arpeggio', '3-string'] },
+   431→   431→  'sweep-5string': { name: '5-String Sweep', description: '5-string sweep arpeggio for extended sweep technique', difficulty: 4, focus: 'Sweep Picking', estimatedTime: '4-6 min', tags: ['sweep', 'arpeggio', '5-string'] },
+   432→   432→  'sweep-minor': { name: 'Minor Sweep Shape', description: 'Minor triad sweep arpeggio shape across strings', difficulty: 3, focus: 'Sweep Picking', estimatedTime: '3-5 min', tags: ['sweep', 'minor', 'arpeggio'] },
+   433→   433→  'sweep-major': { name: 'Major Sweep Shape', description: 'Major triad sweep arpeggio shape across strings', difficulty: 3, focus: 'Sweep Picking', estimatedTime: '3-5 min', tags: ['sweep', 'major', 'arpeggio'] },
+   434→   434→
+   435→   435→  // ── Legato ──
+   436→   436→  'legato-hammer-asc': { name: 'Hammer-On Ascending', description: 'Ascending hammer-on exercise for legato strength', difficulty: 2, focus: 'Legato', estimatedTime: '3-5 min', tags: ['legato', 'hammer-on', 'ascending'] },
+   437→   437→  'legato-hammer-desc': { name: 'Hammer-On Descending', description: 'Descending hammer-on exercise for legato control', difficulty: 2, focus: 'Legato', estimatedTime: '3-5 min', tags: ['legato', 'hammer-on', 'descending'] },
+   438→   438→  'legato-pull-asc': { name: 'Pull-Off Ascending', description: 'Ascending pull-off exercise for legato fluidity', difficulty: 2, focus: 'Legato', estimatedTime: '3-5 min', tags: ['legato', 'pull-off', 'ascending'] },
+   439→   439→  'legato-pull-desc': { name: 'Pull-Off Descending', description: 'Descending pull-off exercise for legato fluidity', difficulty: 3, focus: 'Legato', estimatedTime: '3-5 min', tags: ['legato', 'pull-off', 'descending'] },
+   440→   440→  'legato-trill': { name: 'Trill Exercise', description: 'Rapid hammer-pull on same note pair for finger endurance', difficulty: 2, focus: 'Legato', estimatedTime: '2-4 min', tags: ['legato', 'trill', 'endurance'] },
+   441→   441→
+   442→   442→  // ── Position Shifting ──
+   443→   443→  'pos-shift-1-fret': { name: '1-Fret Position Shift', description: 'Smooth position shifts moving 1 fret up and down the neck', difficulty: 2, focus: 'Position Playing', estimatedTime: '3-5 min', tags: ['position', 'shift', '1-fret'] },
+   444→   444→  'pos-shift-2-fret': { name: '2-Fret Position Shift', description: 'Position shifts moving 2 frets for wider transitions', difficulty: 3, focus: 'Position Playing', estimatedTime: '3-5 min', tags: ['position', 'shift', '2-fret'] },
+   445→   445→  'pos-shift-3-fret': { name: '3-Fret Position Shift', description: 'Position shifts moving 3 frets for extended transitions', difficulty: 3, focus: 'Position Playing', estimatedTime: '3-5 min', tags: ['position', 'shift', '3-fret'] },
+   446→   446→
+   447→   447→  // ── Scale Patterns ──
+   448→   448→  'scale-2nps': { name: '2 Notes Per String', description: 'Scale pattern with 2 notes per string for pentatonic style', difficulty: 2, focus: 'Alternate Picking', estimatedTime: '3-5 min', tags: ['2nps', 'pentatonic', 'picking'] },
+   449→   449→  'scale-4nps': { name: '4 Notes Per String', description: 'Scale pattern with 4 notes per string for advanced picking', difficulty: 4, focus: 'Alternate Picking', estimatedTime: '4-6 min', tags: ['4nps', 'speed', 'picking'] },
+   450→   450→  'scale-offset-run': { name: 'Offset Scale Run', description: 'Run starting from different scale degrees for versatility', difficulty: 3, focus: 'Fretboard Knowledge', estimatedTime: '3-5 min', tags: ['offset', 'degrees', 'versatility'] },
+   451→   451→  'scale-spiral': { name: 'Spiral Pattern', description: 'Spiral pattern ascending across strings and positions', difficulty: 4, focus: 'Fretboard Knowledge', estimatedTime: '4-6 min', tags: ['spiral', 'navigation', 'positions'] },
+   452→   452→  'scale-box-run': { name: 'Box Pattern Run', description: 'Box pattern runs connecting adjacent CAGED positions', difficulty: 3, focus: 'Position Playing', estimatedTime: '3-5 min', tags: ['box', 'caged', 'positions'] },
+   453→   453→
+   454→   454→  // ── Interval Studies ──
+   455→   455→  'intervals-octave': { name: 'Octave Intervals', description: 'Play octave interval shapes across the fretboard', difficulty: 2, focus: 'Ear Training', estimatedTime: '3-5 min', tags: ['intervals', 'octave', 'ear'] },
+   456→   456→  'intervals-tritone': { name: 'Tritone Intervals', description: 'Tritone (augmented 4th / diminished 5th) interval drill', difficulty: 3, focus: 'Ear Training', estimatedTime: '3-5 min', tags: ['intervals', 'tritone', 'ear'] },
+   457→   457→  'intervals-compound': { name: 'Compound Intervals', description: 'Intervals beyond the octave for advanced ear training', difficulty: 4, focus: 'Ear Training', estimatedTime: '4-6 min', tags: ['intervals', 'compound', 'advanced'] },
+   458→   458→  'intervals-chromatic': { name: 'Chromatic Intervals', description: 'Chromatic interval walking through all semitones', difficulty: 3, focus: 'Ear Training', estimatedTime: '3-5 min', tags: ['intervals', 'chromatic', 'ear'] },
+   459→   459→
+   460→   460→  // ── Arpeggio Studies ──
+   461→   461→  'arp-diminished': { name: 'Diminished Arpeggio', description: 'Diminished triad arpeggio (R, b3, b5) for tension and release', difficulty: 4, focus: 'Arpeggio Knowledge', estimatedTime: '3-5 min', tags: ['arpeggio', 'diminished', 'tension'] },
+   462→   462→  'arp-augmented': { name: 'Augmented Arpeggio', description: 'Augmented triad arpeggio (R, 3, #5) for symmetrical sound', difficulty: 4, focus: 'Arpeggio Knowledge', estimatedTime: '3-5 min', tags: ['arpeggio', 'augmented', 'symmetrical'] },
+   463→   463→  'arp-minor7': { name: 'Minor 7th Arpeggio', description: 'Minor 7th arpeggio (R, b3, 5, b7) for jazz and funk', difficulty: 3, focus: 'Arpeggio Knowledge', estimatedTime: '3-5 min', tags: ['arpeggio', 'minor7', 'jazz'] },
+   464→   464→  'arp-dom7': { name: 'Dominant 7th Arpeggio', description: 'Dominant 7th arpeggio (R, 3, 5, b7) for blues and jazz', difficulty: 3, focus: 'Arpeggio Knowledge', estimatedTime: '3-5 min', tags: ['arpeggio', 'dom7', 'blues'] },
+   465→   465→  'arp-maj7': { name: 'Major 7th Arpeggio', description: 'Major 7th arpeggio (R, 3, 5, 7) for jazz and melody', difficulty: 3, focus: 'Arpeggio Knowledge', estimatedTime: '3-5 min', tags: ['arpeggio', 'maj7', 'jazz'] },
+   466→   466→  'arp-min9': { name: 'Minor 9th Arpeggio', description: 'Minor 9th arpeggio (R, b3, 5, b7, 9) for advanced harmony', difficulty: 5, focus: 'Arpeggio Knowledge', estimatedTime: '4-6 min', tags: ['arpeggio', 'min9', 'advanced'] },
+   467→   467→
+   468→   468→  // ── Rhythm & Timing ──
+   469→   469→  'rhythm-gallop': { name: 'Gallop Rhythm', description: 'Gallop rhythm pattern (long-short-short) for metal and rock', difficulty: 3, focus: 'Rhythm', estimatedTime: '3-5 min', tags: ['rhythm', 'gallop', 'metal'] },
+   470→   470→  'rhythm-triplet': { name: 'Triplet Feel', description: 'Triplet feel exercise for swing and blues timing', difficulty: 2, focus: 'Rhythm', estimatedTime: '3-5 min', tags: ['rhythm', 'triplet', 'swing'] },
+   471→   471→  'rhythm-dotted': { name: 'Dotted Rhythm', description: 'Dotted rhythm exercise for precise timing control', difficulty: 3, focus: 'Rhythm', estimatedTime: '3-5 min', tags: ['rhythm', 'dotted', 'timing'] },
+   472→   472→
+   473→   473→  // ── Bending & Expression ──
+   474→   474→  'bend-release': { name: 'Bend & Release', description: 'Bend up to target pitch then release back down', difficulty: 3, focus: 'Bending', estimatedTime: '3-5 min', tags: ['bend', 'release', 'expression'] },
+   475→   475→  'bend-1step': { name: '1-Step Bend', description: 'Full step (2 fret) bend exercise for pitch accuracy', difficulty: 3, focus: 'Bending', estimatedTime: '3-5 min', tags: ['bend', '1-step', 'pitch'] },
+   476→   476→  'bend-1half': { name: '1.5-Step Bend', description: 'One and a half step (3 fret) bend for advanced control', difficulty: 4, focus: 'Bending', estimatedTime: '3-5 min', tags: ['bend', '1.5-step', 'advanced'] },
+   477→   477→
+   478→   478→  // ── Harmonics ──
+   479→   479→  'harmonics-tap': { name: 'Tapped Harmonics', description: 'Tapped harmonics exercise — tap fret 12 above each note', difficulty: 4, focus: 'Harmonics', estimatedTime: '3-5 min', tags: ['harmonics', 'tapped', 'advanced'] },
+   480→   480→  'harmonics-pinch-scale': { name: 'Pinch Harmonic Scale', description: 'Pinch harmonics played along a scale for consistent squeals', difficulty: 4, focus: 'Harmonics', estimatedTime: '3-5 min', tags: ['harmonics', 'pinch', 'scale'] },
+   481→   481→
+   482→   482→  // ── Tapping ──
+   483→   483→  'tap-8finger': { name: '8-Finger Tapping', description: 'Eight-finger tapping exercise using both hands on fretboard', difficulty: 5, focus: 'Tapping', estimatedTime: '5-8 min', tags: ['tapping', '8-finger', 'advanced'] },
+   484→   484→  'tap-sweep': { name: 'Sweep Tapping', description: 'Sweep picking combined with tapping for extended arpeggios', difficulty: 5, focus: 'Tapping', estimatedTime: '4-6 min', tags: ['tapping', 'sweep', 'combination'] },
+   485→   485→  'tap-tap-pull': { name: 'Tap-Pull Combination', description: 'Tap then pull-off combination pattern for fluid tapping', difficulty: 4, focus: 'Tapping', estimatedTime: '3-5 min', tags: ['tapping', 'pull-off', 'combination'] },
+   486→   486→
+   487→   487→  // ── Blues ──
+   488→   488→  'blues-lick-1': { name: 'Blues Lick 1', description: 'Classic blues lick pattern using bends and slides', difficulty: 3, focus: 'Blues Vocabulary', estimatedTime: '3-5 min', tags: ['blues', 'lick', 'vocabulary'] },
+   489→   489→  'blues-lick-2': { name: 'Blues Lick 2', description: 'Blues lick with triplet feel and double stops', difficulty: 3, focus: 'Blues Vocabulary', estimatedTime: '3-5 min', tags: ['blues', 'lick', 'double-stops'] },
+   490→   490→  'blues-turnaround': { name: 'Blues Turnaround', description: 'Classic blues turnaround at the end of a 12-bar progression', difficulty: 3, focus: 'Blues Vocabulary', estimatedTime: '3-5 min', tags: ['blues', 'turnaround', 'progression'] },
+   491→   491→
+   492→   492→  // ── Fretboard Knowledge ──
+   493→   493→  'caged-shapes': { name: 'CAGED Shapes', description: 'All CAGED chord shapes exercise for fretboard mastery', difficulty: 3, focus: 'Fretboard Knowledge', estimatedTime: '4-6 min', tags: ['caged', 'shapes', 'fretboard'] },
+   494→   494→  'note-triplets': { name: 'Note Triplets', description: 'Find the same note on 3 different strings across the fretboard', difficulty: 3, focus: 'Fretboard Knowledge', estimatedTime: '3-5 min', tags: ['notes', 'triplets', 'navigation'] },
+   495→   495→  'relative-note': { name: 'Relative Note Finder', description: 'Find relative major/minor across the fretboard', difficulty: 3, focus: 'Fretboard Knowledge', estimatedTime: '3-5 min', tags: ['relative', 'major-minor', 'theory'] },
+   496→   496→  'fretboard-map': { name: 'Fretboard Map', description: 'Full fretboard note mapping drill for complete memorization', difficulty: 2, focus: 'Fretboard Knowledge', estimatedTime: '5-8 min', tags: ['fretboard', 'map', 'memorization'] },
+   497→   497→
+   498→   498→  // ── Speed & Agility ──
+   499→   499→  'speed-ladder': { name: 'Speed Ladder', description: 'Progressive tempo exercise building speed incrementally', difficulty: 3, focus: 'Speed', estimatedTime: '5-8 min', tags: ['speed', 'ladder', 'progressive'] },
+   500→   500→  'speed-burst-16th': { name: '16th Note Speed Burst', description: '16th note speed bursts for maximum picking velocity', difficulty: 4, focus: 'Speed', estimatedTime: '3-5 min', tags: ['speed', '16th', 'burst'] },
+   501→   501→  'speed-triplet-run': { name: 'Triplet Speed Run', description: 'Triplet speed runs for fluid 3-note-per-string patterns', difficulty: 4, focus: 'Speed', estimatedTime: '3-5 min', tags: ['speed', 'triplet', '3nps'] },
+   502→   502→};
+   503→   503→
+   504→   504→// ─── VARIATION SYSTEM ───
+   505→   505→
+   506→   506→export interface ExerciseVariation {
+   507→   507→  id: string;
+   508→   508→  typeId: ExerciseType;
+   509→   509→  variantName: string;
+   510→   510→  suffix: string;
+   511→   511→  modifier: 'standard' | 'extended' | 'inverted' | 'reverse' | 'compact';
+   512→   512→}
+   513→   513→
+   514→   514→export const EXERCISE_VARIATIONS: ExerciseVariation[] = buildVariations();
+   515→   515→
+   516→   516→function buildVariations(): ExerciseVariation[] {
+   517→   517→  const variations: ExerciseVariation[] = [];
+   518→   518→  const seenIds = new Set<string>();
+   519→   519→  const allTypes = Object.keys(EXERCISE_TYPES) as ExerciseType[];
+   520→   520→
+   521→   521→  function addVariation(v: ExerciseVariation) {
+   522→   522→    if (!seenIds.has(v.id)) {
+   523→   523→      seenIds.add(v.id);
+   524→   524→      variations.push(v);
+   525→   525→    }
+   526→   526→  }
+   527→   527→
+   528→   528→  for (const typeId of allTypes) {
+   529→   529→    // Every type gets standard
+   530→   530→    addVariation({
+   531→   531→      id: `${typeId}-standard`,
+   532→   532→      typeId,
+   533→   533→      variantName: 'Standard',
+   534→   534→      suffix: 'Std',
+   535→   535→      modifier: 'standard',
+   536→   536→    });
+   537→   537→
+   538→   538→    // Scale runs: extended + reverse
+   539→   539→    if (typeId.startsWith('scale-') || typeId === 'reverse-pentatonic') {
+   540→   540→      addVariation({ id: `${typeId}-extended`, typeId, variantName: 'Extended', suffix: 'Ext', modifier: 'extended' });
+   541→   541→      addVariation({ id: `${typeId}-reverse`, typeId, variantName: 'Reverse', suffix: 'Rev', modifier: 'reverse' });
+   542→   542→    }
+   543→   543→
+   544→   544→    // Sequences: extended + compact
+   545→   545→    if (['thirds', 'fourths', 'fifths', 'sixths', 'sevenths', 'sequence-3', 'sequence-4', 'sequence-5', 'sequence-6', 'sequence-7', 'pedal-tone', 'pedal-tone-inv', 'scale-fragment-3', 'scale-fragment-4', 'scale-skip-note'].includes(typeId)) {
+   546→   546→      addVariation({ id: `${typeId}-extended`, typeId, variantName: 'Extended', suffix: 'Ext', modifier: 'extended' });
+   547→   547→      addVariation({ id: `${typeId}-compact`, typeId, variantName: 'Compact', suffix: 'Cmp', modifier: 'compact' });
+   548→   548→    }
+   549→   549→
+   550→   550→    // Shapes: inverted + compact
+   551→   551→    if (['triads', 'triads-inv1', 'triads-inv2', 'arpeggios', 'octave-shapes', 'double-stops', 'shell-voicings', 'dyads', 'chord-scale', 'power-shapes'].includes(typeId)) {
+   552→   552→      addVariation({ id: `${typeId}-inverted`, typeId, variantName: 'Inverted', suffix: 'Inv', modifier: 'inverted' });
+   553→   553→      addVariation({ id: `${typeId}-compact`, typeId, variantName: 'Compact', suffix: 'Cmp', modifier: 'compact' });
+   554→   554→    }
+   555→   555→
+   556→   556→    // Technique: extended + reverse
+   557→   557→    if (['string-skip', 'lateral-run', 'diagonal', 'position-shift', 'pentatonic-run', 'economy-picking', 'spider-walk', 'interval-jump', 'hammer-pull', 'slide-exercise', 'cross-string', 'speed-burst'].includes(typeId)) {
+   558→   558→      addVariation({ id: `${typeId}-extended`, typeId, variantName: 'Extended', suffix: 'Ext', modifier: 'extended' });
+   559→   559→      addVariation({ id: `${typeId}-reverse`, typeId, variantName: 'Reverse', suffix: 'Rev', modifier: 'reverse' });
+   560→   560→    }
+   561→   561→
+   562→   562→    // Connections: extended
+   563→   563→    if (['connecting', 'position-sweep', 'caged-cycle', 'caged-run'].includes(typeId)) {
+   564→   564→      addVariation({ id: `${typeId}-extended`, typeId, variantName: 'Extended', suffix: 'Ext', modifier: 'extended' });
+   565→   565→    }
+   566→   566→
+   567→   567→    // Intervals: inverted + compact
+   568→   568→    if (typeId.startsWith('intervals-')) {
+   569→   569→      addVariation({ id: `${typeId}-inverted`, typeId, variantName: 'Inverted', suffix: 'Inv', modifier: 'inverted' });
+   570→   570→      addVariation({ id: `${typeId}-compact`, typeId, variantName: 'Compact', suffix: 'Cmp', modifier: 'compact' });
+   571→   571→    }
+   572→   572→
+   573→   573→    // Arpeggios: extended + inverted
+   574→   574→    if (['arp-sweep', 'arp-string-skip', 'arp-triad-up', 'arp-seventh', 'arp-inverted', 'arp-connect'].includes(typeId)) {
+   575→   575→      addVariation({ id: `${typeId}-extended`, typeId, variantName: 'Extended', suffix: 'Ext', modifier: 'extended' });
+   576→   576→      addVariation({ id: `${typeId}-inverted`, typeId, variantName: 'Inverted', suffix: 'Inv', modifier: 'inverted' });
+   577→   577→    }
+   578→   578→
+   579→   579→    // Warmups: extended + compact
+   580→   580→    if (['chromatic-warmup', 'spider-warmup', 'finger-gym', 'string-cross-warmup'].includes(typeId)) {
+   581→   581→      addVariation({ id: `${typeId}-extended`, typeId, variantName: 'Extended', suffix: 'Ext', modifier: 'extended' });
+   582→   582→      addVariation({ id: `${typeId}-compact`, typeId, variantName: 'Compact', suffix: 'Cmp', modifier: 'compact' });
+   583→   583→    }
+   584→   584→
+   585→   585→    // Rhythm: extended + compact
+   586→   586→    if (typeId.startsWith('rhythm-')) {
+   587→   587→      addVariation({ id: `${typeId}-extended`, typeId, variantName: 'Extended', suffix: 'Ext', modifier: 'extended' });
+   588→   588→      addVariation({ id: `${typeId}-compact`, typeId, variantName: 'Compact', suffix: 'Cmp', modifier: 'compact' });
+   589→   589→    }
+   590→   590→
+   591→   591→    // Bending: extended
+   592→   592→    if (typeId.startsWith('bend-') || typeId === 'vibrato-control') {
+   593→   593→      addVariation({ id: `${typeId}-extended`, typeId, variantName: 'Extended', suffix: 'Ext', modifier: 'extended' });
+   594→   594→    }
+   595→   595→
+   596→   596→    // Tapping: extended + reverse
+   597→   597→    if (typeId.startsWith('tap-')) {
+   598→   598→      addVariation({ id: `${typeId}-extended`, typeId, variantName: 'Extended', suffix: 'Ext', modifier: 'extended' });
+   599→   599→      addVariation({ id: `${typeId}-reverse`, typeId, variantName: 'Reverse', suffix: 'Rev', modifier: 'reverse' });
+   600→   600→    }
+   601→   601→
+   602→   602→    // Harmonics: extended
+   603→   603→    if (typeId.startsWith('harmonics-')) {
+   604→   604→      addVariation({ id: `${typeId}-extended`, typeId, variantName: 'Extended', suffix: 'Ext', modifier: 'extended' });
+   605→   605→    }
+   606→   606→
+   607→   607→    // Extended sequences: extended + compact
+   608→   608→    if (['enclosure', 'bebop-scale', 'cycle-of-4ths', 'cycle-of-5ths', 'chromatic-enclosure'].includes(typeId)) {
+   609→   609→      addVariation({ id: `${typeId}-extended`, typeId, variantName: 'Extended', suffix: 'Ext', modifier: 'extended' });
+   610→   610→      addVariation({ id: `${typeId}-compact`, typeId, variantName: 'Compact', suffix: 'Cmp', modifier: 'compact' });
+   611→   611→    }
+   612→   612→
+   613→   613→    // Extended scale runs: extended + reverse
+   614→   614→    if (['scale-3nps', 'scale-single-string', 'scale-zigzag', 'scale-wide-skip', 'scale-chromatic-passing'].includes(typeId)) {
+   615→   615→      addVariation({ id: `${typeId}-extended`, typeId, variantName: 'Extended', suffix: 'Ext', modifier: 'extended' });
+   616→   616→      addVariation({ id: `${typeId}-reverse`, typeId, variantName: 'Reverse', suffix: 'Rev', modifier: 'reverse' });
+   617→   617→    }
+   618→   618→
+   619→   619→    // Extended technique: extended + reverse
+   620→   620→    if (['hybrid-picking', 'chicken-pick', 'banjo-roll', 'palm-mute', 'staccato', 'sweep-tap'].includes(typeId)) {
+   621→   621→      addVariation({ id: `${typeId}-extended`, typeId, variantName: 'Extended', suffix: 'Ext', modifier: 'extended' });
+   622→   622→      addVariation({ id: `${typeId}-reverse`, typeId, variantName: 'Reverse', suffix: 'Rev', modifier: 'reverse' });
+   623→   623→    }
+   624→   624→
+   625→   625→    // Extended shapes: inverted + compact
+   626→   626→    if (['barre-shapes', 'drop2-voicings', 'guide-tones', 'quartal-voicings', 'stacked-fourths'].includes(typeId)) {
+   627→   627→      addVariation({ id: `${typeId}-inverted`, typeId, variantName: 'Inverted', suffix: 'Inv', modifier: 'inverted' });
+   628→   628→      addVariation({ id: `${typeId}-compact`, typeId, variantName: 'Compact', suffix: 'Cmp', modifier: 'compact' });
+   629→   629→    }
+   630→   630→
+   631→   631→    // Fretboard navigation: extended + compact
+   632→   632→    if (['note-finder', 'octave-drill', 'unison-drill', 'interval-matrix'].includes(typeId)) {
+   633→   633→      addVariation({ id: `${typeId}-extended`, typeId, variantName: 'Extended', suffix: 'Ext', modifier: 'extended' });
+   634→   634→      addVariation({ id: `${typeId}-compact`, typeId, variantName: 'Compact', suffix: 'Cmp', modifier: 'compact' });
+   635→   635→    }
+   636→   636→
+   637→   637→    // Extended warmups: extended + compact
+   638→   638→    if (['chromatic-1234', 'chromatic-4321', 'chromatic-1324', 'chromatic-1423', 'chromatic-2413', 'finger-stretch', 'chromatic-2341', 'chromatic-3142', 'chromatic-4132', 'chromatic-3241', 'chromatic-desc-warmup', 'chromatic-all-strings'].includes(typeId)) {
+   639→   639→      addVariation({ id: `${typeId}-extended`, typeId, variantName: 'Extended', suffix: 'Ext', modifier: 'extended' });
+   640→   640→      addVariation({ id: `${typeId}-compact`, typeId, variantName: 'Compact', suffix: 'Cmp', modifier: 'compact' });
+   641→   641→    }
+   642→   642→
+   643→   643→    // Spider exercises: extended + reverse
+   644→   644→    if (['chromatic-spider-walk', 'spider-cross-1', 'spider-cross-2', 'spider-inward', 'spider-outward'].includes(typeId)) {
+   645→   645→      addVariation({ id: `${typeId}-extended`, typeId, variantName: 'Extended', suffix: 'Ext', modifier: 'extended' });
+   646→   646→      addVariation({ id: `${typeId}-reverse`, typeId, variantName: 'Reverse', suffix: 'Rev', modifier: 'reverse' });
+   647→   647→    }
+   648→   648→
+   649→   649→    // String crossing: extended + reverse
+   650→   650→    if (['string-cross-asc', 'string-cross-desc', 'string-cross-skip', 'string-cross-alternate'].includes(typeId)) {
+   651→   651→      addVariation({ id: `${typeId}-extended`, typeId, variantName: 'Extended', suffix: 'Ext', modifier: 'extended' });
+   652→   652→      addVariation({ id: `${typeId}-reverse`, typeId, variantName: 'Reverse', suffix: 'Rev', modifier: 'reverse' });
+   653→   653→    }
+   654→   654→
+   655→   655→    // Sweep picking: extended + inverted
+   656→   656→    if (['sweep-3string', 'sweep-5string', 'sweep-minor', 'sweep-major'].includes(typeId)) {
+   657→   657→      addVariation({ id: `${typeId}-extended`, typeId, variantName: 'Extended', suffix: 'Ext', modifier: 'extended' });
+   658→   658→      addVariation({ id: `${typeId}-inverted`, typeId, variantName: 'Inverted', suffix: 'Inv', modifier: 'inverted' });
+   659→   659→    }
+
+[showing lines 160-659 of 2002; use offset=660 with limit to continue reading]

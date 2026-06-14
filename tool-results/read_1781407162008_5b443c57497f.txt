@@ -1,0 +1,2002 @@
+     1→'use client';
+     2→
+     3→import React, { useState, useMemo, useCallback, useRef, useEffect } from 'react';
+     4→import {
+     5→  KEY_NAMES,
+     6→  KEY_DISPLAY_NAMES,
+     7→  SCALES,
+     8→  NoteName,
+     9→  getCAGEDPositions,
+    10→  getScaleOnFretboard,
+    11→  FRET_COUNT,
+    12→} from '@/lib/music-theory';
+    13→import {
+    14→  generateExercise,
+    15→  generatePatternExercises,
+    16→  computeExerciseStats,
+    17→  sortNotesAscending,
+    18→  ExerciseType,
+    19→  EXERCISE_TYPES,
+    20→  EXERCISE_CATEGORIES,
+    21→  ExerciseNote,
+    22→} from '@/lib/exercise-generator';
+    23→import FretboardDiagram from '@/components/guitar/FretboardDiagram';
+    24→import PatternDiagram from '@/components/guitar/PatternDiagram';
+    25→import TabNotation from '@/components/guitar/TabNotation';
+    26→import {
+    27→  Select,
+    28→  SelectContent,
+    29→  SelectItem,
+    30→  SelectTrigger,
+    31→  SelectValue,
+    32→} from '@/components/ui/select';
+    33→import { Switch } from '@/components/ui/switch';
+    34→import { Slider } from '@/components/ui/slider';
+    35→import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetDescription } from '@/components/ui/sheet';
+    36→import { Collapsible, CollapsibleTrigger, CollapsibleContent } from '@/components/ui/collapsible';
+    37→import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
+    38→import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+    39→import {
+    40→  ChevronRight,
+    41→  Shuffle,
+    42→  Music,
+    43→  Zap,
+    44→  GitBranch,
+    45→  Target,
+    46→  Layers,
+    47→  Route,
+    48→  Volume2,
+    49→  VolumeX,
+    50→  Play,
+    51→  Pause,
+    52→  Square,
+    53→  Timer,
+    54→  Drum,
+    55→  Search,
+    56→  Menu,
+    57→  X,
+    58→  Guitar,
+    59→  FileText,
+    60→  BarChart3,
+    61→  Eye,
+    62→  ChevronDown,
+    63→  ChevronUp,
+    64→  Star,
+    65→  ArrowRight,
+    66→  Clock,
+    67→  Signal,
+    68→  Activity,
+    69→  Hash,
+    70→  Ruler,
+    71→  SkipBack, SkipForward, RotateCcw, Repeat, Gauge, Waves, Metronome as MetronomeIcon, Hand, Shuffle as ShuffleIcon, Dice5, TimerReset, Flag, ChevronFirst, ChevronLast, Siren, Disc3, ToggleLeft, Info, BookOpen, ChevronRight as ChevronRightIcon,
+    72→} from 'lucide-react';
+    73→
+    74→// ─── AUDIO ENGINE ───
+    75→// Proper standard guitar tuning frequencies (Hz) — E2, A2, D3, G3, B3, E4
+    76→const STRING_FREQUENCIES = [82.41, 110.00, 146.83, 196.00, 246.94, 329.63];
+    77→
+    78→let audioCtx: AudioContext | null = null;
+    79→let masterCompressor: DynamicsCompressorNode | null = null;
+    80→function getAudioCtx() {
+    81→  if (!audioCtx) audioCtx = new AudioContext();
+    82→  return audioCtx;
+    83→}
+    84→
+    85→// Singleton master compressor
+    86→function getMaster(ctx: AudioContext): DynamicsCompressorNode {
+    87→  if (!masterCompressor) {
+    88→    const comp = ctx.createDynamicsCompressor();
+    89→    comp.threshold.setValueAtTime(-20, ctx.currentTime);
+    90→    comp.knee.setValueAtTime(10, ctx.currentTime);
+    91→    comp.ratio.setValueAtTime(4, ctx.currentTime);
+    92→    comp.attack.setValueAtTime(0.003, ctx.currentTime);
+    93→    comp.release.setValueAtTime(0.15, ctx.currentTime);
+    94→    comp.connect(ctx.destination);
+    95→    masterCompressor = comp;
+    96→  }
+    97→  return masterCompressor;
+    98→}
+    99→
+   100→function playGuitarNote(stringIdx: number, fret: number, duration: number = 0.5) {
+   101→  try {
+   102→    const ctx = getAudioCtx();
+   103→    if (ctx.state === 'suspended') ctx.resume();
+   104→    const master = getMaster(ctx);
+   105→    const baseFreq = STRING_FREQUENCIES[stringIdx];
+   106→    const freq = baseFreq * Math.pow(2, fret / 12);
+   107→    const now = ctx.currentTime;
+   108→
+   109→    // ── Fundamental (pulse wave — close to plucked string) ──
+   110→    const osc1 = ctx.createOscillator();
+   111→    const gain1 = ctx.createGain();
+   112→    osc1.type = 'triangle';
+   113→    osc1.frequency.setValueAtTime(freq, now);
+   114→    // Slight pitch envelope (attack transient — string stretches then settles)
+   115→    osc1.frequency.setValueAtTime(freq * 1.005, now);
+   116→    osc1.frequency.exponentialRampToValueAtTime(freq, now + 0.02);
+   117→    gain1.gain.setValueAtTime(0, now);
+   118→    gain1.gain.linearRampToValueAtTime(0.32, now + 0.004);  // Fast pluck attack
+   119→    gain1.gain.exponentialRampToValueAtTime(0.12, now + 0.08);
+   120→    gain1.gain.exponentialRampToValueAtTime(0.001, now + duration);
+   121→
+   122→    // ── 2nd harmonic (octave above, softer) ──
+   123→    const osc2 = ctx.createOscillator();
+   124→    const gain2 = ctx.createGain();
+   125→    osc2.type = 'sine';
+   126→    osc2.frequency.setValueAtTime(freq * 2, now);
+   127→    gain2.gain.setValueAtTime(0, now);
+   128→    gain2.gain.linearRampToValueAtTime(0.06, now + 0.003);
+   129→    gain2.gain.exponentialRampToValueAtTime(0.001, now + duration * 0.4);
+   130→
+   131→    // ── 3rd harmonic ──
+   132→    const osc3 = ctx.createOscillator();
+   133→    const gain3 = ctx.createGain();
+   134→    osc3.type = 'sine';
+   135→    osc3.frequency.setValueAtTime(freq * 3, now);
+   136→    gain3.gain.setValueAtTime(0, now);
+   137→    gain3.gain.linearRampToValueAtTime(0.025, now + 0.003);
+   138→    gain3.gain.exponentialRampToValueAtTime(0.001, now + duration * 0.25);
+   139→
+   140→    // ── Body resonance (low-pass filtered sub-harmonic) ──
+   141→    const oscBody = ctx.createOscillator();
+   142→    const gainBody = ctx.createGain();
+   143→    const filterBody = ctx.createBiquadFilter();
+   144→    oscBody.type = 'sine';
+   145→    oscBody.frequency.setValueAtTime(freq * 0.5, now);
+   146→    filterBody.type = 'lowpass';
+   147→    filterBody.frequency.setValueAtTime(300, now);
+   148→    filterBody.Q.setValueAtTime(1, now);
+   149→    gainBody.gain.setValueAtTime(0, now);
+   150→    gainBody.gain.linearRampToValueAtTime(0.04, now + 0.01);
+   151→    gainBody.gain.exponentialRampToValueAtTime(0.001, now + duration * 0.4);
+   152→
+   153→    // ── Brightness (sawtooth → lowpass, simulates pick attack brightness) ──
+   154→    const oscBright = ctx.createOscillator();
+   155→    const gainBright = ctx.createGain();
+   156→    const filterBright = ctx.createBiquadFilter();
+   157→    oscBright.type = 'sawtooth';
+   158→    oscBright.frequency.setValueAtTime(freq, now);
+   159→    filterBright.type = 'lowpass';
+   160→    filterBright.frequency.setValueAtTime(4000, now);           // Bright attack
+   161→    filterBright.frequency.exponentialRampToValueAtTime(800, now + 0.15); // Dulls quickly
+   162→    filterBright.Q.setValueAtTime(0.7, now);
+   163→    gainBright.gain.setValueAtTime(0, now);
+   164→    gainBright.gain.linearRampToValueAtTime(0.05, now + 0.002);
+   165→    gainBright.gain.exponentialRampToValueAtTime(0.001, now + duration * 0.3);
+   166→
+   167→    // ── Pluck noise burst (very short, simulates pick/finger noise) ──
+   168→    const noiseLen = 0.015;
+   169→    const noiseBuffer = ctx.createBuffer(1, ctx.sampleRate * noiseLen, ctx.sampleRate);
+   170→    const noiseData = noiseBuffer.getChannelData(0);
+   171→    for (let i = 0; i < noiseData.length; i++) noiseData[i] = (Math.random() * 2 - 1) * 0.3;
+   172→    const noiseSource = ctx.createBufferSource();
+   173→    noiseSource.buffer = noiseBuffer;
+   174→    const noiseGain = ctx.createGain();
+   175→    const noiseFilter = ctx.createBiquadFilter();
+   176→    noiseFilter.type = 'bandpass';
+   177→    noiseFilter.frequency.setValueAtTime(2000 + stringIdx * 500, now); // Higher strings = brighter noise
+   178→    noiseFilter.Q.setValueAtTime(2, now);
+   179→    noiseGain.gain.setValueAtTime(0.12, now);
+   180→    noiseGain.gain.exponentialRampToValueAtTime(0.001, now + noiseLen);
+   181→
+   182→    // Connect everything
+   183→    osc1.connect(gain1); gain1.connect(master);
+   184→    osc2.connect(gain2); gain2.connect(master);
+   185→    osc3.connect(gain3); gain3.connect(master);
+   186→    oscBody.connect(filterBody); filterBody.connect(gainBody); gainBody.connect(master);
+   187→    oscBright.connect(filterBright); filterBright.connect(gainBright); gainBright.connect(master);
+   188→    noiseSource.connect(noiseFilter); noiseFilter.connect(noiseGain); noiseGain.connect(master);
+   189→
+   190→    // Start all
+   191→    const stopTime = now + duration + 0.1;
+   192→    osc1.start(now); osc2.start(now); osc3.start(now); oscBody.start(now); oscBright.start(now); noiseSource.start(now);
+   193→    osc1.stop(stopTime); osc2.stop(stopTime); osc3.stop(stopTime); oscBody.stop(stopTime); oscBright.stop(stopTime);
+   194→  } catch (e) {}
+   195→}
+   196→
+   197→// Professional metronome — wood block sound
+   198→function playMetronomeClick(accent: boolean) {
+   199→  try {
+   200→    const ctx = getAudioCtx();
+   201→    if (ctx.state === 'suspended') ctx.resume();
+   202→    const now = ctx.currentTime;
+   203→
+   204→    // Tone component — short sine burst like a wood block
+   205→    const osc = ctx.createOscillator();
+   206→    const gain = ctx.createGain();
+   207→    osc.type = 'sine';
+   208→    osc.frequency.setValueAtTime(accent ? 1567.98 : 1046.50, now); // G6 (accent) / C6 (normal)
+   209→    gain.gain.setValueAtTime(accent ? 0.35 : 0.18, now);
+   210→    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.04);
+   211→    osc.connect(gain);
+   212→
+   213→    // Click noise burst (the "clack" of the wood block)
+   214→    const noiseLen = 0.008;
+   215→    const noiseBuffer = ctx.createBuffer(1, ctx.sampleRate * noiseLen, ctx.sampleRate);
+   216→    const noiseData = noiseBuffer.getChannelData(0);
+   217→    for (let i = 0; i < noiseData.length; i++) noiseData[i] = (Math.random() * 2 - 1);
+   218→    const noiseSource = ctx.createBufferSource();
+   219→    noiseSource.buffer = noiseBuffer;
+   220→    const noiseGain = ctx.createGain();
+   221→    const noiseFilter = ctx.createBiquadFilter();
+   222→    noiseFilter.type = 'highpass';
+   223→    noiseFilter.frequency.setValueAtTime(accent ? 3000 : 2000, now);
+   224→    noiseGain.gain.setValueAtTime(accent ? 0.15 : 0.07, now);
+   225→    noiseGain.gain.exponentialRampToValueAtTime(0.001, now + noiseLen);
+   226→    noiseSource.connect(noiseFilter); noiseFilter.connect(noiseGain);
+   227→
+   228→    // Resonance body
+   229→    const oscBody = ctx.createOscillator();
+   230→    const gainBody = ctx.createGain();
+   231→    oscBody.type = 'sine';
+   232→    oscBody.frequency.setValueAtTime(accent ? 800 : 600, now);
+   233→    gainBody.gain.setValueAtTime(accent ? 0.08 : 0.04, now);
+   234→    gainBody.gain.exponentialRampToValueAtTime(0.001, now + 0.03);
+   235→    oscBody.connect(gainBody);
+   236→
+   237→    const master = getMaster(ctx);
+   238→    gain.connect(master); noiseGain.connect(master); gainBody.connect(master);
+   239→
+   240→    osc.start(now); noiseSource.start(now); oscBody.start(now);
+   241→    osc.stop(now + 0.05); oscBody.stop(now + 0.04);
+   242→  } catch (e) {}
+   243→}
+   244→
+   245→// Extended metronome sound engine with multiple sound types
+   246→function playMetronomeClickByType(accent: boolean, soundType: MetronomeSound, volume: number = 0.8) {
+   247→  try {
+   248→    const ctx = getAudioCtx();
+   249→    if (ctx.state === 'suspended') ctx.resume();
+   250→    const now = ctx.currentTime;
+   251→    const master = getMaster(ctx);
+   252→    const vol = volume * (accent ? 1.0 : 0.6);
+   253→
+   254→    switch (soundType) {
+   255→      case 'classic':
+   256→      case 'woodblock': {
+   257→        const osc = ctx.createOscillator();
+   258→        const gain = ctx.createGain();
+   259→        osc.type = 'sine';
+   260→        osc.frequency.setValueAtTime(accent ? 1567.98 : 1046.50, now);
+   261→        gain.gain.setValueAtTime(vol * 0.35, now);
+   262→        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.04);
+   263→        osc.connect(gain); gain.connect(master);
+   264→        osc.start(now); osc.stop(now + 0.05);
+   265→        const noiseLen = 0.008;
+   266→        const noiseBuffer = ctx.createBuffer(1, ctx.sampleRate * noiseLen, ctx.sampleRate);
+   267→        const noiseData = noiseBuffer.getChannelData(0);
+   268→        for (let i = 0; i < noiseData.length; i++) noiseData[i] = (Math.random() * 2 - 1);
+   269→        const noiseSrc = ctx.createBufferSource(); noiseSrc.buffer = noiseBuffer;
+   270→        const nGain = ctx.createGain(); const nFilter = ctx.createBiquadFilter();
+   271→        nFilter.type = 'highpass'; nFilter.frequency.setValueAtTime(accent ? 3000 : 2000, now);
+   272→        nGain.gain.setValueAtTime(vol * 0.15, now); nGain.gain.exponentialRampToValueAtTime(0.001, now + noiseLen);
+   273→        noiseSrc.connect(nFilter); nFilter.connect(nGain); nGain.connect(master);
+   274→        noiseSrc.start(now);
+   275→        const oscBody = ctx.createOscillator(); const gainBody = ctx.createGain();
+   276→        oscBody.type = 'sine'; oscBody.frequency.setValueAtTime(accent ? 800 : 600, now);
+   277→        gainBody.gain.setValueAtTime(vol * 0.08, now); gainBody.gain.exponentialRampToValueAtTime(0.001, now + 0.03);
+   278→        oscBody.connect(gainBody); gainBody.connect(master);
+   279→        oscBody.start(now); oscBody.stop(now + 0.04);
+   280→        break;
+   281→      }
+   282→      case 'stick': {
+   283→        const osc = ctx.createOscillator(); const gain = ctx.createGain();
+   284→        osc.type = 'triangle'; osc.frequency.setValueAtTime(accent ? 4000 : 2500, now);
+   285→        gain.gain.setValueAtTime(vol * 0.3, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.015);
+   286→        osc.connect(gain); gain.connect(master);
+   287→        osc.start(now); osc.stop(now + 0.02);
+   288→        const nLen = 0.005; const nBuf = ctx.createBuffer(1, ctx.sampleRate * nLen, ctx.sampleRate);
+   289→        const nD = nBuf.getChannelData(0); for (let i = 0; i < nD.length; i++) nD[i] = (Math.random() * 2 - 1);
+   290→        const nS = ctx.createBufferSource(); nS.buffer = nBuf;
+   291→        const nG = ctx.createGain(); const nF = ctx.createBiquadFilter();
+   292→        nF.type = 'bandpass'; nF.frequency.setValueAtTime(accent ? 6000 : 4000, now); nF.Q.setValueAtTime(2, now);
+   293→        nG.gain.setValueAtTime(vol * 0.2, now); nG.gain.exponentialRampToValueAtTime(0.001, now + nLen);
+   294→        nS.connect(nF); nF.connect(nG); nG.connect(master); nS.start(now);
+   295→        break;
+   296→      }
+   297→      case 'cowbell': {
+   298→        const osc1 = ctx.createOscillator(); const gain1 = ctx.createGain();
+   299→        const osc2 = ctx.createOscillator(); const gain2 = ctx.createGain();
+   300→        osc1.type = 'square'; osc1.frequency.setValueAtTime(accent ? 800 : 540, now);
+   301→        gain1.gain.setValueAtTime(vol * 0.15, now); gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+   302→        osc2.type = 'square'; osc2.frequency.setValueAtTime(accent ? 540 : 360, now);
+   303→        gain2.gain.setValueAtTime(vol * 0.12, now); gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
+   304→        const bp = ctx.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.setValueAtTime(700, now); bp.Q.setValueAtTime(3, now);
+   305→        const bpGain = ctx.createGain(); bpGain.gain.setValueAtTime(vol * 0.3, now); bpGain.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
+   306→        osc1.connect(gain1); gain1.connect(bp); osc2.connect(gain2); gain2.connect(bp); bp.connect(bpGain); bpGain.connect(master);
+   307→        osc1.start(now); osc2.start(now); osc1.stop(now + 0.15); osc2.stop(now + 0.15);
+   308→        break;
+   309→      }
+   310→      case 'digital': {
+   311→        const osc = ctx.createOscillator(); const gain = ctx.createGain();
+   312→        osc.type = 'sine'; osc.frequency.setValueAtTime(accent ? 1200 : 800, now);
+   313→        gain.gain.setValueAtTime(vol * 0.25, now); gain.gain.setValueAtTime(vol * 0.25, now + 0.02);
+   314→        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.06);
+   315→        osc.connect(gain); gain.connect(master);
+   316→        osc.start(now); osc.stop(now + 0.07);
+   317→        break;
+   318→      }
+   319→      case 'drumstick': {
+   320→        const osc = ctx.createOscillator(); const gain = ctx.createGain();
+   321→        osc.type = 'sine'; osc.frequency.setValueAtTime(accent ? 3000 : 1800, now);
+   322→        osc.frequency.exponentialRampToValueAtTime(accent ? 1500 : 900, now + 0.01);
+   323→        gain.gain.setValueAtTime(vol * 0.25, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.025);
+   324→        osc.connect(gain); gain.connect(master);
+   325→        osc.start(now); osc.stop(now + 0.03);
+   326→        const body = ctx.createOscillator(); const bGain = ctx.createGain();
+   327→        body.type = 'sine'; body.frequency.setValueAtTime(accent ? 200 : 150, now);
+   328→        bGain.gain.setValueAtTime(vol * 0.1, now); bGain.gain.exponentialRampToValueAtTime(0.001, now + 0.03);
+   329→        body.connect(bGain); bGain.connect(master);
+   330→        body.start(now); body.stop(now + 0.04);
+   331→        break;
+   332→      }
+   333→      case 'hihat': {
+   334→        const nLen = accent ? 0.06 : 0.03;
+   335→        const nBuf = ctx.createBuffer(1, ctx.sampleRate * nLen, ctx.sampleRate);
+   336→        const nD = nBuf.getChannelData(0); for (let i = 0; i < nD.length; i++) nD[i] = (Math.random() * 2 - 1);
+   337→        const nS = ctx.createBufferSource(); nS.buffer = nBuf;
+   338→        const hp = ctx.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.setValueAtTime(accent ? 8000 : 6000, now);
+   339→        const nG = ctx.createGain(); nG.gain.setValueAtTime(vol * 0.15, now); nG.gain.exponentialRampToValueAtTime(0.001, now + nLen);
+   340→        nS.connect(hp); hp.connect(nG); nG.connect(master); nS.start(now);
+   341→        const osc = ctx.createOscillator(); const g = ctx.createGain();
+   342→        osc.type = 'square'; osc.frequency.setValueAtTime(accent ? 6000 : 4000, now);
+   343→        g.gain.setValueAtTime(vol * 0.04, now); g.gain.exponentialRampToValueAtTime(0.001, now + 0.01);
+   344→        osc.connect(g); g.connect(master); osc.start(now); osc.stop(now + 0.02);
+   345→        break;
+   346→      }
+   347→      case 'electronic': {
+   348→        const osc = ctx.createOscillator(); const gain = ctx.createGain();
+   349→        osc.type = 'square'; osc.frequency.setValueAtTime(accent ? 1000 : 660, now);
+   350→        gain.gain.setValueAtTime(vol * 0.12, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.02);
+   351→        osc.connect(gain); gain.connect(master);
+   352→        osc.start(now); osc.stop(now + 0.025);
+   353→        break;
+   354→      }
+   355→      case 'mechanical': {
+   356→        const osc = ctx.createOscillator(); const gain = ctx.createGain();
+   357→        osc.type = 'sine';
+   358→        const freq = accent ? 2200 : 1600;
+   359→        osc.frequency.setValueAtTime(freq, now);
+   360→        osc.frequency.exponentialRampToValueAtTime(freq * 0.6, now + 0.02);
+   361→        gain.gain.setValueAtTime(vol * 0.3, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
+   362→        const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.setValueAtTime(3000, now);
+   363→        osc.connect(lp); lp.connect(gain); gain.connect(master);
+   364→        osc.start(now); osc.stop(now + 0.06);
+   365→        const res = ctx.createOscillator(); const rGain = ctx.createGain();
+   366→        res.type = 'sine'; res.frequency.setValueAtTime(accent ? 400 : 300, now);
+   367→        rGain.gain.setValueAtTime(vol * 0.06, now); rGain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+   368→        res.connect(rGain); rGain.connect(master);
+   369→        res.start(now); res.stop(now + 0.1);
+   370→        break;
+   371→      }
+   372→    }
+   373→  } catch (e) {}
+   374→}
+   375→
+   376→// ─── INTERVAL COLOR ───
+   377→function getIntervalColor(label: string): string {
+   378→  if (label === 'R') return '#9b3939';
+   379→  if (label.includes('\u266D3') || label.includes('\u266D2')) return '#6b4a7a';
+   380→  if (label === '3' || label === '2') return '#4a7a4a';
+   381→  if (label === '4') return '#4a5a8a';
+   382→  if (label === '5') return '#4a7a7a';
+   383→  if (label.includes('5')) return '#4a7a7a';
+   384→  if (label.includes('6')) return '#8a6a3a';
+   385→  if (label.includes('7')) return '#7a4a6a';
+   386→  if (label.includes('\u266F') || label.includes('\u266D')) return '#6b4a7a';
+   387→  return '#5a5a6a';
+   388→}
+   389→
+   390→// Difficulty stars
+   391→function DifficultyBadge({ level }: { level: number }) {
+   392→  return (
+   393→    <div className="flex items-center gap-0.5">
+   394→      {[1, 2, 3, 4, 5].map(i => (
+   395→        <div key={i} className={`w-1.5 h-1.5 rounded-sm ${i <= level ? 'bg-[#9b3939]' : 'bg-[#e8e2d6]'}`} />
+   396→      ))}
+   397→    </div>
+   398→  );
+   399→}
+   400→
+   401→// ─── VIEW MODES ───
+   402→type ViewMode = 'fretboard' | 'tab' | 'hybrid' | 'analysis';
+   403→
+   404→type MetronomeSound = 'classic' | 'woodblock' | 'stick' | 'cowbell' | 'digital' | 'drumstick' | 'hihat' | 'electronic' | 'mechanical';
+   405→type Subdivision = 'quarter' | 'eighth' | 'triplets' | 'sixteenth' | 'quintuplets' | 'sextuplets';
+   406→type TimeSignatureDisplay = '2/4' | '3/4' | '4/4' | '5/4' | '6/8' | '7/8' | '9/8' | '12/8';
+   407→type AccentMode = 'first' | 'every-n' | 'random' | 'none';
+   408→type PracticeMode = 'none' | 'tempo-trainer' | 'speed-burst' | 'random-tempo';
+   409→
+   410→interface TempoTrainerConfig {
+   411→  startBpm: number;
+   412→  targetBpm: number;
+   413→  stepSize: number;
+   414→  increaseEveryN: number;
+   415→  currentReps: number;
+   416→  isActive: boolean;
+   417→}
+   418→
+   419→interface SpeedBurstConfig {
+   420→  burstBpm: number;
+   421→  burstEveryN: number;
+   422→  burstLength: number;
+   423→  currentCount: number;
+   424→  isInBurst: boolean;
+   425→  isActive: boolean;
+   426→}
+   427→
+   428→interface RandomTempoConfig {
+   429→  minBpm: number;
+   430→  maxBpm: number;
+   431→  isActive: boolean;
+   432→}
+   433→
+   434→interface PracticeGoals {
+   435→  targetReps: number;
+   436→  targetBpm: number;
+   437→  targetDuration: number; // seconds
+   438→}
+   439→
+   440→interface GapClickConfig {
+   441→  barsClick: number;
+   442→  barsSilent: number;
+   443→  currentBar: number;
+   444→  isActive: boolean;
+   445→}
+   446→
+   447→interface PolyrhythmConfig {
+   448→  ratio: '3:2' | '5:4' | '7:4' | '3:4';
+   449→  isActive: boolean;
+   450→}
+   451→
+   452→const METRONOME_SOUNDS: { value: MetronomeSound; label: string }[] = [
+   453→  { value: 'classic', label: 'Classic Click' },
+   454→  { value: 'woodblock', label: 'Wood Block' },
+   455→  { value: 'stick', label: 'Stick Click' },
+   456→  { value: 'cowbell', label: 'Cowbell' },
+   457→  { value: 'digital', label: 'Digital Beep' },
+   458→  { value: 'drumstick', label: 'Drum Stick' },
+   459→  { value: 'hihat', label: 'Hi-Hat' },
+   460→  { value: 'electronic', label: 'Electronic Click' },
+   461→  { value: 'mechanical', label: 'Mechanical' },
+   462→];
+   463→
+   464→const SUBDIVISIONS: { value: Subdivision; label: string; factor: number }[] = [
+   465→  { value: 'quarter', label: 'Quarter', factor: 1 },
+   466→  { value: 'eighth', label: 'Eighth', factor: 2 },
+   467→  { value: 'triplets', label: 'Triplets', factor: 3 },
+   468→  { value: 'sixteenth', label: '16th', factor: 4 },
+   469→  { value: 'quintuplets', label: '5-tuplet', factor: 5 },
+   470→  { value: 'sextuplets', label: '6-tuplet', factor: 6 },
+   471→];
+   472→
+   473→const TIME_SIGNATURES: { value: TimeSignatureDisplay; beats: number; noteValue: number }[] = [
+   474→  { value: '2/4', beats: 2, noteValue: 4 },
+   475→  { value: '3/4', beats: 3, noteValue: 4 },
+   476→  { value: '4/4', beats: 4, noteValue: 4 },
+   477→  { value: '5/4', beats: 5, noteValue: 4 },
+   478→  { value: '6/8', beats: 6, noteValue: 8 },
+   479→  { value: '7/8', beats: 7, noteValue: 8 },
+   480→  { value: '9/8', beats: 9, noteValue: 8 },
+   481→  { value: '12/8', beats: 12, noteValue: 8 },
+   482→];
+   483→
+   484→const POLYRHYTHM_RATIOS = ['3:2', '5:4', '7:4', '3:4'] as const;
+   485→
+   486→// ─── MAIN COMPONENT ───
+   487→export default function Home() {
+   488→  // Core state
+   489→  const [keyIndex, setKeyIndex] = useState(9);
+   490→  const [scaleId, setScaleId] = useState('minor-pentatonic');
+   491→  const [positionIndex, setPositionIndex] = useState(0);
+   492→  const [exerciseType, setExerciseType] = useState<ExerciseType>('scale-asc-desc');
+   493→  const [showAllPositions, setShowAllPositions] = useState(false);
+   494→  const [soundEnabled, setSoundEnabled] = useState(true);
+   495→  const [viewMode, setViewMode] = useState<ViewMode>('hybrid');
+   496→
+   497→  // Playback state
+   498→  const [isPlaying, setIsPlaying] = useState(false);
+   499→  const [isPaused, setIsPaused] = useState(false);
+   500→  const [playingIdx, setPlayingIdx] = useState(-1);
+   501→  const [playbackMode, setPlaybackMode] = useState<'idle' | 'exercise' | 'scale'>('idle');
+   502→  const [playbackActiveNote, setPlaybackActiveNote] = useState<{ string: number; fret: number } | null>(null);
+   503→  const [clickActiveNote, setClickActiveNote] = useState<{ string: number; fret: number } | null>(null);
+   504→  const playbackRef = useRef<{ playing: boolean; notes: ExerciseNote[]; idx: number; timeoutId: number | null }>({
+   505→    playing: false, notes: [], idx: 0, timeoutId: null,
+   506→  });
+   507→
+   508→  // BPM & Metronome
+   509→  const [bpm, setBpm] = useState(100);
+   510→  const [metronomeOn, setMetronomeOn] = useState(false);
+   511→  const [currentBeat, setCurrentBeat] = useState(-1);
+   512→  const [timeSignature, setTimeSignature] = useState(4);
+   513→  const metronomeRef = useRef(false);
+   514→  const metronomeTimeoutRef = useRef<number | null>(null);
+   515→  const beatCountRef = useRef(0);
+   516→  const tapTimes = useRef<number[]>([]);
+   517→
+   518→  // Metronome Settings
+   519→  const [metronomeSound, setMetronomeSound] = useState<MetronomeSound>('classic');
+   520→  const [subdivision, setSubdivision] = useState<Subdivision>('quarter');
+   521→  const [timeSignatureDisplay, setTimeSignatureDisplay] = useState<TimeSignatureDisplay>('4/4');
+   522→  const [accentMode, setAccentMode] = useState<AccentMode>('first');
+   523→  const [accentEveryN, setAccentEveryN] = useState(4);
+   524→  const [metronomeVolume, setMetronomeVolume] = useState(0.8);
+   525→
+   526→  // Practice Tools
+   527→  const [practiceMode, setPracticeMode] = useState<PracticeMode>('none');
+   528→  const [tempoTrainer, setTempoTrainer] = useState<TempoTrainerConfig>({
+   529→    startBpm: 80, targetBpm: 140, stepSize: 5, increaseEveryN: 2, currentReps: 0, isActive: false,
+   530→  });
+   531→  const [speedBurst, setSpeedBurst] = useState<SpeedBurstConfig>({
+   532→    burstBpm: 120, burstEveryN: 3, burstLength: 1, currentCount: 0, isInBurst: false, isActive: false,
+   533→  });
+   534→  const [randomTempo, setRandomTempo] = useState<RandomTempoConfig>({
+   535→    minBpm: 70, maxBpm: 130, isActive: false,
+   536→  });
+   537→  const [repetitionCount, setRepetitionCount] = useState(0);
+   538→  const [repetitionGoal, setRepetitionGoal] = useState(20);
+   539→  const [practiceTimer, setPracticeTimer] = useState(0);
+   540→  const [practiceTimerActive, setPracticeTimerActive] = useState(false);
+   541→  const [practiceGoals] = useState<PracticeGoals>({
+   542→    targetReps: 20, targetBpm: 140, targetDuration: 1800,
+   543→  });
+   544→
+   545→  // Advanced Metronome
+   546→  const [gapClick, setGapClick] = useState<GapClickConfig>({
+   547→    barsClick: 2, barsSilent: 2, currentBar: 0, isActive: false,
+   548→  });
+   549→  const [silentMeasureEnabled, setSilentMeasureEnabled] = useState(false);
+   550→  const [silentEveryN, setSilentEveryN] = useState(2);
+   551→  const [randomAccent, setRandomAccent] = useState(false);
+   552→  const [polyrhythm, setPolyrhythm] = useState<PolyrhythmConfig>({
+   553→    ratio: '3:2', isActive: false,
+   554→  });
+   555→
+   556→  // UI State for Practice Engine
+   557→  const [practicePanelOpen, setPracticePanelOpen] = useState(false);
+   558→  const [advancedMetronomeOpen, setAdvancedMetronomeOpen] = useState(false);
+   559→  const [bpmEditing, setBpmEditing] = useState(false);
+   560→  const [bpmInput, setBpmInput] = useState('');
+   561→  const [mobileMetronomeSheetOpen, setMobileMetronomeSheetOpen] = useState(false);
+   562→
+   563→  // Refs for practice timers
+   564→  const practiceTimerRef = useRef<number | null>(null);
+   565→  const repCountRef = useRef(0);
+   566→  const measureCountRef = useRef(0);
+   567→
+   568→  // Session timer
+   569→  const [sessionStart] = useState(Date.now());
+   570→  const [sessionElapsed, setSessionElapsed] = useState(0);
+   571→  const [exercisesPlayed, setExercisesPlayed] = useState(0);
+   572→
+   573→  // UI state
+   574→  const [sidebarOpen, setSidebarOpen] = useState(false);
+   575→  const [expandedCategory, setExpandedCategory] = useState<string>('scale-runs');
+   576→  const [rightPanelExpanded, setRightPanelExpanded] = useState(true);
+   577→  const [exerciseSearch, setExerciseSearch] = useState('');
+   578→  const [infoPageOpen, setInfoPageOpen] = useState(false);
+   579→
+   580→  // Derived state
+   581→  const keyNote = KEY_NAMES[keyIndex];
+   582→  const scale = SCALES[scaleId];
+   583→  const positions = useMemo(() => getCAGEDPositions(keyNote, scaleId), [keyNote, scaleId]);
+   584→  const currentPosition = positions[positionIndex] || { fretStart: 0, fretEnd: FRET_COUNT, name: 'Full Fretboard' };
+   585→  const startFret = showAllPositions ? 0 : currentPosition.fretStart;
+   586→  const endFret = showAllPositions ? FRET_COUNT : currentPosition.fretEnd;
+   587→
+   588→  // Current exercise
+   589→  const currentExercise = useMemo(
+   590→    () => generateExercise(exerciseType, keyNote, scaleId, positionIndex),
+   591→    [exerciseType, keyNote, scaleId, positionIndex]
+   592→  );
+   593→
+   594→  // Exercise stats (verbose, nerdy)
+   595→  const exerciseStats = useMemo(() => computeExerciseStats(currentExercise), [currentExercise]);
+   596→
+   597→  // Exercise type metadata
+   598→  const exerciseMeta = EXERCISE_TYPES[exerciseType];
+   599→
+   600→  // Breadcrumb
+   601→  const exerciseCategory = useMemo(() => {
+   602→    for (const cat of EXERCISE_CATEGORIES) {
+   603→      if (cat.types.includes(exerciseType)) return cat;
+   604→    }
+   605→    return EXERCISE_CATEGORIES[0];
+   606→  }, [exerciseType]);
+   607→
+   608→  // Scale notes for playback
+   609→  const scaleNotesForPlayback = useMemo(() => {
+   610→    const notes = getScaleOnFretboard(keyNote, scaleId, startFret, endFret);
+   611→    const sorted = sortNotesAscending(notes);
+   612→    const ascDesc = [...sorted, ...sorted.slice(0, -1).reverse()];
+   613→    return ascDesc.map((n, i) => ({
+   614→      string: n.string, fret: n.fret, note: n.note, intervalLabel: n.intervalLabel, isRoot: n.isRoot, sequenceNumber: i + 1,
+   615→    }));
+   616→  }, [keyNote, scaleId, startFret, endFret]);
+   617→
+   618→  const exerciseHighlightNotes = useMemo(() => {
+   619→    if (!currentExercise || !currentExercise.notes.length) return undefined;
+   620→    const allScaleNotes = getScaleOnFretboard(keyNote, scaleId, 0, FRET_COUNT);
+   621→    const exerciseNoteKeys = new Set(currentExercise.notes.map(n => `${n.string}-${n.fret}`));
+   622→    return allScaleNotes.filter(n => exerciseNoteKeys.has(`${n.string}-${n.fret}`));
+   623→  }, [currentExercise, keyNote, scaleId]);
+   624→
+   625→  const exercisePath = useMemo(() => {
+   626→    if (!currentExercise || !currentExercise.notes.length) return undefined;
+   627→    const seen = new Set<string>();
+   628→    const path: Array<{ string: number; fret: number; sequenceNumber?: number }> = [];
+   629→    for (const note of currentExercise.notes) {
+   630→      const key = `${note.string}-${note.fret}`;
+   631→      if (!seen.has(key)) { seen.add(key); path.push({ string: note.string, fret: note.fret, sequenceNumber: note.sequenceNumber }); }
+   632→    }
+   633→    return path;
+   634→  }, [currentExercise]);
+   635→
+   636→  const patternExercises = useMemo(() => generatePatternExercises(keyNote, scaleId), [keyNote, scaleId]);
+   637→
+   638→  const scaleNotes = useMemo(() => {
+   639→    return scale.intervals.map(interval => {
+   640→      const noteIndex = (KEY_NAMES.indexOf(keyNote) + interval) % 12;
+   641→      return KEY_NAMES[noteIndex];
+   642→    });
+   643→  }, [keyNote, scale]);
+   644→
+   645→  const effectiveActiveNote = playbackActiveNote || (isPlaying ? null : clickActiveNote);
+   646→
+   647→  // Session timer
+   648→  useEffect(() => {
+   649→    const interval = setInterval(() => setSessionElapsed(Math.floor((Date.now() - sessionStart) / 1000)), 1000);
+   650→    return () => clearInterval(interval);
+   651→  }, [sessionStart]);
+   652→
+   653→  const formatTime = (s: number) => `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, '0')}`;
+   654→
+   655→  // ─── HANDLERS ───
+   656→
+   657→  const handleRandomize = useCallback(() => {
+   658→    const types = Object.keys(EXERCISE_TYPES) as ExerciseType[];
+   659→    setExerciseType(types[Math.floor(Math.random() * types.length)]);
+   660→    setExercisesPlayed(p => p + 1);
+   661→  }, []);
+   662→
+   663→
+   664→  const handleFretboardNoteClick = useCallback((note: { string: number; fret: number }) => {
+   665→    if (soundEnabled) playGuitarNote(note.string, note.fret, 0.6);
+   666→    setClickActiveNote(prev => prev && prev.string === note.string && prev.fret === note.fret ? null : note);
+   667→  }, [soundEnabled]);
+   668→
+   669→  const handleTabNoteClick = useCallback((note: ExerciseNote) => {
+   670→    if (soundEnabled) playGuitarNote(note.string, note.fret, 0.6);
+   671→    if (!isPlaying) { setClickActiveNote({ string: note.string, fret: note.fret }); setTimeout(() => setClickActiveNote(null), 1500); }
+   672→  }, [soundEnabled, isPlaying]);
+   673→
+   674→  const handlePatternClick = useCallback((posIdx: number) => { setPositionIndex(posIdx); setShowAllPositions(false); }, []);
+   675→
+   676→  // ─── PLAYBACK ENGINE ───
+   677→  const stopPlayback = useCallback(() => {
+   678→    playbackRef.current.playing = false;
+   679→    if (playbackRef.current.timeoutId) { clearTimeout(playbackRef.current.timeoutId); playbackRef.current.timeoutId = null; }
+   680→    setIsPlaying(false); setIsPaused(false); setPlayingIdx(-1); setPlaybackMode('idle'); setPlaybackActiveNote(null);
+   681→  }, []);
+   682→
+   683→  const startPlayback = useCallback((mode: 'exercise' | 'scale', startFromIdx: number = 0) => {
+   684→    stopPlayback(); setClickActiveNote(null);
+   685→    const notes = mode === 'exercise' ? currentExercise.notes : scaleNotesForPlayback;
+   686→    if (!notes.length) return;
+   687→    setIsPlaying(true); setIsPaused(false); setPlaybackMode(mode);
+   688→    if (mode === 'exercise') setExercisesPlayed(p => p + 1);
+   689→    playbackRef.current = { playing: true, notes, idx: startFromIdx, timeoutId: null };
+   690→    const intervalMs = (60 / bpm) * 1000;
+   691→    const playNext = () => {
+   692→      if (!playbackRef.current.playing) return;
+   693→      const idx = playbackRef.current.idx;
+   694→      if (idx >= notes.length) { stopPlayback(); return; }
+   695→      const note = notes[idx];
+   696→      setPlayingIdx(idx); setPlaybackActiveNote({ string: note.string, fret: note.fret });
+   697→      if (soundEnabled) playGuitarNote(note.string, note.fret, Math.min(intervalMs / 1000 * 0.8, 0.6));
+   698→      playbackRef.current.idx = idx + 1;
+   699→      playbackRef.current.timeoutId = window.setTimeout(playNext, intervalMs);
+   700→    };
+   701→    playNext();
+   702→  }, [currentExercise, scaleNotesForPlayback, bpm, soundEnabled, stopPlayback]);
+   703→
+   704→  const togglePausePlayback = useCallback(() => {
+   705→    if (isPaused) {
+   706→      setIsPaused(false); playbackRef.current.playing = true;
+   707→      const notes = playbackRef.current.notes; const intervalMs = (60 / bpm) * 1000;
+   708→      const playNext = () => {
+   709→        if (!playbackRef.current.playing) return;
+   710→        const idx = playbackRef.current.idx;
+   711→        if (idx >= notes.length) { stopPlayback(); return; }
+   712→        const note = notes[idx];
+   713→        setPlayingIdx(idx); setPlaybackActiveNote({ string: note.string, fret: note.fret });
+   714→        if (soundEnabled) playGuitarNote(note.string, note.fret, Math.min(intervalMs / 1000 * 0.8, 0.6));
+   715→        playbackRef.current.idx = idx + 1;
+   716→        playbackRef.current.timeoutId = window.setTimeout(playNext, intervalMs);
+   717→      };
+   718→      playNext();
+   719→    } else {
+   720→      playbackRef.current.playing = false;
+   721→      if (playbackRef.current.timeoutId) { clearTimeout(playbackRef.current.timeoutId); playbackRef.current.timeoutId = null; }
+   722→      setIsPaused(true);
+   723→    }
+   724→  }, [isPaused, bpm, soundEnabled, stopPlayback]);
+   725→
+   726→  const handlePlayExercise = useCallback(() => {
+   727→    if (isPlaying && playbackMode === 'exercise') { togglePausePlayback(); }
+   728→    else if (isPlaying) { stopPlayback(); startPlayback('exercise'); }
+   729→    else { startPlayback('exercise'); }
+   730→  }, [isPlaying, playbackMode, togglePausePlayback, stopPlayback, startPlayback]);
+   731→
+   732→  const handlePlayScale = useCallback(() => {
+   733→    if (isPlaying && playbackMode === 'scale') { togglePausePlayback(); }
+   734→    else if (isPlaying) { stopPlayback(); startPlayback('scale'); }
+   735→    else { startPlayback('scale'); }
+   736→  }, [isPlaying, playbackMode, togglePausePlayback, stopPlayback, startPlayback]);
+   737→
+   738→  // ─── METRONOME ───
+   739→  const startMetronome = useCallback(() => {
+   740→    metronomeRef.current = true; beatCountRef.current = 0; setMetronomeOn(true);
+   741→    const tick = () => {
+   742→      if (!metronomeRef.current) return;
+   743→      const accent = beatCountRef.current % timeSignature === 0;
+   744→      setCurrentBeat(beatCountRef.current % timeSignature);
+   745→      if (soundEnabled) playMetronomeClick(accent);
+   746→      beatCountRef.current++;
+   747→      metronomeTimeoutRef.current = window.setTimeout(tick, (60 / bpm) * 1000);
+   748→    };
+   749→    tick();
+   750→  }, [bpm, soundEnabled, timeSignature]);
+   751→
+   752→  const stopMetronome = useCallback(() => {
+   753→    metronomeRef.current = false;
+   754→    if (metronomeTimeoutRef.current) clearTimeout(metronomeTimeoutRef.current);
+   755→    setMetronomeOn(false); setCurrentBeat(-1);
+   756→  }, []);
+   757→
+   758→  const toggleMetronome = useCallback(() => { if (metronomeOn) stopMetronome(); else startMetronome(); }, [metronomeOn, startMetronome, stopMetronome]);
+   759→
+   760→  useEffect(() => { return () => { playbackRef.current.playing = false; metronomeRef.current = false; }; }, []);
+   761→
+   762→  const handleTapTempo = useCallback(() => {
+   763→    const now = Date.now();
+   764→    if (tapTimes.current.length > 0 && now - tapTimes.current[tapTimes.current.length - 1] > 2000) tapTimes.current = [];
+   765→    tapTimes.current.push(now);
+   766→    if (tapTimes.current.length > 5) tapTimes.current.shift();
+   767→    if (tapTimes.current.length >= 2) {
+   768→      const intervals = [];
+   769→      for (let i = 1; i < tapTimes.current.length; i++) intervals.push(tapTimes.current[i] - tapTimes.current[i - 1]);
+   770→      const avgInterval = intervals.reduce((a, b) => a + b, 0) / intervals.length;
+   771→      setBpm(Math.max(40, Math.min(220, Math.round(60000 / avgInterval))));
+   772→    }
+   773→  }, []);
+   774→
+   775→  // Parse time signature display to beats count
+   776→  const getTimeSignatureBeats = useCallback((ts: TimeSignatureDisplay): number => {
+   777→    const found = TIME_SIGNATURES.find(t => t.value === ts);
+   778→    return found ? found.beats : 4;
+   779→  }, []);
+   780→
+   781→  // Get subdivision interval factor
+   782→  const getSubdivisionFactor = useCallback((sub: Subdivision): number => {
+   783→    const found = SUBDIVISIONS.find(s => s.value === sub);
+   784→    return found ? found.factor : 1;
+   785→  }, []);
+   786→
+   787→  // Handle time signature change
+   788→  const handleTimeSignatureChange = useCallback((ts: TimeSignatureDisplay) => {
+   789→    setTimeSignatureDisplay(ts);
+   790→    setTimeSignature(getTimeSignatureBeats(ts));
+   791→  }, [getTimeSignatureBeats]);
+   792→
+   793→  // Handle BPM edit
+   794→  const handleBpmClick = useCallback(() => {
+   795→    setBpmEditing(true);
+   796→    setBpmInput(String(bpm));
+   797→  }, [bpm]);
+   798→
+   799→  const handleBpmSubmit = useCallback(() => {
+   800→    const val = parseInt(bpmInput, 10);
+   801→    if (!isNaN(val)) setBpm(Math.max(30, Math.min(300, val)));
+   802→    setBpmEditing(false);
+   803→  }, [bpmInput]);
+   804→
+   805→  const handleBpmKeyDown = useCallback((e: React.KeyboardEvent) => {
+   806→    if (e.key === 'Enter') handleBpmSubmit();
+   807→    else if (e.key === 'Escape') setBpmEditing(false);
+   808→    else if (e.key === 'ArrowUp') { e.preventDefault(); setBpm(prev => Math.min(300, prev + 1)); }
+   809→    else if (e.key === 'ArrowDown') { e.preventDefault(); setBpm(prev => Math.max(30, prev - 1)); }
+   810→  }, [handleBpmSubmit]);
+   811→
+   812→  // Enhanced metronome with subdivision support
+   813→  const startEnhancedMetronome = useCallback(() => {
+   814→    metronomeRef.current = true;
+   815→    beatCountRef.current = 0;
+   816→    measureCountRef.current = 0;
+   817→    repCountRef.current = 0;
+   818→    setMetronomeOn(true);
+   819→    setRepetitionCount(0);
+   820→
+   821→    const beats = getTimeSignatureBeats(timeSignatureDisplay);
+   822→    const subFactor = getSubdivisionFactor(subdivision);
+   823→    const baseInterval = (60 / bpm) * 1000;
+   824→    const subInterval = baseInterval / subFactor;
+   825→    let subBeatInMeasure = 0;
+   826→
+   827→    const tick = () => {
+   828→      if (!metronomeRef.current) return;
+   829→
+   830→      const currentBeatInMeasure = subBeatInMeasure % beats;
+   831→      const isDownbeat = currentBeatInMeasure === 0;
+   832→      const isSubBeat = subBeatInMeasure % subFactor !== 0;
+   833→
+   834→      // Determine if this beat should be silent (gap click / silent measure)
+   835→      let shouldClick = true;
+   836→      if (gapClick.isActive) {
+   837→        const totalBars = gapClick.barsClick + gapClick.barsSilent;
+   838→        const currentBarCycle = measureCountRef.current % totalBars;
+   839→        if (currentBarCycle >= gapClick.barsClick) shouldClick = false;
+   840→      }
+   841→      if (silentMeasureEnabled) {
+   842→        const cyclePos = measureCountRef.current % (silentEveryN + 1);
+   843→        if (cyclePos === silentEveryN) shouldClick = false;
+   844→      }
+   845→
+   846→      // Only show visual beat on main beats (not subdivisions)
+   847→      if (!isSubBeat) {
+   848→        setCurrentBeat(currentBeatInMeasure);
+   849→
+   850→        // Track measures
+   851→        if (isDownbeat && subBeatInMeasure > 0) {
+   852→          measureCountRef.current++;
+   853→          repCountRef.current++;
+   854→          setRepetitionCount(repCountRef.current);
+   855→
+   856→          // Practice mode logic
+   857→          if (practiceMode === 'tempo-trainer' && tempoTrainer.isActive) {
+   858→            if (repCountRef.current % tempoTrainer.increaseEveryN === 0) {
+   859→              const newBpm = Math.min(tempoTrainer.targetBpm, bpm + tempoTrainer.stepSize);
+   860→              if (newBpm !== bpm) setBpm(newBpm);
+   861→            }
+   862→          }
+   863→          if (practiceMode === 'speed-burst' && speedBurst.isActive) {
+   864→            const newCount = speedBurst.currentCount + 1;
+   865→            if (newCount >= speedBurst.burstEveryN && !speedBurst.isInBurst) {
+   866→              setSpeedBurst(prev => ({ ...prev, isInBurst: true, currentCount: 0 }));
+   867→            } else if (speedBurst.isInBurst && newCount >= speedBurst.burstLength) {
+   868→              setSpeedBurst(prev => ({ ...prev, isInBurst: false, currentCount: 0 }));
+   869→            } else {
+   870→              setSpeedBurst(prev => ({ ...prev, currentCount: newCount }));
+   871→            }
+   872→          }
+   873→          if (practiceMode === 'random-tempo' && randomTempo.isActive && isDownbeat) {
+   874→            const range = randomTempo.maxBpm - randomTempo.minBpm;
+   875→            const newBpm = Math.round(randomTempo.minBpm + Math.random() * range);
+   876→            setBpm(newBpm);
+   877→          }
+   878→        }
+   879→      }
+   880→
+   881→      // Determine accent
+   882→      let accent = isDownbeat && !isSubBeat;
+   883→      if (accentMode === 'every-n' && !isSubBeat) {
+   884→        accent = (beatCountRef.current % accentEveryN) === 0;
+   885→      }
+   886→      if (accentMode === 'none') accent = false;
+   887→      if (randomAccent && !isSubBeat) accent = Math.random() > 0.7;
+   888→
+   889→      // Play the click sound
+   890→      if (soundEnabled && shouldClick) {
+   891→        playMetronomeClickByType(accent, metronomeSound, metronomeVolume);
+   892→      }
+   893→
+   894→      // Polyrhythm secondary pulse
+   895→      if (polyrhythm.isActive && !isSubBeat) {
+   896→        const [a, b] = polyrhythm.ratio.split(':').map(Number);
+   897→        if (beatCountRef.current % b === 0 && soundEnabled && shouldClick) {
+   898→          playMetronomeClickByType(false, metronomeSound, metronomeVolume * 0.3);
+   899→        }
+   900→      }
+   901→
+   902→      if (!isSubBeat) beatCountRef.current++;
+   903→      subBeatInMeasure++;
+   904→
+   905→      // Calculate interval - use effective BPM for speed burst
+   906→      const effectiveBpm = (practiceMode === 'speed-burst' && speedBurst.isInBurst) ? speedBurst.burstBpm : bpm;
+   907→      const currentInterval = (60 / effectiveBpm) * 1000 / subFactor;
+   908→
+   909→      metronomeTimeoutRef.current = window.setTimeout(tick, currentInterval);
+   910→    };
+   911→    tick();
+   912→  }, [bpm, soundEnabled, timeSignatureDisplay, subdivision, metronomeSound, metronomeVolume, accentMode, accentEveryN, randomAccent, gapClick, silentMeasureEnabled, silentEveryN, polyrhythm, practiceMode, tempoTrainer, speedBurst, randomTempo, getTimeSignatureBeats, getSubdivisionFactor]);
+   913→
+   914→  // Replace the existing toggleMetronome to use enhanced version
+   915→  const toggleEnhancedMetronome = useCallback(() => {
+   916→    if (metronomeOn) {
+   917→      stopMetronome();
+   918→      setPracticeMode('none');
+   919→      setTempoTrainer(prev => ({ ...prev, isActive: false }));
+   920→      setSpeedBurst(prev => ({ ...prev, isActive: false }));
+   921→      setRandomTempo(prev => ({ ...prev, isActive: false }));
+   922→    } else {
+   923→      startEnhancedMetronome();
+   924→    }
+   925→  }, [metronomeOn, stopMetronome, startEnhancedMetronome]);
+   926→
+   927→  // Restart metronome when BPM or time signature changes
+   928→  useEffect(() => { if (metronomeOn) { stopMetronome(); startEnhancedMetronome(); } }, [bpm, timeSignature, stopMetronome, startEnhancedMetronome]); // eslint-disable-line
+   929→
+   930→  // Practice timer
+   931→  useEffect(() => {
+   932→    if (practiceTimerActive) {
+   933→      practiceTimerRef.current = window.setInterval(() => {
+   934→        setPracticeTimer(prev => prev + 1);
+   935→      }, 1000);
+   936→    } else if (practiceTimerRef.current) {
+   937→      clearInterval(practiceTimerRef.current);
+   938→      practiceTimerRef.current = null;
+   939→    }
+   940→    return () => { if (practiceTimerRef.current) clearInterval(practiceTimerRef.current); };
+   941→  }, [practiceTimerActive]);
+   942→
+   943→  // Auto-start practice timer when metronome starts
+   944→  useEffect(() => {
+   945→    if (metronomeOn) setPracticeTimerActive(true);
+   946→  }, [metronomeOn]);
+   947→
+   948→  // Keyboard shortcuts
+   949→  useEffect(() => {
+   950→    const handleKeyDown = (e: KeyboardEvent) => {
+   951→      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+   952→      switch (e.key) {
+   953→        case ' ':
+   954→          e.preventDefault();
+   955→          if (isPlaying) togglePausePlayback();
+   956→          else startPlayback('exercise');
+   957→          break;
+   958→        case 'Escape':
+   959→          stopPlayback();
+   960→          if (metronomeOn) stopMetronome();
+   961→          break;
+   962→        case 'm': case 'M':
+   963→          toggleEnhancedMetronome();
+   964→          break;
+   965→        case 'ArrowLeft':
+   966→          if (e.shiftKey) setBpm(prev => Math.max(30, prev - 5));
+   967→          else setBpm(prev => Math.max(30, prev - 1));
+   968→          break;
+   969→        case 'ArrowRight':
+   970→          if (e.shiftKey) setBpm(prev => Math.min(300, prev + 5));
+   971→          else setBpm(prev => Math.min(300, prev + 1));
+   972→          break;
+   973→      }
+   974→    };
+   975→    window.addEventListener('keydown', handleKeyDown);
+   976→    return () => window.removeEventListener('keydown', handleKeyDown);
+   977→  }, [isPlaying, metronomeOn, togglePausePlayback, startPlayback, stopPlayback, stopMetronome, toggleEnhancedMetronome]);
+   978→
+   979→  // Filtered exercises for search
+   980→  const filteredCategories = useMemo(() => {
+   981→    if (!exerciseSearch.trim()) return EXERCISE_CATEGORIES;
+   982→    const q = exerciseSearch.toLowerCase();
+   983→    return EXERCISE_CATEGORIES.map(cat => ({
+   984→      ...cat,
+   985→      types: cat.types.filter(t => EXERCISE_TYPES[t].name.toLowerCase().includes(q) || EXERCISE_TYPES[t].description.toLowerCase().includes(q)),
+   986→    })).filter(cat => cat.types.length > 0);
+   987→  }, [exerciseSearch]);
+   988→
+   989→  // Group categories by section
+   990→  const sectionGroups = useMemo(() => {
+   991→    const groups: Array<{ section: string; categories: typeof EXERCISE_CATEGORIES }> = [];
+   992→    for (const cat of filteredCategories) {
+   993→      const existing = groups.find(g => g.section === cat.section);
+   994→      if (existing) existing.categories.push(cat);
+   995→      else groups.push({ section: cat.section, categories: [cat] });
+   996→    }
+   997→    return groups;
+   998→  }, [filteredCategories]);
+   999→
+  1000→  // ─── RENDER ───
+  1001→  return (
+  1002→    <div className="h-screen flex flex-col bg-[#f5f0e8] text-[#2c2c2c] overflow-hidden">
+  1003→
+  1004→      {/* ═══ TOP STICKY GLOBAL CONTEXT BAR ═══ */}
+  1005→      <header className="border-b-2 border-[#8b7355] bg-[#faf6ef] shrink-0 z-40">
+  1006→        <div className="px-3 py-1.5 flex items-center gap-2">
+  1007→          <button className="lg:hidden sketch-btn p-1 border-[#c4b89c]" onClick={() => setSidebarOpen(!sidebarOpen)}>
+  1008→            <Menu className="w-3.5 h-3.5" />
+  1009→          </button>
+  1010→          <div className="flex items-center gap-1.5 shrink-0">
+  1011→            <div className="w-6 h-6 rounded-sm border-2 border-[#8b7355] flex items-center justify-center bg-[#f5f0e8]">
+  1012→              <Guitar className="w-3.5 h-3.5 text-[#6b5b47]" />
+  1013→            </div>
+  1014→            <h1 className="text-[12px] font-bold text-[#2c2c2c] hidden sm:block" style={{ fontFamily: "'Georgia', serif", fontStyle: 'italic' }}>FretBoard Forge</h1>
+  1015→          </div>
+  1016→          <div className="w-px h-5 bg-[#c4b89c] hidden md:block" />
+  1017→          {/* Key */}
+  1018→          <div className="hidden md:flex items-center gap-1.5 shrink-0">
+  1019→            <span className="text-[10px] uppercase tracking-[0.1em] text-[#8b7355] font-serif italic font-bold">Key</span>
+  1020→            <Select value={String(keyIndex)} onValueChange={(v) => { const idx = parseInt(v, 10); if (!isNaN(idx)) { setKeyIndex(idx); setPositionIndex(0); stopPlayback(); } }}>
+  1021→              <SelectTrigger className="bg-[#f5f0e8] border-[#c4b89c] text-[#2c2c2c] text-[11px] rounded-sm h-6 w-[80px] cursor-pointer"><SelectValue /></SelectTrigger>
+  1022→              <SelectContent className="bg-[#faf6ef] border-[#c4b89c]">
+  1023→                {KEY_DISPLAY_NAMES.map((key, idx) => (
+  1024→                  <SelectItem key={idx} value={String(idx)} className="text-[11px] text-[#2c2c2c] cursor-pointer">{key}</SelectItem>
+  1025→                ))}
+  1026→              </SelectContent>
+  1027→            </Select>
+  1028→          </div>
+  1029→          <div className="w-px h-5 bg-[#c4b89c] hidden md:block" />
+  1030→          {/* Scale */}
+  1031→          <div className="hidden md:flex items-center gap-1 shrink-0">
+  1032→            <span className="text-[10px] uppercase tracking-[0.1em] text-[#8b7355] font-serif italic font-bold">Scale</span>
+  1033→            <Select value={scaleId} onValueChange={(v) => { setScaleId(v); setPositionIndex(0); stopPlayback(); }}>
+  1034→              <SelectTrigger className="bg-[#f5f0e8] border-[#c4b89c] text-[#2c2c2c] text-[11px] rounded-sm h-6 w-[150px]"><SelectValue /></SelectTrigger>
+  1035→              <SelectContent className="bg-[#faf6ef] border-[#c4b89c]">
+  1036→                {Object.entries(SCALES).map(([id, s]) => (
+  1037→                  <SelectItem key={id} value={id} className="text-[11px] text-[#2c2c2c]">{s.name} ({s.intervals.length})</SelectItem>
+  1038→                ))}
+  1039→              </SelectContent>
+  1040→            </Select>
+  1041→          </div>
+  1042→          <div className="w-px h-5 bg-[#c4b89c] hidden md:block" />
+  1043→          {/* Position */}
+  1044→          <div className="hidden md:flex items-center gap-1.5 shrink-0">
+  1045→            <span className="text-[10px] uppercase tracking-[0.1em] text-[#8b7355] font-serif italic font-bold">Pos</span>
+  1046→            <div className="flex items-center gap-1">
+  1047→              {positions.map((_, idx) => (
+  1048→                <button key={idx} className={`h-6 w-7 text-[10px] font-semibold rounded-sm transition-all border p-0 cursor-pointer ${!showAllPositions && positionIndex === idx ? 'sketch-btn-active border-[#6b5b47]' : 'sketch-btn border-[#c4b89c] hover:border-[#8b7355]'}`}
+  1049→                  onClick={() => { setPositionIndex(idx); setShowAllPositions(false); stopPlayback(); }}>{idx + 1}</button>
+  1050→              ))}
+  1051→              <button className={`h-6 px-2 text-[10px] font-semibold rounded-sm transition-all border p-0 cursor-pointer ${showAllPositions ? 'sketch-btn-active border-[#6b5b47]' : 'sketch-btn border-[#c4b89c] hover:border-[#8b7355]'}`}
+  1052→                onClick={() => { setShowAllPositions(true); stopPlayback(); }}>All</button>
+  1053→            </div>
+  1054→          </div>
+  1055→          {/* Mobile context pill */}
+  1056→          <div className="md:hidden flex-1 flex items-center justify-center">
+  1057→            <span className="text-[11px] font-serif italic text-[#4a4a4a] font-bold">{keyNote} {scale.name} · P{positionIndex + 1}</span>
+  1058→          </div>
+  1059→          <div className="flex-1 hidden md:block" />
+  1060→          <div className="hidden lg:flex items-center gap-1.5 shrink-0">
+  1061→            <span className="text-[10px] text-[#8b7355] font-serif italic">{currentPosition.name} · Frets {currentPosition.fretStart}–{currentPosition.fretEnd}</span>
+  1062→            <span className="text-[10px] text-[#b8a88a] font-serif italic">· {Object.keys(EXERCISE_TYPES).length} exercises</span>
+  1063→          </div>
+  1064→          <button className={`sketch-btn px-1.5 py-0.5 text-[10px] flex items-center gap-0.5 shrink-0 ${soundEnabled ? 'border-[#6b5b47]' : 'border-[#c4b89c] opacity-50'}`}
+  1065→            onClick={() => setSoundEnabled(!soundEnabled)}>
+  1066→            {soundEnabled ? <Volume2 className="w-2.5 h-2.5" /> : <VolumeX className="w-2.5 h-2.5" />}
+  1067→          </button>
+  1068→          <button className="sketch-btn px-1.5 py-0.5 text-[10px] flex items-center gap-0.5 shrink-0 border-[#8b7355]"
+  1069→            onClick={() => setInfoPageOpen(true)} title="App Guide & Documentation">
+  1070→            <Info className="w-2.5 h-2.5" />
+  1071→            <span className="hidden sm:inline text-[9px] font-serif italic">Guide</span>
+  1072→          </button>
+  1073→        </div>
+  1074→      </header>
+  1075→
+  1076→      {/* ═══ MAIN WORK AREA ═══ */}
+  1077→      <div className="flex-1 flex overflow-hidden">
+  1078→
+  1079→        {/* ─── LEFT SIDEBAR ─── */}
+  1080→        {sidebarOpen && <div className="lg:hidden fixed inset-0 z-30 bg-black/30" onClick={() => setSidebarOpen(false)} />}
+  1081→        <aside className={`fixed lg:relative inset-y-0 left-0 z-30 lg:z-0 w-[250px] lg:w-[250px] shrink-0 bg-[#faf6ef] border-r-2 border-[#8b7355] overflow-y-auto transform transition-transform duration-200 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'} pt-[38px] lg:pt-0`}>
+  1082→          <div className="p-2.5 pb-16 space-y-1.5">
+  1083→            <div className="flex items-center justify-between">
+  1084→              <h3 className="text-[11px] uppercase tracking-[0.15em] text-[#8b7355] font-serif italic font-bold">Exercise Library</h3>
+  1085→              <button className="lg:hidden" onClick={() => setSidebarOpen(false)}><X className="w-3.5 h-3.5 text-[#8b7355]" /></button>
+  1086→            </div>
+  1087→            {/* Search */}
+  1088→            <div className="relative">
+  1089→              <Search className="absolute left-1.5 top-1/2 -translate-y-1/2 w-2.5 h-2.5 text-[#8b7355]" />
+  1090→              <input type="text" placeholder="Search..." value={exerciseSearch} onChange={e => setExerciseSearch(e.target.value)}
+  1091→                className="w-full pl-5 pr-2 py-1 text-[10px] bg-[#f5f0e8] border border-[#c4b89c] rounded-sm focus:outline-none focus:border-[#8b7355] font-serif italic" />
+  1092→            </div>
+  1093→            {/* Random */}
+  1094→            <button className="sketch-btn w-full text-[10px] py-1 border-[#8b7355] text-[#6b5b47] font-semibold flex items-center justify-center gap-1" onClick={handleRandomize}>
+  1095→              <Shuffle className="w-2.5 h-2.5" /> Random Exercise
+  1096→            </button>
+  1097→
+  1098→            {/* Category groups by section */}
+  1099→            {sectionGroups.map(group => (
+  1100→              <div key={group.section}>
+  1101→                <div className="text-[9px] uppercase tracking-[0.2em] text-[#9b3939] font-serif italic font-bold pt-2 pb-0.5 border-b border-[#e8e2d6] mb-0.5">
+  1102→                  {group.section}
+  1103→                </div>
+  1104→                {group.categories.map(cat => {
+  1105→                  const isActiveCat = cat.types.includes(exerciseType);
+  1106→                  const isExpanded = expandedCategory === cat.id;
+  1107→                  return (
+  1108→                    <div key={cat.id}>
+  1109→                      <button className={`w-full flex items-center gap-1 px-1.5 py-1 rounded-sm text-[10px] font-serif italic font-bold transition-all ${isActiveCat ? 'bg-[rgba(155,57,57,0.08)] text-[#9b3939]' : 'text-[#6b5b47] hover:bg-[rgba(139,115,85,0.06)]'}`}
+  1110→                        onClick={() => setExpandedCategory(isExpanded ? '' : cat.id)}>
+  1111→                        <span className="flex-1 text-left">{cat.label}</span>
+  1112→                        <span className="text-[8px] opacity-50">{cat.types.length}</span>
+  1113→                        {isExpanded ? <ChevronUp className="w-2.5 h-2.5 opacity-40" /> : <ChevronDown className="w-2.5 h-2.5 opacity-40" />}
+  1114→                      </button>
+  1115→                      {(isExpanded || isActiveCat) && (
+  1116→                        <div className="ml-3 mt-0.5 space-y-0.5">
+  1117→                          {cat.types.map(typeId => {
+  1118→                            const info = EXERCISE_TYPES[typeId];
+  1119→                            const isSelected = exerciseType === typeId;
+  1120→                            return (
+  1121→                              <button key={typeId} className={`w-full text-left flex items-center gap-1 text-[9px] py-0.5 px-1.5 rounded-sm transition-all ${isSelected ? 'bg-[rgba(155,57,57,0.12)] text-[#9b3939] font-bold' : 'text-[#4a4a4a] hover:bg-[rgba(139,115,85,0.08)]'}`}
+  1122→                                onClick={() => { setExerciseType(typeId); stopPlayback(); setSidebarOpen(false); }}>
+  1123→                                <DifficultyBadge level={info.difficulty} />
+  1124→                                <span className="flex-1 truncate">{info.name}</span>
+  1125→                              </button>
+  1126→                            );
+  1127→                          })}
+  1128→                        </div>
+  1129→                      )}
+  1130→                    </div>
+  1131→                  );
+  1132→                })}
+  1133→              </div>
+  1134→            ))}
+  1135→
+  1136→            {/* Intervals legend */}
+  1137→            <div className="border-t border-[#e8e2d6] pt-2 mt-2">
+  1138→              <h4 className="text-[10px] uppercase tracking-[0.12em] text-[#8b7355] font-serif italic font-bold mb-1">Intervals</h4>
+  1139→              <div className="flex flex-wrap gap-0.5">
+  1140→                {scale.intervalLabels.map((label, idx) => (
+  1141→                  <span key={idx} className="inline-flex items-center justify-center px-1.5 py-0.5 text-[9px] font-bold font-serif italic border rounded-sm"
+  1142→                    style={{ borderColor: getIntervalColor(label) + '55', color: getIntervalColor(label), backgroundColor: getIntervalColor(label) + '12' }}>{label}</span>
+  1143→                ))}
+  1144→              </div>
+  1145→            </div>
+  1146→            {/* Scale notes */}
+  1147→            <div className="border-t border-[#e8e2d6] pt-2 mt-1">
+  1148→              <h4 className="text-[10px] uppercase tracking-[0.12em] text-[#8b7355] font-serif italic font-bold mb-1">Scale Notes</h4>
+  1149→              <div className="flex flex-wrap gap-0.5">
+  1150→                {scaleNotes.map((note, idx) => {
+  1151→                  const label = scale.intervalLabels[idx]; const color = getIntervalColor(label);
+  1152→                  return (
+  1153→                    <span key={idx} className="inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[9px] font-serif italic border rounded-sm"
+  1154→                      style={{ borderColor: color + '40', color, backgroundColor: color + '08' }}>
+  1155→                      <span className="font-bold">{note}</span><span className="opacity-40 text-[8px]">{label}</span>
+  1156→                    </span>
+  1157→                  );
+  1158→                })}
+  1159→              </div>
+  1160→            </div>
+  1161→          </div>
+  1162→        </aside>
+  1163→
+  1164→        {/* ─── CENTER PANEL ─── */}
+  1165→        <main className="flex-1 overflow-y-auto min-w-0 pb-[46px]">
+  1166→          <div className="p-2.5 lg:p-3 space-y-2">
+  1167→
+  1168→            {/* Exercise Header (Sticky within center) */}
+  1169→            <div className="sticky top-0 z-10 bg-[#faf6ef] border-b-2 border-[#8b7355] -mx-2.5 lg:-mx-3 px-2.5 lg:px-3 pb-2 pt-1">
+  1170→              {/* Breadcrumb */}
+  1171→              <div className="flex items-center gap-1 text-[9px] text-[#8b7355] font-serif italic mb-0.5">
+  1172→                <span>{exerciseCategory.section}</span>
+  1173→                <ChevronRight className="w-2 h-2" />
+  1174→                <span>{exerciseCategory.label}</span>
+  1175→                <ChevronRight className="w-2 h-2" />
+  1176→                <span className="text-[#9b3939] font-bold">{exerciseMeta.name}</span>
+  1177→              </div>
+  1178→              {/* Title + metadata */}
+  1179→              <div className="flex items-start justify-between gap-2">
+  1180→                <div className="min-w-0">
+  1181→                  <div className="flex items-center gap-1.5">
+  1182→                    <span className="text-[12px] font-bold text-[#9b3939] font-serif italic truncate">{currentExercise?.name}</span>
+  1183→                    <DifficultyBadge level={exerciseMeta.difficulty} />
+  1184→                  </div>
+  1185→                  <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+  1186→                    <span className="text-[9px] text-[#6b5b47] font-serif italic font-semibold">{keyNote} {scale.name} · {showAllPositions ? 'All Pos' : `P${positionIndex + 1}`}</span>
+  1187→                    <span className="text-[9px] text-[#b8a88a] font-serif italic">{exerciseMeta.focus}</span>
+  1188→                    <span className="text-[9px] text-[#b8a88a] font-serif italic">~{exerciseMeta.estimatedTime}</span>
+  1189→                    {isPlaying && playbackActiveNote && (
+  1190→                      <span className="text-[9px] text-[#9b3939] font-serif italic font-bold">▸ {playingIdx + 1}/{playbackMode === 'exercise' ? currentExercise.notes.length : scaleNotesForPlayback.length}</span>
+  1191→                    )}
+  1192→                  </div>
+  1193→                </div>
+  1194→                {/* Quick actions */}
+  1195→                <div className="flex items-center gap-1 shrink-0">
+  1196→                  <button className="sketch-btn h-6 px-1 text-[9px] border-[#c4b89c] text-[#8b7355]" onClick={handleRandomize} title="Random"><Shuffle className="w-3 h-3" /></button>
+  1197→                </div>
+  1198→              </div>
+  1199→            </div>
+  1200→
+  1201→            {/* View Switcher + Inline play */}
+  1202→            <div className="flex items-center gap-1">
+  1203→              {([
+  1204→                { mode: 'fretboard' as ViewMode, icon: Guitar, label: 'Fretboard' },
+  1205→                { mode: 'tab' as ViewMode, icon: FileText, label: 'Tab' },
+  1206→                { mode: 'hybrid' as ViewMode, icon: Eye, label: 'Hybrid' },
+  1207→                { mode: 'analysis' as ViewMode, icon: BarChart3, label: 'Analysis' },
+  1208→              ]).map(({ mode, icon: Icon, label }) => (
+  1209→                <button key={mode} className={`flex items-center gap-0.5 px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-wider border-2 rounded-sm transition-all ${viewMode === mode ? 'sketch-btn-active border-[#6b5b47] text-[#2c2c2c]' : 'sketch-btn border-[#c4b89c] text-[#8b7355] hover:border-[#8b7355]'}`}
+  1210→                  onClick={() => setViewMode(mode)}>
+  1211→                  <Icon className="w-2.5 h-2.5" /><span className="hidden sm:inline">{label}</span>
+  1212→                </button>
+  1213→              ))}
+  1214→              <div className="flex-1" />
+  1215→              <button className={`px-2 py-1 text-[10px] font-bold flex items-center gap-0.5 border-2 rounded-sm transition-all ${isPlaying && playbackMode === 'exercise' && !isPaused ? 'bg-[#9b3939] text-white border-[#9b3939]' : 'sketch-btn border-[#6b5b47]'}`} onClick={handlePlayExercise}>
+  1216→                {isPlaying && playbackMode === 'exercise' && !isPaused ? <Pause className="w-2.5 h-2.5" /> : <Play className="w-2.5 h-2.5" />}
+  1217→              </button>
+  1218→              <button className={`px-2 py-1 text-[10px] font-bold flex items-center gap-0.5 border-2 rounded-sm transition-all ${isPlaying && playbackMode === 'scale' && !isPaused ? 'bg-[#4a5a8a] text-white border-[#4a5a8a]' : 'sketch-btn border-[#4a5a8a]'}`} onClick={handlePlayScale}>
+  1219→                {isPlaying && playbackMode === 'scale' && !isPaused ? <Pause className="w-2.5 h-2.5" /> : <Music className="w-2.5 h-2.5" />}
+  1220→              </button>
+  1221→              {isPlaying && <button className="px-2 py-1 text-[10px] font-bold flex items-center gap-0.5 border-2 rounded-sm bg-[#4a4a4a] text-white border-[#4a4a4a]" onClick={stopPlayback}><Square className="w-3 h-3" /></button>}
+  1222→            </div>
+  1223→
+  1224→            {/* ─── View Content ─── */}
+  1225→
+  1226→            {/* Fretboard Only */}
+  1227→            {viewMode === 'fretboard' && (
+  1228→              <div className="sketch-card bg-[#faf6ef] overflow-hidden">
+  1229→                <div className="px-1 py-1 overflow-x-auto">
+  1230→                  <FretboardDiagram keyNote={keyNote} scaleId={scaleId} startFret={startFret} endFret={endFret}
+  1231→                    showAllPositions={showAllPositions} positionIndex={positionIndex}
+  1232→                    highlightNotes={exerciseHighlightNotes}
+  1233→                    exercisePath={exercisePath}
+  1234→                    activeNote={effectiveActiveNote} onNoteClick={handleFretboardNoteClick}
+  1235→                    showPatternLines={true} fullFretboard={true} />
+  1236→                </div>
+  1237→              </div>
+  1238→            )}
+  1239→
+  1240→            {/* Tab Only */}
+  1241→            {viewMode === 'tab' && (
+  1242→              <TabNotation exercise={currentExercise} onNoteClick={handleTabNoteClick} playingIdx={playingIdx}
+  1243→                isPlaying={isPlaying} isPaused={isPaused} playbackMode={playbackMode}
+  1244→                activePlayingNote={playbackActiveNote}
+  1245→                onPlayExercise={handlePlayExercise} onPlayScale={handlePlayScale} onPause={togglePausePlayback} onStop={stopPlayback} />
+  1246→            )}
+  1247→
+  1248→            {/* Hybrid — Fretboard + Tab */}
+  1249→            {viewMode === 'hybrid' && (
+  1250→              <>
+  1251→                <div className="sketch-card bg-[#faf6ef] overflow-hidden">
+  1252→                  <div className="px-1 py-1 overflow-x-auto">
+  1253→                    <FretboardDiagram keyNote={keyNote} scaleId={scaleId} startFret={startFret} endFret={endFret}
+  1254→                      showAllPositions={showAllPositions} positionIndex={positionIndex}
+  1255→                      highlightNotes={exerciseHighlightNotes}
+  1256→                      exercisePath={exercisePath}
+  1257→                      activeNote={effectiveActiveNote} onNoteClick={handleFretboardNoteClick}
+  1258→                      showPatternLines={true} fullFretboard={true} />
+  1259→                  </div>
+  1260→                </div>
+  1261→                <TabNotation exercise={currentExercise} onNoteClick={handleTabNoteClick} playingIdx={playingIdx}
+  1262→                  isPlaying={isPlaying} isPaused={isPaused} playbackMode={playbackMode}
+  1263→                  activePlayingNote={playbackActiveNote}
+  1264→                  onPlayExercise={handlePlayExercise} onPlayScale={handlePlayScale} onPause={togglePausePlayback} onStop={stopPlayback} />
+  1265→              </>
+  1266→            )}
+  1267→
+  1268→            {/* Analysis — Verbose Nerdy Stats */}
+  1269→            {viewMode === 'analysis' && (
+  1270→              <div className="sketch-card bg-[#faf6ef] p-3 space-y-3">
+  1271→                {/* Overview Stats Grid */}
+  1272→                <div>
+  1273→                  <h3 className="text-[11px] uppercase tracking-[0.15em] text-[#8b7355] font-serif italic font-bold mb-1.5 flex items-center gap-1"><Activity className="w-3 h-3" /> Exercise Overview</h3>
+  1274→                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
+  1275→                    {[
+  1276→                      { label: 'Total Notes', value: exerciseStats.totalNotes, icon: Hash },
+  1277→                      { label: 'Fret Range', value: `${exerciseStats.fretRange[0]}–${exerciseStats.fretRange[1]}`, icon: Ruler },
+  1278→                      { label: 'String Changes', value: exerciseStats.stringChanges, icon: ArrowRight },
+  1279→                      { label: 'Pos. Shifts', value: exerciseStats.positionShifts, icon: Zap },
+  1280→                    ].map(({ label, value, icon: Icon }) => (
+  1281→                      <div key={label} className="bg-[#f5f0e8] border border-[#e8e2d6] rounded-sm p-1.5">
+  1282→                        <div className="flex items-center gap-0.5 text-[9px] text-[#8b7355] font-serif italic uppercase"><Icon className="w-3 h-3" />{label}</div>
+  1283→                        <div className="text-[14px] font-bold text-[#2c2c2c] font-serif italic">{value}</div>
+  1284→                      </div>
+  1285→                    ))}
+  1286→                  </div>
+  1287→                </div>
+  1288→
+  1289→                {/* Deep Stats */}
+  1290→                <div>
+  1291→                  <h3 className="text-[11px] uppercase tracking-[0.15em] text-[#8b7355] font-serif italic font-bold mb-1.5 flex items-center gap-1"><Signal className="w-3.5 h-3.5" /> Detailed Metrics</h3>
+  1292→                  <div className="grid grid-cols-3 sm:grid-cols-6 gap-1.5">
+  1293→                    {[
+  1294→                      { label: 'Avg Jump', value: exerciseStats.avgFretJump },
+  1295→                      { label: 'Max Jump', value: exerciseStats.maxFretJump },
+  1296→                      { label: 'Strings Used', value: `${exerciseStats.uniqueStrings}/6` },
+  1297→                      { label: 'Unique Frets', value: exerciseStats.uniqueFrets },
+  1298→                      { label: 'Difficulty', value: `${exerciseStats.difficulty}/5` },
+  1299→                      { label: 'Pattern', value: exerciseStats.patternType },
+  1300→                    ].map(({ label, value }) => (
+  1301→                      <div key={label} className="bg-[#f5f0e8] border border-[#e8e2d6] rounded-sm p-1.5">
+  1302→                        <div className="text-[8px] text-[#8b7355] font-serif italic uppercase">{label}</div>
+  1303→                        <div className="text-[12px] font-bold text-[#2c2c2c] font-serif italic">{value}</div>
+  1304→                      </div>
+  1305→                    ))}
+  1306→                  </div>
+  1307→                </div>
+  1308→
+  1309→                {/* Interval Distribution */}
+  1310→                <div>
+  1311→                  <h3 className="text-[11px] uppercase tracking-[0.15em] text-[#8b7355] font-serif italic font-bold mb-1.5">Interval Distribution</h3>
+  1312→                  <div className="flex flex-wrap gap-1">
+  1313→                    {Object.entries(exerciseStats.intervalDistribution).sort((a, b) => b[1] - a[1]).map(([label, count]) => {
+  1314→                      const color = getIntervalColor(label);
+  1315→                      const maxCount = Math.max(...Object.values(exerciseStats.intervalDistribution));
+  1316→                      const width = Math.max(20, (count / maxCount) * 100);
+  1317→                      return (
+  1318→                        <div key={label} className="flex items-center gap-1">
+  1319→                          <div className="h-3 rounded-sm overflow-hidden" style={{ width: `${width}px`, backgroundColor: color + '20', border: `1px solid ${color}40` }}>
+  1320→                            <div className="h-full rounded-sm" style={{ width: `${(count / maxCount) * 100}%`, backgroundColor: color + '60' }} />
+  1321→                          </div>
+  1322→                          <span className="text-[9px] font-serif italic" style={{ color }}>{label}: <b>{count}</b></span>
+  1323→                        </div>
+  1324→                      );
+  1325→                    })}
+  1326→                  </div>
+  1327→                </div>
+  1328→
+  1329→                {/* String Coverage */}
+  1330→                <div>
+  1331→                  <h3 className="text-[11px] uppercase tracking-[0.15em] text-[#8b7355] font-serif italic font-bold mb-1.5">String Coverage</h3>
+  1332→                  <div className="flex gap-1.5">
+  1333→                    {['E', 'A', 'D', 'G', 'B', 'e'].map((s, idx) => {
+  1334→                      const used = currentExercise.notes.some(n => n.string === idx);
+  1335→                      const noteCount = currentExercise.notes.filter(n => n.string === idx).length;
+  1336→                      return (
+  1337→                        <div key={s} className={`flex flex-col items-center w-8 rounded-sm border-2 p-1 ${used ? 'border-[#8b7355] bg-[rgba(139,115,85,0.1)]' : 'border-[#e8e2d6]'}`}>
+  1338→                          <span className={`text-[11px] font-bold font-serif italic ${used ? 'text-[#4a4a4a]' : 'text-[#c4b89c]'}`}>{s}</span>
+  1339→                          {used && <span className="text-[8px] text-[#8b7355] font-serif italic">{noteCount}n</span>}
+  1340→                        </div>
+  1341→                      );
+  1342→                    })}
+  1343→                  </div>
+  1344→                </div>
+  1345→
+  1346→                {/* Scale Formula */}
+  1347→                <div>
+  1348→                  <h3 className="text-[11px] uppercase tracking-[0.15em] text-[#8b7355] font-serif italic font-bold mb-1.5">Scale Formula</h3>
+  1349→                  <div className="flex flex-wrap gap-1 mb-1">
+  1350→                    {scaleNotes.map((note, idx) => {
+  1351→                      const label = scale.intervalLabels[idx]; const color = getIntervalColor(label);
+  1352→                      return (
+  1353→                        <span key={idx} className="inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[10px] font-serif italic border rounded-sm"
+  1354→                          style={{ borderColor: color + '50', color, backgroundColor: color + '0a' }}>
+  1355→                          <span className="font-bold">{note}</span><span className="opacity-50 text-[8px]">{label}</span>
+  1356→                        </span>
+  1357→                      );
+  1358→                    })}
+  1359→                  </div>
+  1360→                  <p className="text-[9px] text-[#8b7355] font-serif italic">
+  1361→                    Steps: {scale.intervals.slice(1).map((interval, idx) => {
+  1362→                      const prevInterval = idx === 0 ? 0 : scale.intervals[idx]; const step = interval - prevInterval;
+  1363→                      return step === 1 ? 'H' : step === 2 ? 'W' : `${step}H`;
+  1364→                    }).join(' − ')}
+  1365→                  </p>
+  1366→                </div>
+  1367→
+  1368→                {/* Picking Direction */}
+  1369→                <div>
+  1370→                  <h3 className="text-[11px] uppercase tracking-[0.15em] text-[#8b7355] font-serif italic font-bold mb-1.5">Suggested Picking</h3>
+  1371→                  <div className="flex flex-wrap gap-px">
+  1372→                    {exerciseStats.pickingDirection.slice(0, 40).map((dir, idx) => (
+  1373→                      <span key={idx} className={`w-4 h-4 rounded-sm flex items-center justify-center text-[8px] font-bold border ${
+  1374→                        dir === 'D' ? 'border-[#4a7a4a] text-[#4a7a4a] bg-[rgba(74,122,74,0.06)]' : 'border-[#4a5a8a] text-[#4a5a8a] bg-[rgba(74,90,138,0.06)]'
+  1375→                      }`}>{dir}</span>
+  1376→                    ))}
+  1377→                    {exerciseStats.pickingDirection.length > 40 && <span className="text-[8px] text-[#8b7355] font-serif italic ml-0.5">+{exerciseStats.pickingDirection.length - 40}</span>}
+  1378→                  </div>
+  1379→                  <div className="flex items-center gap-3 mt-0.5">
+  1380→                    <span className="text-[8px] text-[#4a7a4a] font-serif italic">D = Downstroke</span>
+  1381→                    <span className="text-[8px] text-[#4a5a8a] font-serif italic">U = Upstroke</span>
+  1382→                  </div>
+  1383→                </div>
+  1384→
+  1385→                {/* Exercise Metadata */}
+  1386→                <div>
+  1387→                  <h3 className="text-[11px] uppercase tracking-[0.15em] text-[#8b7355] font-serif italic font-bold mb-1.5 flex items-center gap-1"><Clock className="w-3.5 h-3.5" /> Exercise Info</h3>
+  1388→                  <div className="bg-[#f5f0e8] border border-[#e8e2d6] rounded-sm p-2 space-y-1">
+  1389→                    <div className="grid grid-cols-2 gap-x-4 gap-y-0.5">
+  1390→                      <div className="flex justify-between text-[9px]"><span className="text-[#8b7355] font-serif italic">Focus</span><span className="text-[#4a4a4a] font-bold">{exerciseMeta.focus}</span></div>
+  1391→                      <div className="flex justify-between text-[9px]"><span className="text-[#8b7355] font-serif italic">Duration</span><span className="text-[#4a4a4a] font-bold">{exerciseMeta.estimatedTime}</span></div>
+  1392→                      <div className="flex justify-between text-[9px]"><span className="text-[#8b7355] font-serif italic">Position</span><span className="text-[#4a4a4a] font-bold">{showAllPositions ? 'All' : `P${positionIndex + 1}`} ({currentPosition.fretStart}–{currentPosition.fretEnd})</span></div>
+  1393→                      <div className="flex justify-between text-[9px]"><span className="text-[#8b7355] font-serif italic">Category</span><span className="text-[#4a4a4a] font-bold">{exerciseStats.patternType}</span></div>
+  1394→                      <div className="flex justify-between text-[9px]"><span className="text-[#8b7355] font-serif italic">Notes</span><span className="text-[#4a4a4a] font-bold">{exerciseStats.totalNotes}</span></div>
+  1395→                      <div className="flex justify-between text-[9px]"><span className="text-[#8b7355] font-serif italic">Fret Span</span><span className="text-[#4a4a4a] font-bold">{exerciseStats.fretRange[1] - exerciseStats.fretRange[0] + 1} frets</span></div>
+  1396→                    </div>
+  1397→                    <div className="flex flex-wrap gap-0.5 pt-1 border-t border-[#e8e2d6]">
+  1398→                      {exerciseMeta.tags.map(tag => (
+  1399→                        <span key={tag} className="px-1.5 py-0.5 text-[8px] font-serif italic bg-[rgba(139,115,85,0.08)] text-[#6b5b47] border border-[#e8e2d6] rounded-sm">{tag}</span>
+  1400→                      ))}
+  1401→                    </div>
+  1402→                    <p className="text-[9px] text-[#4a4a4a] font-serif italic pt-1 border-t border-[#e8e2d6]">
+  1403→                      {exerciseStats.positionShifts > 0 ? 'Contains position shifts — practice slowly, focus on smooth transitions.' :
+  1404→                        exerciseStats.stringChanges > exerciseStats.totalNotes * 0.6 ? 'High string-crossing density — keep picking hand relaxed, use efficient alternate picking.' :
+  1405→                        'Focus on clean articulation and consistent timing with the metronome.'}
+  1406→                    </p>
+  1407→                  </div>
+  1408→                </div>
+  1409→              </div>
+  1410→            )}
+  1411→
+  1412→            {/* Mobile: Explorer section */}
+  1413→            <div className="xl:hidden">
+  1414→              <button className="w-full sketch-card bg-[#faf6ef] px-2 py-1 flex items-center justify-between"
+  1415→                onClick={() => setRightPanelExpanded(!rightPanelExpanded)}>
+  1416→                <span className="text-[10px] uppercase tracking-[0.12em] text-[#8b7355] font-serif italic font-bold">Scale Explorer</span>
+  1417→                {rightPanelExpanded ? <ChevronUp className="w-2.5 h-2.5 text-[#8b7355]" /> : <ChevronDown className="w-2.5 h-2.5 text-[#8b7355]" />}
+  1418→              </button>
+  1419→              {rightPanelExpanded && (
+  1420→                <div className="mt-1.5">
+  1421→                  <div className="sketch-card bg-[#faf6ef] p-2">
+  1422→                    <h4 className="text-[10px] uppercase tracking-[0.12em] text-[#8b7355] font-serif italic font-bold mb-1.5">CAGED Positions</h4>
+  1423→                    <div className="grid grid-cols-5 gap-1.5">
+  1424→                      {patternExercises.map((pat) => (
+  1425→                        <button key={pat.position} onClick={() => handlePatternClick(pat.position - 1)} className="text-left">
+  1426→                          <PatternDiagram keyNote={keyNote} scaleId={scaleId} fretStart={pat.fretStart} fretEnd={pat.fretEnd}
+  1427→                            positionNumber={pat.position} exerciseNotes={pat.notes}
+  1428→                            selected={positionIndex === pat.position - 1 && !showAllPositions} />
+  1429→                        </button>
+  1430→                      ))}
+  1431→                    </div>
+  1432→                  </div>
+  1433→                </div>
+  1434→              )}
+  1435→            </div>
+  1436→          </div>
+  1437→        </main>
+  1438→
+  1439→        {/* ─── RIGHT SIDEBAR ─── */}
+  1440→        <aside className="hidden xl:block w-[280px] shrink-0 border-l-2 border-[#8b7355] bg-[#faf6ef] overflow-y-auto">
+  1441→          <div className="p-2.5 pb-16 space-y-2.5">
+  1442→
+  1443→            {/* Card 1: Current Scale */}
+  1444→            <div className="sketch-card bg-[#f5f0e8] p-2.5">
+  1445→              <h4 className="text-[10px] uppercase tracking-[0.12em] text-[#8b7355] font-serif italic font-bold mb-1.5">Current Scale</h4>
+  1446→              <div className="text-[13px] font-bold text-[#9b3939] font-serif italic mb-1">{keyNote} {scale.name}</div>
+  1447→              <div className="flex flex-wrap gap-0.5 mb-1.5">
+  1448→                {scaleNotes.map((note, idx) => {
+  1449→                  const label = scale.intervalLabels[idx]; const color = getIntervalColor(label);
+  1450→                  return <span key={idx} className="inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[9px] font-serif italic border rounded-sm"
+  1451→                    style={{ borderColor: color + '40', color, backgroundColor: color + '08' }}>
+  1452→                    <span className="font-bold">{note}</span><span className="opacity-40 text-[8px]">{label}</span>
+  1453→                  </span>;
+  1454→                })}
+  1455→              </div>
+  1456→              <p className="text-[8px] text-[#8b7355] font-serif italic">{scale.intervals.length} notes · Steps: {scale.intervals.slice(1).map((interval, idx) => {
+  1457→                const prevInterval = idx === 0 ? 0 : scale.intervals[idx]; const step = interval - prevInterval;
+  1458→                return step === 1 ? 'H' : step === 2 ? 'W' : `${step}H`;
+  1459→              }).join('−')}</p>
+  1460→            </div>
+  1461→
+  1462→            {/* Card 2: Current Position */}
+  1463→            <div className="sketch-card bg-[#f5f0e8] p-2.5">
+  1464→              <h4 className="text-[10px] uppercase tracking-[0.12em] text-[#8b7355] font-serif italic font-bold mb-1.5">Current Position</h4>
+  1465→              <div className="space-y-1.5">
+  1466→                {patternExercises.map((pat) => (
+  1467→                  <button key={pat.position} onClick={() => handlePatternClick(pat.position - 1)} className="w-full text-left">
+  1468→                    <PatternDiagram keyNote={keyNote} scaleId={scaleId} fretStart={pat.fretStart} fretEnd={pat.fretEnd}
+  1469→                      positionNumber={pat.position} exerciseNotes={pat.notes}
+  1470→                      selected={positionIndex === pat.position - 1 && !showAllPositions} />
+  1471→                  </button>
+  1472→                ))}
+  1473→              </div>
+  1474→            </div>
+  1475→
+  1476→            {/* Card 3: Related Exercises */}
+  1477→            <div className="sketch-card bg-[#f5f0e8] p-2.5">
+  1478→              <h4 className="text-[10px] uppercase tracking-[0.12em] text-[#8b7355] font-serif italic font-bold mb-1.5">Related Exercises</h4>
+  1479→              <div className="space-y-0.5">
+  1480→                {exerciseCategory.types.filter(t => t !== exerciseType).slice(0, 5).map(typeId => {
+  1481→                  const info = EXERCISE_TYPES[typeId];
+  1482→                  return (
+  1483→                    <button key={typeId} className="w-full text-left flex items-center gap-1 px-1.5 py-1 rounded-sm text-[9px] text-[#4a4a4a] hover:bg-[rgba(139,115,85,0.08)] transition-all"
+  1484→                      onClick={() => { setExerciseType(typeId); stopPlayback(); }}>
+  1485→                      <ArrowRight className="w-2 h-2 text-[#8b7355] shrink-0" />
+  1486→                      <div className="flex-1 min-w-0">
+  1487→                        <span className="font-serif italic">{info.name}</span>
+  1488→                        <span className="text-[8px] text-[#8b7355] ml-1">{info.focus}</span>
+  1489→                      </div>
+  1490→                      <DifficultyBadge level={info.difficulty} />
+  1491→                    </button>
+  1492→                  );
+  1493→                })}
+  1494→              </div>
+  1495→            </div>
+  1496→
+  1497→            {/* Card 4: Next Suggested */}
+  1498→            <div className="sketch-card bg-[#f5f0e8] p-2.5">
+  1499→              <h4 className="text-[10px] uppercase tracking-[0.12em] text-[#8b7355] font-serif italic font-bold mb-1.5">Suggested Next</h4>
+  1500→              {(() => {
+  1501→                const currentIdx = exerciseCategory.types.indexOf(exerciseType);
+  1502→                const nextType = currentIdx >= 0 && currentIdx < exerciseCategory.types.length - 1 ? exerciseCategory.types[currentIdx + 1] : null;
+  1503→                const nextMeta = nextType ? EXERCISE_TYPES[nextType] : null;
+  1504→                if (!nextType || !nextMeta) return <p className="text-[9px] text-[#b8a88a] font-serif italic">Complete!</p>;
+  1505→                return (
+  1506→                  <button className="w-full text-left bg-[rgba(155,57,57,0.05)] border border-[#9b393930] rounded-sm p-1.5 hover:bg-[rgba(155,57,57,0.1)] transition-all"
+  1507→                    onClick={() => { setExerciseType(nextType); stopPlayback(); }}>
+  1508→                    <div className="flex items-center gap-1">
+  1509→                      <Play className="w-2.5 h-2.5 text-[#9b3939]" />
+  1510→                      <span className="text-[10px] font-bold text-[#9b3939] font-serif italic">{nextMeta.name}</span>
+  1511→                    </div>
+  1512→                    <p className="text-[8px] text-[#8b7355] font-serif italic mt-0.5">{nextMeta.description} · {nextMeta.focus}</p>
+  1513→                  </button>
+  1514→                );
+  1515→              })()}
+  1516→            </div>
+  1517→
+  1518→            {/* Card 5: Session */}
+  1519→            <div className="sketch-card bg-[#f5f0e8] p-2.5">
+  1520→              <h4 className="text-[10px] uppercase tracking-[0.12em] text-[#8b7355] font-serif italic font-bold mb-1.5 flex items-center gap-1"><Clock className="w-3 h-3" /> Session</h4>
+  1521→              <div className="grid grid-cols-2 gap-1.5">
+  1522→                <div><div className="text-[8px] text-[#8b7355] font-serif italic uppercase">Time</div><div className="text-[13px] font-bold text-[#2c2c2c] font-mono">{formatTime(sessionElapsed)}</div></div>
+  1523→                <div><div className="text-[8px] text-[#8b7355] font-serif italic uppercase">Played</div><div className="text-[13px] font-bold text-[#2c2c2c] font-mono">{exercisesPlayed}</div></div>
+  1524→                <div><div className="text-[8px] text-[#8b7355] font-serif italic uppercase">Tempo</div><div className="text-[13px] font-bold text-[#2c2c2c] font-mono">{bpm}</div></div>
+  1525→                <div><div className="text-[8px] text-[#8b7355] font-serif italic uppercase">Library</div><div className="text-[13px] font-bold text-[#2c2c2c] font-mono">{Object.keys(EXERCISE_TYPES).length}</div></div>
+  1526→              </div>
+  1527→            </div>
+  1528→          </div>
+  1529→        </aside>
+  1530→      </div>
+  1531→
+  1532→      {/* ═══ BOTTOM PRACTICE ENGINE ═══ */}
+  1533→
+  1534→      {/* Practice Panel - Expandable area above the toolbar */}
+  1535→      {practicePanelOpen && (
+  1536→        <div className="fixed bottom-[38px] left-0 right-0 z-30 border-t-2 border-[#8b7355] bg-[#faf6ef] shadow-lg max-h-[50vh] overflow-y-auto">
+  1537→          <div className="px-3 py-2 space-y-3">
+  1538→
+  1539→            {/* METRONOME SETTINGS */}
+  1540→            <div>
+  1541→              <div className="flex items-center gap-1.5 mb-2">
+  1542→                <Drum className="w-3 h-3 text-[#9b3939]" />
+  1543→                <span className="text-[10px] uppercase tracking-[0.15em] text-[#8b7355] font-serif italic font-bold">Metronome</span>
+  1544→              </div>
+  1545→              <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
+  1546→                {/* Sound */}
+  1547→                <div>
+  1548→                  <label className="text-[8px] uppercase tracking-[0.1em] text-[#8b7355] font-serif italic block mb-0.5">Sound</label>
+  1549→                  <Select value={metronomeSound} onValueChange={(v) => setMetronomeSound(v as MetronomeSound)}>
+  1550→                    <SelectTrigger className="bg-[#f5f0e8] border-[#c4b89c] text-[10px] rounded-sm h-7 cursor-pointer"><SelectValue /></SelectTrigger>
+  1551→                    <SelectContent className="bg-[#faf6ef] border-[#c4b89c]">
+  1552→                      {METRONOME_SOUNDS.map(s => <SelectItem key={s.value} value={s.value} className="text-[10px] text-[#2c2c2c] cursor-pointer">{s.label}</SelectItem>)}
+  1553→                    </SelectContent>
+  1554→                  </Select>
+  1555→                </div>
+  1556→                {/* Time Signature */}
+  1557→                <div>
+  1558→                  <label className="text-[8px] uppercase tracking-[0.1em] text-[#8b7355] font-serif italic block mb-0.5">Time Sig</label>
+  1559→                  <Select value={timeSignatureDisplay} onValueChange={(v) => handleTimeSignatureChange(v as TimeSignatureDisplay)}>
+  1560→                    <SelectTrigger className="bg-[#f5f0e8] border-[#c4b89c] text-[10px] rounded-sm h-7 cursor-pointer"><SelectValue /></SelectTrigger>
+  1561→                    <SelectContent className="bg-[#faf6ef] border-[#c4b89c]">
+  1562→                      {TIME_SIGNATURES.map(ts => <SelectItem key={ts.value} value={ts.value} className="text-[10px] text-[#2c2c2c] cursor-pointer">{ts.value}</SelectItem>)}
+  1563→                    </SelectContent>
+  1564→                  </Select>
+  1565→                </div>
+  1566→                {/* Subdivision */}
+  1567→                <div>
+  1568→                  <label className="text-[8px] uppercase tracking-[0.1em] text-[#8b7355] font-serif italic block mb-0.5">Subdivision</label>
+  1569→                  <Select value={subdivision} onValueChange={(v) => setSubdivision(v as Subdivision)}>
+  1570→                    <SelectTrigger className="bg-[#f5f0e8] border-[#c4b89c] text-[10px] rounded-sm h-7 cursor-pointer"><SelectValue /></SelectTrigger>
+  1571→                    <SelectContent className="bg-[#faf6ef] border-[#c4b89c]">
+  1572→                      {SUBDIVISIONS.map(s => <SelectItem key={s.value} value={s.value} className="text-[10px] text-[#2c2c2c] cursor-pointer">{s.label}</SelectItem>)}
+  1573→                    </SelectContent>
+  1574→                  </Select>
+  1575→                </div>
+  1576→                {/* Accent Mode */}
+  1577→                <div>
+  1578→                  <label className="text-[8px] uppercase tracking-[0.1em] text-[#8b7355] font-serif italic block mb-0.5">Accent</label>
+  1579→                  <Select value={accentMode} onValueChange={(v) => setAccentMode(v as AccentMode)}>
+  1580→                    <SelectTrigger className="bg-[#f5f0e8] border-[#c4b89c] text-[10px] rounded-sm h-7 cursor-pointer"><SelectValue /></SelectTrigger>
+  1581→                    <SelectContent className="bg-[#faf6ef] border-[#c4b89c]">
+  1582→                      <SelectItem value="first" className="text-[10px] text-[#2c2c2c] cursor-pointer">First Beat</SelectItem>
+  1583→                      <SelectItem value="every-n" className="text-[10px] text-[#2c2c2c] cursor-pointer">Every N Beats</SelectItem>
+  1584→                      <SelectItem value="random" className="text-[10px] text-[#2c2c2c] cursor-pointer">Random</SelectItem>
+  1585→                      <SelectItem value="none" className="text-[10px] text-[#2c2c2c] cursor-pointer">No Accent</SelectItem>
+  1586→                    </SelectContent>
+  1587→                  </Select>
+  1588→                </div>
+  1589→              </div>
+  1590→
+  1591→              {/* Accent every N + Volume */}
+  1592→              <div className="flex items-center gap-3 mt-2">
+  1593→                {accentMode === 'every-n' && (
+  1594→                  <div className="flex items-center gap-1">
+  1595→                    <span className="text-[8px] text-[#8b7355] font-serif italic">Every</span>
+  1596→                    <input type="number" min={2} max={16} value={accentEveryN} onChange={e => setAccentEveryN(Math.max(2, Math.min(16, parseInt(e.target.value) || 2)))}
+  1597→                      className="w-8 h-5 text-[10px] font-mono font-bold text-center bg-[#f5f0e8] border border-[#c4b89c] rounded-sm px-0.5" />
+  1598→                    <span className="text-[8px] text-[#8b7355] font-serif italic">beats</span>
+  1599→                  </div>
+  1600→                )}
+  1601→                <div className="flex items-center gap-1.5 ml-auto">
+  1602→                  <Volume2 className="w-2.5 h-2.5 text-[#8b7355]" />
+  1603→                  <Slider value={[metronomeVolume]} min={0} max={1} step={0.05} onValueChange={([v]) => setMetronomeVolume(v)}
+  1604→                    className="w-16 cursor-pointer" />
+  1605→                </div>
+  1606→              </div>
+  1607→
+  1608→              {/* Beat Visualizer */}
+  1609→              <div className="flex items-center gap-1 mt-2">
+  1610→                {Array.from({ length: timeSignature }, (_, i) => {
+  1611→                  const isAccent = accentMode === 'first' ? i === 0 : accentMode === 'every-n' ? i % accentEveryN === 0 : false;
+  1612→                  return (
+  1613→                    <div key={i} className={`flex-1 h-4 rounded-sm border-2 transition-all duration-75 flex items-center justify-center ${
+  1614→                      metronomeOn && currentBeat === i
+  1615→                        ? isAccent ? 'bg-[#9b3939] border-[#9b3939] scale-105' : 'bg-[#8b7355] border-[#8b7355] scale-105'
+  1616→                        : isAccent ? 'bg-[rgba(155,57,57,0.1)] border-[#9b3939]/50' : 'bg-transparent border-[#c4b89c]'
+  1617→                    }`}>
+  1618→                      <span className={`text-[7px] font-bold ${metronomeOn && currentBeat === i ? 'text-white' : isAccent ? 'text-[#9b3939]/60' : 'text-[#c4b89c]'}`}>{i + 1}</span>
+  1619→                    </div>
+  1620→                  );
+  1621→                })}
+  1622→              </div>
+  1623→            </div>
+  1624→
+  1625→            {/* PRACTICE TOOLS */}
+  1626→            <div>
+  1627→              <div className="flex items-center gap-1.5 mb-2">
+  1628→                <Target className="w-3 h-3 text-[#4a5a8a]" />
+  1629→                <span className="text-[10px] uppercase tracking-[0.15em] text-[#8b7355] font-serif italic font-bold">Practice Tools</span>
+  1630→              </div>
+  1631→
+  1632→              {/* Practice Mode Selector */}
+  1633→              <div className="flex gap-1 mb-2">
+  1634→                {([
+  1635→                  { mode: 'none' as PracticeMode, label: 'Off', icon: Square },
+  1636→                  { mode: 'tempo-trainer' as PracticeMode, label: 'Trainer', icon: Gauge },
+  1637→                  { mode: 'speed-burst' as PracticeMode, label: 'Burst', icon: Zap },
+  1638→                  { mode: 'random-tempo' as PracticeMode, label: 'Random', icon: Shuffle },
+  1639→                ]).map(({ mode, label, icon: Icon }) => (
+  1640→                  <button key={mode} className={`flex items-center gap-0.5 px-2 py-1 text-[9px] font-bold border rounded-sm transition-all cursor-pointer ${
+  1641→                    practiceMode === mode ? 'bg-[rgba(74,90,138,0.15)] border-[#4a5a8a] text-[#4a5a8a]' : 'sketch-btn border-[#c4b89c]'
+  1642→                  }`} onClick={() => {
+  1643→                    setPracticeMode(mode);
+  1644→                    setTempoTrainer(prev => ({ ...prev, isActive: mode === 'tempo-trainer' }));
+  1645→                    setSpeedBurst(prev => ({ ...prev, isActive: mode === 'speed-burst' }));
+  1646→                    setRandomTempo(prev => ({ ...prev, isActive: mode === 'random-tempo' }));
+  1647→                  }}>
+  1648→                    <Icon className="w-2.5 h-2.5" />{label}
+  1649→                  </button>
+  1650→                ))}
+  1651→              </div>
+  1652→
+  1653→              {/* Tempo Trainer Config */}
+  1654→              {practiceMode === 'tempo-trainer' && (
+  1655→                <div className="bg-[#f5f0e8] border border-[#e8e2d6] rounded-sm p-2 space-y-1.5">
+  1656→                  <div className="text-[9px] font-bold text-[#4a5a8a] font-serif italic">Tempo Trainer</div>
+  1657→                  <div className="grid grid-cols-2 gap-2">
+  1658→                    <div>
+  1659→                      <label className="text-[8px] text-[#8b7355] font-serif italic">Start BPM</label>
+  1660→                      <input type="number" min={30} max={300} value={tempoTrainer.startBpm}
+  1661→                        onChange={e => setTempoTrainer(prev => ({ ...prev, startBpm: Math.max(30, Math.min(300, parseInt(e.target.value) || 80)) }))}
+  1662→                        className="w-full h-6 text-[10px] font-mono font-bold bg-[#faf6ef] border border-[#c4b89c] rounded-sm px-1.5 cursor-pointer" />
+  1663→                    </div>
+  1664→                    <div>
+  1665→                      <label className="text-[8px] text-[#8b7355] font-serif italic">Target BPM</label>
+  1666→                      <input type="number" min={30} max={300} value={tempoTrainer.targetBpm}
+  1667→                        onChange={e => setTempoTrainer(prev => ({ ...prev, targetBpm: Math.max(30, Math.min(300, parseInt(e.target.value) || 140)) }))}
+  1668→                        className="w-full h-6 text-[10px] font-mono font-bold bg-[#faf6ef] border border-[#c4b89c] rounded-sm px-1.5 cursor-pointer" />
+  1669→                    </div>
+  1670→                    <div>
+  1671→                      <label className="text-[8px] text-[#8b7355] font-serif italic">Step Size</label>
+  1672→                      <input type="number" min={1} max={20} value={tempoTrainer.stepSize}
+  1673→                        onChange={e => setTempoTrainer(prev => ({ ...prev, stepSize: Math.max(1, Math.min(20, parseInt(e.target.value) || 5)) }))}
+  1674→                        className="w-full h-6 text-[10px] font-mono font-bold bg-[#faf6ef] border border-[#c4b89c] rounded-sm px-1.5 cursor-pointer" />
+  1675→                    </div>
+  1676→                    <div>
+  1677→                      <label className="text-[8px] text-[#8b7355] font-serif italic">Increase Every N Reps</label>
+  1678→                      <input type="number" min={1} max={20} value={tempoTrainer.increaseEveryN}
+  1679→                        onChange={e => setTempoTrainer(prev => ({ ...prev, increaseEveryN: Math.max(1, Math.min(20, parseInt(e.target.value) || 2)) }))}
+  1680→                        className="w-full h-6 text-[10px] font-mono font-bold bg-[#faf6ef] border border-[#c4b89c] rounded-sm px-1.5 cursor-pointer" />
+  1681→                    </div>
+  1682→                  </div>
+  1683→                  <button className="sketch-btn text-[9px] px-2 py-1 border-[#4a5a8a] text-[#4a5a8a] font-semibold cursor-pointer"
+  1684→                    onClick={() => { setBpm(tempoTrainer.startBpm); setTempoTrainer(prev => ({ ...prev, currentReps: 0, isActive: true })); repCountRef.current = 0; setRepetitionCount(0); }}>
+  1685→                    Reset &amp; Start from {tempoTrainer.startBpm} BPM
+  1686→                  </button>
+  1687→                </div>
+  1688→              )}
+  1689→
+  1690→              {/* Speed Burst Config */}
+  1691→              {practiceMode === 'speed-burst' && (
+  1692→                <div className="bg-[#f5f0e8] border border-[#e8e2d6] rounded-sm p-2 space-y-1.5">
+  1693→                  <div className="text-[9px] font-bold text-[#4a5a8a] font-serif italic">Speed Burst</div>
+  1694→                  <div className="grid grid-cols-3 gap-2">
+  1695→                    <div>
+  1696→                      <label className="text-[8px] text-[#8b7355] font-serif italic">Burst BPM</label>
+  1697→                      <input type="number" min={30} max={300} value={speedBurst.burstBpm}
+  1698→                        onChange={e => setSpeedBurst(prev => ({ ...prev, burstBpm: Math.max(30, Math.min(300, parseInt(e.target.value) || 120)) }))}
+  1699→                        className="w-full h-6 text-[10px] font-mono font-bold bg-[#faf6ef] border border-[#c4b89c] rounded-sm px-1.5 cursor-pointer" />
+  1700→                    </div>
+  1701→                    <div>
+  1702→                      <label className="text-[8px] text-[#8b7355] font-serif italic">Burst Every N</label>
+  1703→                      <input type="number" min={1} max={10} value={speedBurst.burstEveryN}
+  1704→                        onChange={e => setSpeedBurst(prev => ({ ...prev, burstEveryN: Math.max(1, Math.min(10, parseInt(e.target.value) || 3)) }))}
+  1705→                        className="w-full h-6 text-[10px] font-mono font-bold bg-[#faf6ef] border border-[#c4b89c] rounded-sm px-1.5 cursor-pointer" />
+  1706→                    </div>
+  1707→                    <div>
+  1708→                      <label className="text-[8px] text-[#8b7355] font-serif italic">Burst Length</label>
+  1709→                      <input type="number" min={1} max={8} value={speedBurst.burstLength}
+  1710→                        onChange={e => setSpeedBurst(prev => ({ ...prev, burstLength: Math.max(1, Math.min(8, parseInt(e.target.value) || 1)) }))}
+  1711→                        className="w-full h-6 text-[10px] font-mono font-bold bg-[#faf6ef] border border-[#c4b89c] rounded-sm px-1.5 cursor-pointer" />
+  1712→                    </div>
+  1713→                  </div>
+  1714→                  {speedBurst.isInBurst && (
+  1715→                    <div className="text-[9px] text-[#9b3939] font-serif italic font-bold animate-pulse">⚡ BURST MODE ACTIVE — {speedBurst.burstBpm} BPM</div>
+  1716→                  )}
+  1717→                </div>
+  1718→              )}
+  1719→
+  1720→              {/* Random Tempo Config */}
+  1721→              {practiceMode === 'random-tempo' && (
+  1722→                <div className="bg-[#f5f0e8] border border-[#e8e2d6] rounded-sm p-2 space-y-1.5">
+  1723→                  <div className="text-[9px] font-bold text-[#4a5a8a] font-serif italic">Random Tempo</div>
+  1724→                  <div className="grid grid-cols-2 gap-2">
+  1725→                    <div>
+  1726→                      <label className="text-[8px] text-[#8b7355] font-serif italic">Min BPM</label>
+  1727→                      <input type="number" min={30} max={300} value={randomTempo.minBpm}
+  1728→                        onChange={e => setRandomTempo(prev => ({ ...prev, minBpm: Math.max(30, Math.min(300, parseInt(e.target.value) || 70)) }))}
+  1729→                        className="w-full h-6 text-[10px] font-mono font-bold bg-[#faf6ef] border border-[#c4b89c] rounded-sm px-1.5 cursor-pointer" />
+  1730→                    </div>
+  1731→                    <div>
+  1732→                      <label className="text-[8px] text-[#8b7355] font-serif italic">Max BPM</label>
+  1733→                      <input type="number" min={30} max={300} value={randomTempo.maxBpm}
+  1734→                        onChange={e => setRandomTempo(prev => ({ ...prev, maxBpm: Math.max(30, Math.min(300, parseInt(e.target.value) || 130)) }))}
+  1735→                        className="w-full h-6 text-[10px] font-mono font-bold bg-[#faf6ef] border border-[#c4b89c] rounded-sm px-1.5 cursor-pointer" />
+  1736→                    </div>
+  1737→                  </div>
+  1738→                </div>
+  1739→              )}
+  1740→
+  1741→              {/* Session Stats Row */}
+  1742→              <div className="flex items-center gap-3 mt-2 pt-2 border-t border-[#e8e2d6]">
+  1743→                <div className="flex items-center gap-1">
+  1744→                  <Hash className="w-2.5 h-2.5 text-[#8b7355]" />
+  1745→                  <span className="text-[9px] text-[#8b7355] font-serif italic">Reps</span>
+  1746→                  <span className="text-[10px] font-mono font-bold text-[#4a4a4a]">{repetitionCount}<span className="text-[8px] text-[#8b7355]">/{repetitionGoal}</span></span>
+  1747→                </div>
+  1748→                <div className="flex items-center gap-1">
+  1749→                  <Clock className="w-2.5 h-2.5 text-[#8b7355]" />
+  1750→                  <span className="text-[9px] text-[#8b7355] font-serif italic">Practice</span>
+  1751→                  <span className="text-[10px] font-mono font-bold text-[#4a4a4a]">{formatTime(practiceTimer)}</span>
+  1752→                </div>
+  1753→                <div className="flex items-center gap-1">
+  1754→                  <Timer className="w-2.5 h-2.5 text-[#8b7355]" />
+  1755→                  <span className="text-[9px] text-[#8b7355] font-serif italic">Session</span>
+  1756→                  <span className="text-[10px] font-mono font-bold text-[#4a4a4a]">{formatTime(sessionElapsed)}</span>
+  1757→                </div>
+  1758→                <button className="sketch-btn text-[8px] px-1.5 py-0.5 border-[#c4b89c] ml-auto cursor-pointer"
+  1759→                  onClick={() => { setRepetitionCount(0); repCountRef.current = 0; setPracticeTimer(0); }}>
+  1760→                  Reset
+  1761→                </button>
+  1762→              </div>
+  1763→            </div>
+  1764→
+  1765→            {/* ADVANCED METRONOME */}
+  1766→            <Collapsible open={advancedMetronomeOpen} onOpenChange={setAdvancedMetronomeOpen}>
+  1767→              <CollapsibleTrigger className="flex items-center gap-1.5 w-full cursor-pointer">
+  1768→                <Waves className="w-3 h-3 text-[#6b4a7a]" />
+  1769→                <span className="text-[10px] uppercase tracking-[0.15em] text-[#8b7355] font-serif italic font-bold">Advanced</span>
+  1770→                {advancedMetronomeOpen ? <ChevronUp className="w-2.5 h-2.5 text-[#8b7355]" /> : <ChevronDown className="w-2.5 h-2.5 text-[#8b7355]" />}
+  1771→              </CollapsibleTrigger>
+  1772→              <CollapsibleContent>
+  1773→                <div className="mt-2 space-y-2">
+  1774→                  {/* Gap Click */}
+  1775→                  <div className="bg-[#f5f0e8] border border-[#e8e2d6] rounded-sm p-2">
+  1776→                    <div className="flex items-center justify-between mb-1">
+  1777→                      <span className="text-[9px] font-bold text-[#6b4a7a] font-serif italic">Gap Click Training</span>
+  1778→                      <Switch checked={gapClick.isActive} onCheckedChange={(v) => setGapClick(prev => ({ ...prev, isActive: v }))} className="cursor-pointer" />
+  1779→                    </div>
+  1780→                    {gapClick.isActive && (
+  1781→                      <div className="grid grid-cols-2 gap-2">
+  1782→                        <div>
+  1783→                          <label className="text-[8px] text-[#8b7355] font-serif italic">Bars Click</label>
+  1784→                          <input type="number" min={1} max={16} value={gapClick.barsClick}
+  1785→                            onChange={e => setGapClick(prev => ({ ...prev, barsClick: Math.max(1, parseInt(e.target.value) || 2) }))}
+  1786→                            className="w-full h-6 text-[10px] font-mono font-bold bg-[#faf6ef] border border-[#c4b89c] rounded-sm px-1.5 cursor-pointer" />
+  1787→                        </div>
+  1788→                        <div>
+  1789→                          <label className="text-[8px] text-[#8b7355] font-serif italic">Bars Silent</label>
+  1790→                          <input type="number" min={1} max={16} value={gapClick.barsSilent}
+  1791→                            onChange={e => setGapClick(prev => ({ ...prev, barsSilent: Math.max(1, parseInt(e.target.value) || 2) }))}
+  1792→                            className="w-full h-6 text-[10px] font-mono font-bold bg-[#faf6ef] border border-[#c4b89c] rounded-sm px-1.5 cursor-pointer" />
+  1793→                        </div>
+  1794→                      </div>
+  1795→                    )}
+  1796→                  </div>
+  1797→
+  1798→                  {/* Silent Measures */}
+  1799→                  <div className="bg-[#f5f0e8] border border-[#e8e2d6] rounded-sm p-2">
+  1800→                    <div className="flex items-center justify-between mb-1">
+  1801→                      <span className="text-[9px] font-bold text-[#6b4a7a] font-serif italic">Silent Measure Training</span>
+  1802→                      <Switch checked={silentMeasureEnabled} onCheckedChange={setSilentMeasureEnabled} className="cursor-pointer" />
+  1803→                    </div>
+  1804→                    {silentMeasureEnabled && (
+  1805→                      <div>
+  1806→                        <label className="text-[8px] text-[#8b7355] font-serif italic">Silent every N measures</label>
+  1807→                        <input type="number" min={1} max={8} value={silentEveryN}
+  1808→                          onChange={e => setSilentEveryN(Math.max(1, Math.min(8, parseInt(e.target.value) || 2)))}
+  1809→                          className="w-full h-6 text-[10px] font-mono font-bold bg-[#faf6ef] border border-[#c4b89c] rounded-sm px-1.5 cursor-pointer" />
+  1810→                      </div>
+  1811→                    )}
+  1812→                  </div>
+  1813→
+  1814→                  {/* Random Accent */}
+  1815→                  <div className="bg-[#f5f0e8] border border-[#e8e2d6] rounded-sm p-2 flex items-center justify-between">
+  1816→                    <span className="text-[9px] font-bold text-[#6b4a7a] font-serif italic">Random Accents</span>
+  1817→                    <Switch checked={randomAccent} onCheckedChange={setRandomAccent} className="cursor-pointer" />
+  1818→                  </div>
+  1819→
+  1820→                  {/* Polyrhythm */}
+  1821→                  <div className="bg-[#f5f0e8] border border-[#e8e2d6] rounded-sm p-2">
+  1822→                    <div className="flex items-center justify-between mb-1">
+  1823→                      <span className="text-[9px] font-bold text-[#6b4a7a] font-serif italic">Polyrhythm</span>
+  1824→                      <Switch checked={polyrhythm.isActive} onCheckedChange={(v) => setPolyrhythm(prev => ({ ...prev, isActive: v }))} className="cursor-pointer" />
+  1825→                    </div>
+  1826→                    {polyrhythm.isActive && (
+  1827→                      <div className="flex gap-1">
+  1828→                        {POLYRHYTHM_RATIOS.map(r => (
+  1829→                          <button key={r} className={`px-2 py-0.5 text-[9px] font-bold border rounded-sm cursor-pointer transition-all ${
+  1830→                            polyrhythm.ratio === r ? 'bg-[rgba(107,74,122,0.15)] border-[#6b4a7a] text-[#6b4a7a]' : 'sketch-btn border-[#c4b89c]'
+  1831→                          }`} onClick={() => setPolyrhythm(prev => ({ ...prev, ratio: r }))}>{r}</button>
+  1832→                        ))}
+  1833→                      </div>
+  1834→                    )}
+  1835→                  </div>
+  1836→                </div>
+  1837→              </CollapsibleContent>
+  1838→            </Collapsible>
+  1839→          </div>
+  1840→        </div>
+  1841→      )}
+  1842→
+  1843→      {/* Compact Toolbar - Always visible */}
+  1844→      <div className="fixed bottom-0 left-0 right-0 z-40 border-t-2 border-[#8b7355] bg-[#faf6ef]">
+  1845→        <div className="px-2 py-1 flex items-center gap-1.5 h-[38px]">
+  1846→
+  1847→          {/* GROUP 1: TRANSPORT */}
+  1848→          <div className="flex items-center gap-0.5 shrink-0">
+  1849→            <button className={`w-6 h-6 flex items-center justify-center border rounded-sm transition-all cursor-pointer ${
+  1850→              isPlaying && playbackMode === 'exercise' && !isPaused ? 'bg-[#9b3939] text-white border-[#9b3939]' : 'sketch-btn border-[#6b5b47]'
+  1851→            }`} onClick={handlePlayExercise} title="Play exercise (Space)">
+  1852→              {isPlaying && playbackMode === 'exercise' && !isPaused ? <Pause className="w-3 h-3" /> : <Play className="w-3 h-3" />}
+  1853→            </button>
+  1854→            <button className={`w-6 h-6 flex items-center justify-center border rounded-sm transition-all cursor-pointer ${
+  1855→              isPlaying && playbackMode === 'scale' && !isPaused ? 'bg-[#4a5a8a] text-white border-[#4a5a8a]' : 'sketch-btn border-[#4a5a8a]'
+  1856→            }`} onClick={handlePlayScale} title="Play scale">
+  1857→              {isPlaying && playbackMode === 'scale' && !isPaused ? <Pause className="w-3 h-3" /> : <Music className="w-3 h-3" />}
+  1858→            </button>
+  1859→            {(isPlaying || metronomeOn) && (
+  1860→              <button className="w-6 h-6 flex items-center justify-center border-2 rounded-sm bg-[#4a4a4a] text-white border-[#4a4a4a] cursor-pointer" onClick={() => { stopPlayback(); if (metronomeOn) stopMetronome(); }} title="Stop (Esc)">
+  1861→                <Square className="w-2.5 h-2.5" />
+  1862→              </button>
+  1863→            )}
+  1864→          </div>
+  1865→
+  1866→          <div className="w-px h-4 bg-[#e8e2d6]" />
+  1867→
+  1868→          {/* GROUP 2: TEMPO */}
+  1869→          <div className="flex items-center gap-1 min-w-0">
+  1870→            {/* -5 / -1 buttons */}
+  1871→            <div className="hidden sm:flex items-center gap-px">
+  1872→              <button className="sketch-btn h-5 px-1 text-[8px] font-bold border-[#c4b89c] cursor-pointer" onClick={() => setBpm(Math.max(30, bpm - 5))} title="-5 BPM">-5</button>
+  1873→              <button className="sketch-btn h-5 px-1 text-[8px] font-bold border-[#c4b89c] cursor-pointer" onClick={() => setBpm(Math.max(30, bpm - 1))} title="-1 BPM">-1</button>
+  1874→            </div>
+  1875→            <button className="sm:hidden sketch-btn h-5 w-5 flex items-center justify-center border-[#c4b89c] text-[10px] font-bold cursor-pointer" onClick={() => setBpm(Math.max(30, bpm - 1))} title="-1 BPM">-</button>
+  1876→
+  1877→            {/* BPM Display - Clickable to edit */}
+  1878→            {bpmEditing ? (
+  1879→              <input type="number" min={30} max={300} value={bpmInput}
+  1880→                onChange={e => setBpmInput(e.target.value)}
+  1881→                onKeyDown={handleBpmKeyDown}
+  1882→                onBlur={handleBpmSubmit}
+  1883→                autoFocus
+  1884→                className="w-10 h-6 text-[13px] font-mono font-bold text-center bg-[#f5f0e8] border-2 border-[#8b7355] rounded-sm px-0.5" />
+  1885→            ) : (
+  1886→              <button className="text-[13px] font-mono font-bold text-[#4a4a4a] w-8 text-center cursor-pointer hover:text-[#9b3939] transition-colors" onClick={handleBpmClick} title="Click to edit BPM">
+  1887→                {bpm}
+  1888→              </button>
+  1889→            )}
+  1890→            <span className="text-[9px] text-[#8b7355] font-serif italic shrink-0">BPM</span>
+  1891→
+  1892→            {/* +1 / +5 buttons */}
+  1893→            <div className="hidden sm:flex items-center gap-px">
+  1894→              <button className="sketch-btn h-5 px-1 text-[8px] font-bold border-[#c4b89c] cursor-pointer" onClick={() => setBpm(Math.min(300, bpm + 1))} title="+1 BPM">+1</button>
+  1895→              <button className="sketch-btn h-5 px-1 text-[8px] font-bold border-[#c4b89c] cursor-pointer" onClick={() => setBpm(Math.min(300, bpm + 5))} title="+5 BPM">+5</button>
+  1896→            </div>
+  1897→            <button className="sm:hidden sketch-btn h-5 w-5 flex items-center justify-center border-[#c4b89c] text-[10px] font-bold cursor-pointer" onClick={() => setBpm(Math.min(300, bpm + 1))} title="+1 BPM">+</button>
+  1898→
+  1899→            {/* Slider */}
+  1900→            <Slider value={[bpm]} min={30} max={300} step={1} onValueChange={([v]) => setBpm(v)}
+  1901→              className="w-12 sm:w-20 md:w-28 lg:w-36 cursor-pointer" />
+  1902→
+  1903→            {/* Tap Tempo */}
+  1904→            <button className="sketch-btn text-[8px] px-1.5 py-0.5 border-[#8b7355] text-[#6b5b47] font-semibold cursor-pointer hidden sm:block" onClick={handleTapTempo} title="Tap Tempo">TAP</button>
+  1905→          </div>
+  1906→
+  1907→          <div className="w-px h-4 bg-[#e8e2d6]" />
+  1908→
+  1909→          {/* GROUP 3: METRONOME */}
+  1910→          <div className="flex items-center gap-1 shrink-0">
+  1911→            <button className={`px-1.5 py-0.5 text-[9px] font-bold flex items-center gap-0.5 border-2 rounded-sm transition-all cursor-pointer ${
+  1912→              metronomeOn ? 'bg-[#9b3939] text-white border-[#9b3939]' : 'sketch-btn border-[#6b5b47]'
+  1913→            }`} onClick={toggleEnhancedMetronome} title="Metronome (M)">
+  1914→              <Drum className="w-2.5 h-2.5" />
+  1915→              <span className="hidden sm:inline">{metronomeOn ? 'ON' : 'MET'}</span>
+  1916→            </button>
+  1917→
+  1918→            {/* Compact beat dots */}
+  1919→            <div className="hidden sm:flex items-center gap-px">
+  1920→              {Array.from({ length: Math.min(timeSignature, 8) }, (_, i) => (
+  1921→                <div key={i} className={`w-2 h-2 rounded-full border transition-all duration-75 ${
+  1922→                  metronomeOn && currentBeat === i ? 'bg-[#9b3939] border-[#9b3939] scale-125' : 'bg-transparent border-[#c4b89c]'
+  1923→                }`} />
+  1924→              ))}
+  1925→            </div>
+  1926→
+  1927→            {/* Time sig badge */}
+  1928→            <span className="text-[9px] font-mono font-bold text-[#6b5b47] hidden md:inline">{timeSignatureDisplay}</span>
+  1929→
+  1930→            {/* Subdivision badge */}
+  1931→            {subdivision !== 'quarter' && (
+  1932→              <span className="text-[8px] font-mono text-[#4a5a8a] hidden lg:inline">{SUBDIVISIONS.find(s => s.value === subdivision)?.label}</span>
+  1933→            )}
+  1934→
+  1935→            {/* Practice mode indicator */}
+  1936→            {practiceMode !== 'none' && metronomeOn && (
+  1937→              <span className={`text-[8px] font-bold font-serif italic ${
+  1938→                practiceMode === 'tempo-trainer' ? 'text-[#4a5a8a]' :
+  1939→                practiceMode === 'speed-burst' ? 'text-[#9b3939]' :
+  1940→                'text-[#6b4a7a]'
+  1941→              }`}>
+  1942→                {practiceMode === 'tempo-trainer' ? 'TRN' : practiceMode === 'speed-burst' ? 'BRST' : 'RND'}
+  1943→              </span>
+  1944→            )}
+  1945→          </div>
+  1946→
+  1947→          <div className="w-px h-4 bg-[#e8e2d6] hidden md:block" />
+  1948→
+  1949→          {/* GROUP 4: SESSION (compact) */}
+  1950→          <div className="hidden md:flex items-center gap-2 shrink-0">
+  1951→            <div className="flex items-center gap-0.5">
+  1952→              <Hash className="w-2 h-2 text-[#8b7355]" />
+  1953→              <span className="text-[9px] font-mono font-bold text-[#4a4a4a]">{repetitionCount}/{repetitionGoal}</span>
+  1954→            </div>
+  1955→            <div className="flex items-center gap-0.5">
+  1956→              <Clock className="w-2 h-2 text-[#8b7355]" />
+  1957→              <span className="text-[9px] font-mono font-bold text-[#4a4a4a]">{formatTime(practiceTimer)}</span>
+  1958→            </div>
+  1959→          </div>
+  1960→
+  1961→          <div className="flex-1" />
+  1962→
+  1963→          {/* Playback status */}
+  1964→          {isPlaying && (
+  1965→            <div className="hidden lg:flex items-center gap-0.5 shrink-0">
+  1966→              <span className="text-[8px] text-[#9b3939] font-serif italic font-bold">{playbackMode === 'exercise' ? 'EX' : 'SC'}</span>
+  1967→              <span className="text-[8px] text-[#4a4a4a] font-mono">{playingIdx + 1}/{playbackMode === 'exercise' ? currentExercise.notes.length : scaleNotesForPlayback.length}</span>
+  1968→            </div>
+  1969→          )}
+  1970→
+  1971→          {/* Expand/Collapse Practice Panel */}
+  1972→          <button className={`sketch-btn h-6 px-1.5 text-[8px] font-bold flex items-center gap-0.5 border-[#8b7355] cursor-pointer ${practicePanelOpen ? 'bg-[rgba(139,115,85,0.15)]' : ''}`}
+  1973→            onClick={() => setPracticePanelOpen(!practicePanelOpen)} title="Practice Tools">
+  1974→            <Target className="w-2.5 h-2.5" />
+  1975→            <span className="hidden sm:inline">{practicePanelOpen ? 'Close' : 'Tools'}</span>
+  1976→            {practicePanelOpen ? <ChevronDown className="w-2 h-2" /> : <ChevronUp className="w-2 h-2" />}
+  1977→          </button>
+  1978→
+  1979→          {/* Mobile scale selector */}
+  1980→          <div className="md:hidden shrink-0">
+  1981→            <Select value={scaleId} onValueChange={(v) => { setScaleId(v); setPositionIndex(0); stopPlayback(); }}>
+  1982→              <SelectTrigger className="bg-[#f5f0e8] border-[#c4b89c] text-[9px] rounded-sm h-6 w-[90px] cursor-pointer"><SelectValue /></SelectTrigger>
+  1983→              <SelectContent className="bg-[#faf6ef] border-[#c4b89c]">
+  1984→                {Object.entries(SCALES).map(([id, s]) => (<SelectItem key={id} value={id} className="text-[9px] text-[#2c2c2c] cursor-pointer">{s.name}</SelectItem>))}
+  1985→              </SelectContent>
+  1986→            </Select>
+  1987→          </div>
+  1988→        </div>
+  1989→      </div>
+  1990→
+  1991→      {/* ═══ INFO / DOCUMENTATION SHEET ═══ */}
+  1992→      <Sheet open={infoPageOpen} onOpenChange={setInfoPageOpen}>
+  1993→        <SheetContent side="right" className="w-full sm:max-w-[700px] p-0 bg-[#faf6ef] border-l-2 border-[#8b7355] overflow-y-auto">
+  1994→          <SheetHeader className="sticky top-0 z-10 bg-[#faf6ef] border-b-2 border-[#8b7355] px-6 py-4">
+  1995→            <div className="flex items-center gap-3">
+  1996→              <div className="w-8 h-8 rounded border-2 border-[#8b7355] flex items-center justify-center bg-[#f5f0e8]">
+  1997→                <Guitar className="w-5 h-5 text-[#6b5b47]" />
+  1998→              </div>
+  1999→              <div>
+  2000→                <SheetTitle className="text-lg font-bold text-[#2c2c2c]" style={{ fontFamily: "'Georgia', serif", fontStyle: 'italic' }}>FretBoard Forge — Complete Guide</SheetTitle>
+
+[showing lines 1-2000 of 2554; use offset=2001 with limit to continue reading]
