@@ -183,6 +183,19 @@ body {
   font-size: 0.75rem;
 }
 
+/* All interactive elements get pointer cursor */
+button,
+a,
+select,
+[role="button"],
+[onclick],
+input[type="submit"],
+input[type="button"],
+input[type="range"],
+.sketch-btn {
+  cursor: pointer;
+}
+
 /* Sketch button style */
 .sketch-btn {
   border: 1.5px solid #8b7355 !important;
