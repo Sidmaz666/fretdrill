@@ -28,13 +28,13 @@ interface FretboardDiagramProps {
   fullFretboard?: boolean;
 }
 
-// Layout constants for full fretboard view
-const FULL_STRING_SPACING = 28;
-const FULL_FRET_SPACING = 44;
-const FULL_LEFT_MARGIN = 40;
-const FULL_TOP_MARGIN = 30;
-const FULL_BOTTOM_MARGIN = 26;
-const FULL_NOTE_RADIUS = 11;
+// Layout constants for full fretboard view — V3: 25% larger for dominance
+const FULL_STRING_SPACING = 35;
+const FULL_FRET_SPACING = 52;
+const FULL_LEFT_MARGIN = 44;
+const FULL_TOP_MARGIN = 28;
+const FULL_BOTTOM_MARGIN = 22;
+const FULL_NOTE_RADIUS = 13;
 
 // Compact view constants
 const COMPACT_STRING_SPACING = 20;

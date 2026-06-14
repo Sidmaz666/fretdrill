@@ -89,20 +89,29 @@ body {
   overflow: hidden;
 }
 
-/* Scrollbar styling for workstation feel */
+/* Scrollbar styling — sketch workstation aesthetic */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #c4b89c #f5f0e8;
+}
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
 }
 ::-webkit-scrollbar-track {
   background: #f5f0e8;
+  border-left: 1px solid #e8e2d6;
 }
 ::-webkit-scrollbar-thumb {
   background: #c4b89c;
-  border-radius: 2px;
+  border-radius: 1px;
+  border: 1px solid #b8a88a;
 }
 ::-webkit-scrollbar-thumb:hover {
   background: #8b7355;
+}
+::-webkit-scrollbar-corner {
+  background: #f5f0e8;
 }
 
 /* Sketch-style card with torn/rough border effect */
