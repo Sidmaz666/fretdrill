@@ -1,0 +1,916 @@
+     1→'use client';
+     2→
+     3→import React, { useState, useMemo, useCallback, useRef, useEffect } from 'react';
+     4→import {
+     5→  KEY_NAMES,
+     6→  KEY_DISPLAY_NAMES,
+     7→  SCALES,
+     8→  NoteName,
+     9→  getCAGEDPositions,
+    10→  getScaleOnFretboard,
+    11→  FRET_COUNT,
+    12→} from '@/lib/music-theory';
+    13→import {
+    14→  generateExercise,
+    15→  generatePatternExercises,
+    16→  sortNotesAscending,
+    17→  ExerciseType,
+    18→  EXERCISE_TYPES,
+    19→  ExerciseNote,
+    20→} from '@/lib/exercise-generator';
+    21→import FretboardDiagram from '@/components/guitar/FretboardDiagram';
+    22→import PatternDiagram from '@/components/guitar/PatternDiagram';
+    23→import TabNotation from '@/components/guitar/TabNotation';
+    24→import {
+    25→  Select,
+    26→  SelectContent,
+    27→  SelectItem,
+    28→  SelectTrigger,
+    29→  SelectValue,
+    30→} from '@/components/ui/select';
+    31→import {
+    32→  ChevronLeft,
+    33→  ChevronRight,
+    34→  Shuffle,
+    35→  Music,
+    36→  Zap,
+    37→  GitBranch,
+    38→  Target,
+    39→  Layers,
+    40→  Route,
+    41→  Volume2,
+    42→  VolumeX,
+    43→  Play,
+    44→  Pause,
+    45→  Square,
+    46→  Timer,
+    47→  Drum,
+    48→} from 'lucide-react';
+    49→
+    50→// ─── AUDIO ENGINE ───
+    51→const STRING_FREQUENCIES = [82.41, 110.0, 146.83, 196.0, 246.94, 329.63]; // E2, A2, D3, G3, B3, E4
+    52→
+    53→let audioCtx: AudioContext | null = null;
+    54→function getAudioCtx() {
+    55→  if (!audioCtx) audioCtx = new AudioContext();
+    56→  return audioCtx;
+    57→}
+    58→
+    59→function playGuitarNote(stringIdx: number, fret: number, duration: number = 0.5) {
+    60→  try {
+    61→    const ctx = getAudioCtx();
+    62→    if (ctx.state === 'suspended') ctx.resume();
+    63→    const baseFreq = STRING_FREQUENCIES[stringIdx];
+    64→    const freq = baseFreq * Math.pow(2, fret / 12);
+    65→
+    66→    // Main oscillator - warm triangle
+    67→    const osc = ctx.createOscillator();
+    68→    const gain = ctx.createGain();
+    69→    osc.type = 'triangle';
+    70→    osc.frequency.setValueAtTime(freq, ctx.currentTime);
+    71→
+    72→    // Harmonic - subtle sawtooth for body
+    73→    const osc2 = ctx.createOscillator();
+    74→    const gain2 = ctx.createGain();
+    75→    osc2.type = 'sawtooth';
+    76→    osc2.frequency.setValueAtTime(freq, ctx.currentTime);
+    77→
+    78→    // Sub harmonic - an octave below for warmth
+    79→    const osc3 = ctx.createOscillator();
+    80→    const gain3 = ctx.createGain();
+    81→    osc3.type = 'sine';
+    82→    osc3.frequency.setValueAtTime(freq * 0.5, ctx.currentTime);
+    83→
+    84→    // Attack envelope - quick attack, medium decay
+    85→    gain.gain.setValueAtTime(0, ctx.currentTime);
+    86→    gain.gain.linearRampToValueAtTime(0.35, ctx.currentTime + 0.008);
+    87→    gain.gain.exponentialRampToValueAtTime(0.15, ctx.currentTime + 0.1);
+    88→    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + duration);
+    89→
+    90→    gain2.gain.setValueAtTime(0, ctx.currentTime);
+    91→    gain2.gain.linearRampToValueAtTime(0.06, ctx.currentTime + 0.008);
+    92→    gain2.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + duration * 0.7);
+    93→
+    94→    gain3.gain.setValueAtTime(0, ctx.currentTime);
+    95→    gain3.gain.linearRampToValueAtTime(0.05, ctx.currentTime + 0.01);
+    96→    gain3.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + duration * 0.5);
+    97→
+    98→    osc.connect(gain);
+    99→    osc2.connect(gain2);
+   100→    osc3.connect(gain3);
+   101→    gain.connect(ctx.destination);
+   102→    gain2.connect(ctx.destination);
+   103→    gain3.connect(ctx.destination);
+   104→
+   105→    osc.start(ctx.currentTime);
+   106→    osc2.start(ctx.currentTime);
+   107→    osc3.start(ctx.currentTime);
+   108→    osc.stop(ctx.currentTime + duration + 0.05);
+   109→    osc2.stop(ctx.currentTime + duration + 0.05);
+   110→    osc3.stop(ctx.currentTime + duration + 0.05);
+   111→  } catch (e) {
+   112→    // Silently fail
+   113→  }
+   114→}
+   115→
+   116→function playMetronomeClick(accent: boolean) {
+   117→  try {
+   118→    const ctx = getAudioCtx();
+   119→    if (ctx.state === 'suspended') ctx.resume();
+   120→    const osc = ctx.createOscillator();
+   121→    const gain = ctx.createGain();
+   122→    osc.type = 'sine';
+   123→    osc.frequency.setValueAtTime(accent ? 1200 : 900, ctx.currentTime);
+   124→    gain.gain.setValueAtTime(accent ? 0.25 : 0.12, ctx.currentTime);
+   125→    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.06);
+   126→    osc.connect(gain);
+   127→    gain.connect(ctx.destination);
+   128→    osc.start(ctx.currentTime);
+   129→    osc.stop(ctx.currentTime + 0.06);
+   130→  } catch (e) {}
+   131→}
+   132→
+   133→// ─── INTERVAL COLOR MAPPING ───
+   134→function getIntervalColor(label: string): string {
+   135→  if (label === 'R') return '#9b3939';
+   136→  if (label.includes('♭3') || label.includes('♭2')) return '#6b4a7a';
+   137→  if (label === '3' || label === '2') return '#4a7a4a';
+   138→  if (label === '4') return '#4a5a8a';
+   139→  if (label === '5') return '#4a7a7a';
+   140→  if (label.includes('5')) return '#4a7a7a';
+   141→  if (label.includes('6')) return '#8a6a3a';
+   142→  if (label.includes('7')) return '#7a4a6a';
+   143→  if (label.includes('♯') || label.includes('♭')) return '#6b4a7a';
+   144→  return '#5a5a6a';
+   145→}
+   146→
+   147→// ─── EXERCISE CATEGORIES ───
+   148→const EXERCISE_CATEGORIES = [
+   149→  { label: 'Scale Runs', icon: Route, types: ['scale-asc', 'scale-desc', 'scale-asc-desc', 'reverse-pentatonic'] as ExerciseType[] },
+   150→  { label: 'Sequences', icon: Layers, types: ['thirds', 'sequence-3', 'sequence-4', 'sequence-5', 'pedal-tone'] as ExerciseType[] },
+   151→  { label: 'Shapes', icon: Target, types: ['triads', 'arpeggios', 'octave-shapes', 'double-stops'] as ExerciseType[] },
+   152→  { label: 'Technique', icon: Zap, types: ['string-skip', 'lateral-run', 'diagonal', 'position-shift', 'pentatonic-run', 'economy-picking', 'spider-walk', 'interval-jump'] as ExerciseType[] },
+   153→  { label: 'Connections', icon: GitBranch, types: ['connecting'] as ExerciseType[] },
+   154→];
+   155→
+   156→// ─── MAIN COMPONENT ───
+   157→export default function Home() {
+   158→  // Core state
+   159→  const [keyIndex, setKeyIndex] = useState(9); // A
+   160→  const [scaleId, setScaleId] = useState('minor-pentatonic');
+   161→  const [positionIndex, setPositionIndex] = useState(0);
+   162→  const [exerciseType, setExerciseType] = useState<ExerciseType>('scale-asc-desc');
+   163→  const [showAllPositions, setShowAllPositions] = useState(false);
+   164→  const [activeNote, setActiveNote] = useState<{ string: number; fret: number } | null>(null);
+   165→  const [soundEnabled, setSoundEnabled] = useState(true);
+   166→
+   167→  // Playback state
+   168→  const [isPlaying, setIsPlaying] = useState(false);
+   169→  const [isPaused, setIsPaused] = useState(false);
+   170→  const [playingIdx, setPlayingIdx] = useState(-1);
+   171→  const [playbackMode, setPlaybackMode] = useState<'idle' | 'exercise' | 'scale'>('idle');
+   172→  const playbackRef = useRef<{ playing: boolean; notes: ExerciseNote[]; idx: number; timeoutId: number | null }>({
+   173→    playing: false, notes: [], idx: 0, timeoutId: null,
+   174→  });
+   175→
+   176→  // BPM & Metronome
+   177→  const [bpm, setBpm] = useState(100);
+   178→  const [metronomeOn, setMetronomeOn] = useState(false);
+   179→  const [currentBeat, setCurrentBeat] = useState(-1);
+   180→  const [timeSignature, setTimeSignature] = useState(4);
+   181→  const metronomeRef = useRef(false);
+   182→  const metronomeTimeoutRef = useRef<number | null>(null);
+   183→  const beatCountRef = useRef(0);
+   184→  const tapTimes = useRef<number[]>([]);
+   185→
+   186→  // Derived state
+   187→  const keyNote = KEY_NAMES[keyIndex];
+   188→  const scale = SCALES[scaleId];
+   189→  const positions = useMemo(() => getCAGEDPositions(keyNote, scaleId), [keyNote, scaleId]);
+   190→  const currentPosition = positions[positionIndex] || { fretStart: 0, fretEnd: FRET_COUNT, name: 'Full Fretboard' };
+   191→  const startFret = showAllPositions ? 0 : currentPosition.fretStart;
+   192→  const endFret = showAllPositions ? FRET_COUNT : currentPosition.fretEnd;
+   193→
+   194→  // Current exercise
+   195→  const currentExercise = useMemo(
+   196→    () => generateExercise(exerciseType, keyNote, scaleId, positionIndex),
+   197→    [exerciseType, keyNote, scaleId, positionIndex]
+   198→  );
+   199→
+   200→  // Scale notes for "play scale" feature
+   201→  const scaleNotesForPlayback = useMemo(() => {
+   202→    const notes = getScaleOnFretboard(keyNote, scaleId, startFret, endFret);
+   203→    const sorted = sortNotesAscending(notes);
+   204→    const ascDesc = [...sorted, ...sorted.slice(0, -1).reverse()];
+   205→    return ascDesc.map((n, i) => ({
+   206→      string: n.string,
+   207→      fret: n.fret,
+   208→      note: n.note,
+   209→      intervalLabel: n.intervalLabel,
+   210→      isRoot: n.isRoot,
+   211→      sequenceNumber: i + 1,
+   212→    }));
+   213→  }, [keyNote, scaleId, startFret, endFret]);
+   214→
+   215→  // Exercise highlighting
+   216→  const exerciseHighlightNotes = useMemo(() => {
+   217→    if (!currentExercise || !currentExercise.notes.length) return undefined;
+   218→    const allScaleNotes = getScaleOnFretboard(keyNote, scaleId, 0, FRET_COUNT);
+   219→    const exerciseNoteKeys = new Set(currentExercise.notes.map(n => `${n.string}-${n.fret}`));
+   220→    return allScaleNotes.filter(n => exerciseNoteKeys.has(`${n.string}-${n.fret}`));
+   221→  }, [currentExercise, keyNote, scaleId]);
+   222→
+   223→  const exercisePath = useMemo(() => {
+   224→    if (!currentExercise || !currentExercise.notes.length) return undefined;
+   225→    const seen = new Set<string>();
+   226→    const path: Array<{ string: number; fret: number; sequenceNumber?: number }> = [];
+   227→    for (const note of currentExercise.notes) {
+   228→      const key = `${note.string}-${note.fret}`;
+   229→      if (!seen.has(key)) {
+   230→        seen.add(key);
+   231→        path.push({ string: note.string, fret: note.fret, sequenceNumber: note.sequenceNumber });
+   232→      }
+   233→    }
+   234→    return path;
+   235→  }, [currentExercise]);
+   236→
+   237→  const patternExercises = useMemo(() => generatePatternExercises(keyNote, scaleId), [keyNote, scaleId]);
+   238→
+   239→  const scaleNotes = useMemo(() => {
+   240→    return scale.intervals.map(interval => {
+   241→      const noteIndex = (KEY_NAMES.indexOf(keyNote) + interval) % 12;
+   242→      return KEY_NAMES[noteIndex];
+   243→    });
+   244→  }, [keyNote, scale]);
+   245→
+   246→  // ─── HANDLERS ───
+   247→
+   248→  const handleRandomize = useCallback(() => {
+   249→    const types = Object.keys(EXERCISE_TYPES) as ExerciseType[];
+   250→    setExerciseType(types[Math.floor(Math.random() * types.length)]);
+   251→  }, []);
+   252→
+   253→  const handlePrevPosition = useCallback(() => {
+   254→    setPositionIndex(prev => Math.max(0, prev - 1));
+   255→  }, []);
+   256→
+   257→  const handleNextPosition = useCallback(() => {
+   258→    setPositionIndex(prev => Math.min(positions.length - 1, prev + 1));
+   259→  }, [positions.length]);
+   260→
+   261→  const handleFretboardNoteClick = useCallback((note: { string: number; fret: number }) => {
+   262→    if (soundEnabled) playGuitarNote(note.string, note.fret, 0.6);
+   263→    setActiveNote(prev => prev && prev.string === note.string && prev.fret === note.fret ? null : note);
+   264→  }, [soundEnabled]);
+   265→
+   266→  const handleTabNoteClick = useCallback((note: ExerciseNote) => {
+   267→    if (soundEnabled) playGuitarNote(note.string, note.fret, 0.6);
+   268→    // Only set active note if not currently playing (avoids double highlight)
+   269→    if (!isPlaying) {
+   270→      setActiveNote({ string: note.string, fret: note.fret });
+   271→      setTimeout(() => setActiveNote(null), 1500);
+   272→    }
+   273→  }, [soundEnabled, isPlaying]);
+   274→
+   275→  const handlePatternClick = useCallback((posIdx: number) => {
+   276→    setPositionIndex(posIdx);
+   277→    setShowAllPositions(false);
+   278→  }, []);
+   279→
+   280→  // ─── PLAYBACK ENGINE ───
+   281→
+   282→  const stopPlayback = useCallback(() => {
+   283→    playbackRef.current.playing = false;
+   284→    if (playbackRef.current.timeoutId) {
+   285→      clearTimeout(playbackRef.current.timeoutId);
+   286→      playbackRef.current.timeoutId = null;
+   287→    }
+   288→    setIsPlaying(false);
+   289→    setIsPaused(false);
+   290→    setPlayingIdx(-1);
+   291→    setPlaybackMode('idle');
+   292→    setActiveNote(null);
+   293→  }, []);
+   294→
+   295→  const startPlayback = useCallback((mode: 'exercise' | 'scale', startFromIdx: number = 0) => {
+   296→    stopPlayback();
+   297→    const notes = mode === 'exercise' ? currentExercise.notes : scaleNotesForPlayback;
+   298→    if (!notes.length) return;
+   299→
+   300→    setIsPlaying(true);
+   301→    setIsPaused(false);
+   302→    setPlaybackMode(mode);
+   303→    playbackRef.current = { playing: true, notes, idx: startFromIdx, timeoutId: null };
+   304→
+   305→    const intervalMs = (60 / bpm) * 1000;
+   306→
+   307→    const playNext = () => {
+   308→      if (!playbackRef.current.playing) return;
+   309→      const idx = playbackRef.current.idx;
+   310→      if (idx >= notes.length) {
+   311→        stopPlayback();
+   312→        return;
+   313→      }
+   314→      const note = notes[idx];
+   315→      setPlayingIdx(idx);
+   316→      setActiveNote({ string: note.string, fret: note.fret });
+   317→      if (soundEnabled) playGuitarNote(note.string, note.fret, Math.min(intervalMs / 1000 * 0.8, 0.6));
+   318→      playbackRef.current.idx = idx + 1;
+   319→      playbackRef.current.timeoutId = window.setTimeout(playNext, intervalMs);
+   320→    };
+   321→    playNext();
+   322→  }, [currentExercise, scaleNotesForPlayback, bpm, soundEnabled, stopPlayback]);
+   323→
+   324→  const togglePausePlayback = useCallback(() => {
+   325→    if (isPaused) {
+   326→      // Resume
+   327→      setIsPaused(false);
+   328→      playbackRef.current.playing = true;
+   329→      const notes = playbackRef.current.notes;
+   330→      const intervalMs = (60 / bpm) * 1000;
+   331→
+   332→      const playNext = () => {
+   333→        if (!playbackRef.current.playing) return;
+   334→        const idx = playbackRef.current.idx;
+   335→        if (idx >= notes.length) {
+   336→          stopPlayback();
+   337→          return;
+   338→        }
+   339→        const note = notes[idx];
+   340→        setPlayingIdx(idx);
+   341→        setActiveNote({ string: note.string, fret: note.fret });
+   342→        if (soundEnabled) playGuitarNote(note.string, note.fret, Math.min(intervalMs / 1000 * 0.8, 0.6));
+   343→        playbackRef.current.idx = idx + 1;
+   344→        playbackRef.current.timeoutId = window.setTimeout(playNext, intervalMs);
+   345→      };
+   346→      playNext();
+   347→    } else {
+   348→      // Pause
+   349→      playbackRef.current.playing = false;
+   350→      if (playbackRef.current.timeoutId) {
+   351→        clearTimeout(playbackRef.current.timeoutId);
+   352→        playbackRef.current.timeoutId = null;
+   353→      }
+   354→      setIsPaused(true);
+   355→    }
+   356→  }, [isPaused, bpm, soundEnabled, stopPlayback]);
+   357→
+   358→  const handlePlayExercise = useCallback(() => {
+   359→    if (isPlaying && playbackMode === 'exercise') {
+   360→      togglePausePlayback();
+   361→    } else if (isPlaying) {
+   362→      stopPlayback();
+   363→      startPlayback('exercise');
+   364→    } else {
+   365→      startPlayback('exercise');
+   366→    }
+   367→  }, [isPlaying, playbackMode, togglePausePlayback, stopPlayback, startPlayback]);
+   368→
+   369→  const handlePlayScale = useCallback(() => {
+   370→    if (isPlaying && playbackMode === 'scale') {
+   371→      togglePausePlayback();
+   372→    } else if (isPlaying) {
+   373→      stopPlayback();
+   374→      startPlayback('scale');
+   375→    } else {
+   376→      startPlayback('scale');
+   377→    }
+   378→  }, [isPlaying, playbackMode, togglePausePlayback, stopPlayback, startPlayback]);
+   379→
+   380→  // ─── METRONOME ───
+   381→
+   382→  const startMetronome = useCallback(() => {
+   383→    metronomeRef.current = true;
+   384→    beatCountRef.current = 0;
+   385→    setMetronomeOn(true);
+   386→
+   387→    const tick = () => {
+   388→      if (!metronomeRef.current) return;
+   389→      const accent = beatCountRef.current % timeSignature === 0;
+   390→      setCurrentBeat(beatCountRef.current % timeSignature);
+   391→      if (soundEnabled) playMetronomeClick(accent);
+   392→      beatCountRef.current++;
+   393→      const intervalMs = (60 / bpm) * 1000;
+   394→      metronomeTimeoutRef.current = window.setTimeout(tick, intervalMs);
+   395→    };
+   396→    tick();
+   397→  }, [bpm, soundEnabled, timeSignature]);
+   398→
+   399→  const stopMetronome = useCallback(() => {
+   400→    metronomeRef.current = false;
+   401→    if (metronomeTimeoutRef.current) clearTimeout(metronomeTimeoutRef.current);
+   402→    setMetronomeOn(false);
+   403→    setCurrentBeat(-1);
+   404→  }, []);
+   405→
+   406→  const toggleMetronome = useCallback(() => {
+   407→    if (metronomeOn) stopMetronome();
+   408→    else startMetronome();
+   409→  }, [metronomeOn, startMetronome, stopMetronome]);
+   410→
+   411→  // Restart metronome when BPM changes while running
+   412→  useEffect(() => {
+   413→    if (metronomeOn) {
+   414→      stopMetronome();
+   415→      startMetronome();
+   416→    }
+   417→  // eslint-disable-next-line react-hooks/exhaustive-deps
+   418→  }, [bpm, timeSignature]);
+   419→
+   420→  // Cleanup on unmount
+   421→  useEffect(() => {
+   422→    return () => {
+   423→      playbackRef.current.playing = false;
+   424→      metronomeRef.current = false;
+   425→    };
+   426→  }, []);
+   427→
+   428→  // Tap tempo
+   429→  const handleTapTempo = useCallback(() => {
+   430→    const now = Date.now();
+   431→    if (tapTimes.current.length > 0 && now - tapTimes.current[tapTimes.current.length - 1] > 2000) {
+   432→      tapTimes.current = [];
+   433→    }
+   434→    tapTimes.current.push(now);
+   435→    if (tapTimes.current.length > 5) tapTimes.current.shift();
+   436→    if (tapTimes.current.length >= 2) {
+   437→      const intervals = [];
+   438→      for (let i = 1; i < tapTimes.current.length; i++) {
+   439→        intervals.push(tapTimes.current[i] - tapTimes.current[i - 1]);
+   440→      }
+   441→      const avgInterval = intervals.reduce((a, b) => a + b, 0) / intervals.length;
+   442→      const newBpm = Math.round(60000 / avgInterval);
+   443→      setBpm(Math.max(40, Math.min(220, newBpm)));
+   444→    }
+   445→  }, []);
+   446→
+   447→  // BPM presets
+   448→  const bpmPresets = [60, 80, 100, 120, 140, 160, 180];
+   449→
+   450→  return (
+   451→    <div className="min-h-screen flex flex-col bg-[#f5f0e8] text-[#2c2c2c]">
+   452→      {/* ── HEADER ── */}
+   453→      <header className="border-b-2 border-[#8b7355] bg-[#faf6ef] shrink-0">
+   454→        <div className="max-w-[1440px] mx-auto px-5 py-2.5 flex items-center justify-between gap-4">
+   455→          <div className="flex items-center gap-2.5 shrink-0">
+   456→            <div className="w-9 h-9 rounded-sm border-2 border-[#8b7355] flex items-center justify-center bg-[#f5f0e8]">
+   457→              <Music className="w-5 h-5 text-[#6b5b47]" />
+   458→            </div>
+   459→            <div>
+   460→              <h1 className="text-[17px] font-bold text-[#2c2c2c] leading-tight" style={{ fontFamily: "'Georgia', serif", fontStyle: 'italic' }}>
+   461→                FretBoard Forge
+   462→              </h1>
+   463→              <p className="text-[9px] text-[#8b7355] font-serif italic -mt-0.5 tracking-wide">Procedural Guitar Exercise Generator</p>
+   464→            </div>
+   465→          </div>
+   466→          <div className="flex items-center gap-2">
+   467→            <button
+   468→              className={`sketch-btn px-2.5 py-1.5 text-[10px] flex items-center gap-1.5 ${soundEnabled ? 'border-[#6b5b47]' : 'border-[#c4b89c] opacity-50'}`}
+   469→              onClick={() => setSoundEnabled(!soundEnabled)}
+   470→              title={soundEnabled ? 'Sound on' : 'Sound off'}
+   471→            >
+   472→              {soundEnabled ? <Volume2 className="w-3.5 h-3.5" /> : <VolumeX className="w-3.5 h-3.5" />}
+   473→              {soundEnabled ? 'SOUND' : 'MUTE'}
+   474→            </button>
+   475→          </div>
+   476→        </div>
+   477→      </header>
+   478→
+   479→      <main className="flex-1 max-w-[1440px] w-full mx-auto px-4 py-4 space-y-4">
+   480→
+   481→        {/* ══════════════════════════════════════════════
+   482→            CONTROLS — Key → Scale → Position/Intervals
+   483→            ══════════════════════════════════════════════ */}
+   484→        <div className="sketch-card bg-[#faf6ef] p-4 space-y-4">
+   485→          {/* Row 1: Key Selector */}
+   486→          <div>
+   487→            <div className="flex items-center gap-2 mb-2">
+   488→              <h3 className="text-[10px] uppercase tracking-[0.15em] text-[#8b7355] font-serif italic font-bold">Key</h3>
+   489→              <span className="text-[9px] text-[#b8a88a] font-serif italic">— Root note of the scale</span>
+   490→            </div>
+   491→            <div className="flex flex-wrap gap-1">
+   492→              {KEY_DISPLAY_NAMES.map((key, idx) => (
+   493→                <button
+   494→                  key={idx}
+   495→                  className={`h-8 min-w-[46px] px-2 text-[11px] font-semibold border transition-all rounded-sm ${
+   496→                    keyIndex === idx ? 'sketch-btn-active border-[#6b5b47]' : 'sketch-btn border-[#c4b89c] hover:border-[#8b7355]'
+   497→                  }`}
+   498→                  onClick={() => { setKeyIndex(idx); setPositionIndex(0); stopPlayback(); }}
+   499→                >
+   500→                  {key}
+   501→                </button>
+   502→              ))}
+   503→            </div>
+   504→          </div>
+   505→
+   506→          {/* Row 2: Scale Selector (full width) */}
+   507→          <div>
+   508→            <div className="flex items-center gap-2 mb-2">
+   509→              <h3 className="text-[10px] uppercase tracking-[0.15em] text-[#8b7355] font-serif italic font-bold">Scale</h3>
+   510→              <span className="text-[9px] text-[#b8a88a] font-serif italic">— {scale.intervals.length} notes · {scale.intervalLabels.join(' − ')}</span>
+   511→            </div>
+   512→            <Select value={scaleId} onValueChange={(v) => { setScaleId(v); setPositionIndex(0); stopPlayback(); }}>
+   513→              <SelectTrigger className="bg-[#f5f0e8] border-[#c4b89c] text-[#2c2c2c] text-xs rounded-sm h-9 w-full">
+   514→                <SelectValue />
+   515→              </SelectTrigger>
+   516→              <SelectContent className="bg-[#faf6ef] border-[#c4b89c]">
+   517→                {Object.entries(SCALES).map(([id, s]) => (
+   518→                  <SelectItem key={id} value={id} className="text-[#2c2c2c] focus:bg-[rgba(139,115,85,0.1)] text-xs">
+   519→                    {s.name} ({s.intervals.length} notes)
+   520→                  </SelectItem>
+   521→                ))}
+   522→              </SelectContent>
+   523→            </Select>
+   524→            {/* Scale notes + intervals */}
+   525→            <div className="flex items-center gap-1.5 mt-2 flex-wrap">
+   526→              {scaleNotes.map((note, idx) => {
+   527→                const label = scale.intervalLabels[idx];
+   528→                const color = getIntervalColor(label);
+   529→                return (
+   530→                  <span
+   531→                    key={idx}
+   532→                    className="inline-flex items-center gap-1 px-2 py-1 text-[10px] font-serif italic border rounded-sm"
+   533→                    style={{ borderColor: color + '50', color, backgroundColor: color + '0a' }}
+   534→                  >
+   535→                    <span className="font-bold">{note}</span>
+   536→                    <span className="opacity-50 text-[9px]">{label}</span>
+   537→                  </span>
+   538→                );
+   539→              })}
+   540→              <span className="text-[9px] text-[#8b7355] font-serif italic ml-1">
+   541→                Steps: {scale.intervals.slice(1).map((interval, idx) => {
+   542→                  const prevInterval = idx === 0 ? 0 : scale.intervals[idx];
+   543→                  const step = interval - prevInterval;
+   544→                  return step === 1 ? 'H' : step === 2 ? 'W' : `${step}H`;
+   545→                }).join(' − ')}
+   546→              </span>
+   547→            </div>
+   548→          </div>
+   549→
+   550→          {/* Row 3: Position + Intervals side by side */}
+   551→          <div className="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-4 items-start">
+   552→            {/* Position */}
+   553→            <div>
+   554→              <div className="flex items-center gap-2 mb-2">
+   555→                <h3 className="text-[10px] uppercase tracking-[0.15em] text-[#8b7355] font-serif italic font-bold">Position</h3>
+   556→                <span className="text-[9px] text-[#b8a88a] font-serif italic">— CAGED shape on neck</span>
+   557→              </div>
+   558→              <div className="flex items-center gap-1">
+   559→                <button className="sketch-btn w-7 h-8 flex items-center justify-center border-[#c4b89c] disabled:opacity-30" onClick={handlePrevPosition} disabled={positionIndex <= 0}>
+   560→                  <ChevronLeft className="h-3.5 w-3.5" />
+   561→                </button>
+   562→                {positions.map((_, idx) => (
+   563→                  <button
+   564→                    key={idx}
+   565→                    className={`h-8 w-9 text-[11px] font-semibold rounded-sm transition-all border ${
+   566→                      !showAllPositions && positionIndex === idx ? 'sketch-btn-active border-[#6b5b47]' : 'sketch-btn border-[#c4b89c] hover:border-[#8b7355]'
+   567→                    }`}
+   568→                    onClick={() => { setPositionIndex(idx); setShowAllPositions(false); stopPlayback(); }}
+   569→                  >
+   570→                    {idx + 1}
+   571→                  </button>
+   572→                ))}
+   573→                <button
+   574→                  className={`h-8 px-2 text-[11px] font-semibold rounded-sm transition-all border ${
+   575→                    showAllPositions ? 'sketch-btn-active border-[#6b5b47]' : 'sketch-btn border-[#c4b89c] hover:border-[#8b7355]'
+   576→                  }`}
+   577→                  onClick={() => { setShowAllPositions(true); stopPlayback(); }}
+   578→                >
+   579→                  All
+   580→                </button>
+   581→                <button className="sketch-btn w-7 h-8 flex items-center justify-center border-[#c4b89c] disabled:opacity-30" onClick={handleNextPosition} disabled={positionIndex >= positions.length - 1}>
+   582→                  <ChevronRight className="h-3.5 w-3.5" />
+   583→                </button>
+   584→              </div>
+   585→              <div className="mt-1.5 text-[10px] text-[#6b5b47] font-serif italic font-semibold">
+   586→                {showAllPositions ? 'Full Fretboard · All Positions' : `${currentPosition.name} · Frets ${currentPosition.fretStart}–${currentPosition.fretEnd}`}
+   587→              </div>
+   588→            </div>
+   589→
+   590→            {/* Intervals legend */}
+   591→            <div>
+   592→              <div className="flex items-center gap-2 mb-2">
+   593→                <h3 className="text-[10px] uppercase tracking-[0.15em] text-[#8b7355] font-serif italic font-bold">Intervals</h3>
+   594→              </div>
+   595→              <div className="flex flex-wrap gap-1 max-w-[260px]">
+   596→                {scale.intervalLabels.map((label, idx) => (
+   597→                  <span
+   598→                    key={idx}
+   599→                    className="inline-flex items-center justify-center px-2 py-1 text-[10px] font-bold font-serif italic border rounded-sm"
+   600→                    style={{
+   601→                      borderColor: getIntervalColor(label) + '55',
+   602→                      color: getIntervalColor(label),
+   603→                      backgroundColor: getIntervalColor(label) + '12',
+   604→                    }}
+   605→                  >
+   606→                    {label}
+   607→                  </span>
+   608→                ))}
+   609→              </div>
+   610→            </div>
+   611→          </div>
+   612→        </div>
+   613→
+   614→        {/* ══════════════════════════════════════════════
+   615→            FRETBOARD — Full interactive
+   616→            ══════════════════════════════════════════════ */}
+   617→        <div className="sketch-card bg-[#faf6ef] overflow-hidden">
+   618→          <div className="px-4 pt-3 pb-1.5 flex items-center justify-between border-b border-[#e8e2d6]">
+   619→            <div>
+   620→              <h2 className="text-sm font-bold font-serif italic text-[#2c2c2c]">
+   621→                {keyNote} {scale.name}
+   622→                {!showAllPositions
+   623→                  ? <span className="text-[#8b7355] font-normal"> — {currentPosition.name}</span>
+   624→                  : <span className="text-[#8b7355] font-normal"> — All Positions</span>
+   625→                }
+   626→              </h2>
+   627→              <p className="text-[10px] text-[#8b7355] font-serif italic mt-0.5">
+   628→                {currentExercise?.name || 'Select exercise'} · {currentExercise?.notes.length || 0} notes · Click any note to hear it
+   629→              </p>
+   630→            </div>
+   631→          </div>
+   632→          <div className="px-2 py-2 overflow-x-auto">
+   633→            <FretboardDiagram
+   634→              keyNote={keyNote}
+   635→              scaleId={scaleId}
+   636→              startFret={startFret}
+   637→              endFret={endFret}
+   638→              showAllPositions={showAllPositions}
+   639→              positionIndex={positionIndex}
+   640→              highlightNotes={exerciseHighlightNotes}
+   641→              exercisePath={exercisePath}
+   642→              activeNote={activeNote}
+   643→              onNoteClick={handleFretboardNoteClick}
+   644→              showPatternLines={true}
+   645→              fullFretboard={true}
+   646→            />
+   647→          </div>
+   648→        </div>
+   649→
+   650→        {/* ══════════════════════════════════════════════
+   651→            PLAYBACK CONTROLS — BPM + Metronome + Transport
+   652→            ══════════════════════════════════════════════ */}
+   653→        <div className="sketch-card bg-[#faf6ef] p-4">
+   654→          <div className="grid grid-cols-1 md:grid-cols-[1fr_auto_auto] gap-4 items-center">
+   655→            {/* BPM Control */}
+   656→            <div className="space-y-2">
+   657→              <div className="flex items-center gap-2">
+   658→                <Timer className="w-3.5 h-3.5 text-[#8b7355]" />
+   659→                <h3 className="text-[10px] uppercase tracking-[0.15em] text-[#8b7355] font-serif italic font-bold">Tempo</h3>
+   660→                <span className="text-[20px] font-mono font-bold text-[#4a4a4a] ml-1">{bpm}</span>
+   661→                <span className="text-[10px] text-[#8b7355] font-serif italic">BPM</span>
+   662→              </div>
+   663→              <div className="flex items-center gap-3">
+   664→                <input
+   665→                  type="range"
+   666→                  min={40}
+   667→                  max={220}
+   668→                  step={1}
+   669→                  value={bpm}
+   670→                  onChange={e => setBpm(Number(e.target.value))}
+   671→                  className="flex-1 h-2 accent-[#8b7355] cursor-pointer"
+   672→                  style={{ accentColor: '#8b7355' }}
+   673→                />
+   674→                <div className="flex gap-1">
+   675→                  {bpmPresets.map(preset => (
+   676→                    <button
+   677→                      key={preset}
+   678→                      className={`text-[9px] px-1.5 py-0.5 border rounded-sm transition-all ${
+   679→                        bpm === preset ? 'sketch-btn-active border-[#6b5b47]' : 'sketch-btn border-[#c4b89c] hover:border-[#8b7355]'
+   680→                      }`}
+   681→                      onClick={() => setBpm(preset)}
+   682→                    >
+   683→                      {preset}
+   684→                    </button>
+   685→                  ))}
+   686→                </div>
+   687→                <button
+   688→                  className="sketch-btn text-[9px] px-2 py-0.5 border-[#8b7355] text-[#6b5b47] font-semibold"
+   689→                  onClick={handleTapTempo}
+   690→                  title="Tap to set tempo"
+   691→                >
+   692→                  TAP
+   693→                </button>
+   694→              </div>
+   695→            </div>
+   696→
+   697→            {/* Metronome */}
+   698→            <div className="space-y-2">
+   699→              <div className="flex items-center gap-2">
+   700→                <Drum className="w-3.5 h-3.5 text-[#8b7355]" />
+   701→                <h3 className="text-[10px] uppercase tracking-[0.15em] text-[#8b7355] font-serif italic font-bold">Metronome</h3>
+   702→              </div>
+   703→              <div className="flex items-center gap-3">
+   704→                {/* Time signature selector */}
+   705→                <div className="flex gap-1">
+   706→                  {[3, 4, 5, 6].map(ts => (
+   707→                    <button
+   708→                      key={ts}
+   709→                      className={`text-[9px] px-1.5 py-0.5 border rounded-sm transition-all ${
+   710→                        timeSignature === ts ? 'sketch-btn-active border-[#6b5b47]' : 'sketch-btn border-[#c4b89c] hover:border-[#8b7355]'
+   711→                      }`}
+   712→                      onClick={() => setTimeSignature(ts)}
+   713→                    >
+   714→                      {ts}/4
+   715→                    </button>
+   716→                  ))}
+   717→                </div>
+   718→                {/* Beat indicators */}
+   719→                <div className="flex items-center gap-1.5">
+   720→                  {Array.from({ length: timeSignature }, (_, i) => (
+   721→                    <div
+   722→                      key={i}
+   723→                      className={`w-4 h-4 rounded-full border-2 transition-all duration-75 ${
+   724→                        metronomeOn && currentBeat === i
+   725→                          ? 'bg-[#9b3939] border-[#9b3939] scale-110'
+   726→                          : 'bg-transparent border-[#c4b89c]'
+   727→                      }`}
+   728→                    />
+   729→                  ))}
+   730→                </div>
+   731→                {/* Metronome toggle */}
+   732→                <button
+   733→                  className={`px-3 py-1.5 text-[10px] font-bold flex items-center gap-1.5 border-2 rounded-sm transition-all ${
+   734→                    metronomeOn
+   735→                      ? 'bg-[#9b3939] text-white border-[#9b3939]'
+   736→                      : 'sketch-btn border-[#6b5b47]'
+   737→                  }`}
+   738→                  onClick={toggleMetronome}
+   739→                >
+   740→                  {metronomeOn ? <Square className="w-3 h-3" /> : <Play className="w-3 h-3" />}
+   741→                  {metronomeOn ? 'STOP' : 'START'}
+   742→                </button>
+   743→              </div>
+   744→            </div>
+   745→
+   746→            {/* Transport controls */}
+   747→            <div className="space-y-2">
+   748→              <div className="flex items-center gap-2">
+   749→                <Zap className="w-3.5 h-3.5 text-[#8b7355]" />
+   750→                <h3 className="text-[10px] uppercase tracking-[0.15em] text-[#8b7355] font-serif italic font-bold">Playback</h3>
+   751→                {isPlaying && (
+   752→                  <span className="text-[9px] text-[#9b3939] font-serif italic font-bold">
+   753→                    {playbackMode === 'exercise' ? 'EXERCISE' : 'SCALE'} · Note {playingIdx + 1}
+   754→                  </span>
+   755→                )}
+   756→              </div>
+   757→              <div className="flex items-center gap-2">
+   758→                <button
+   759→                  className={`px-3 py-1.5 text-[10px] font-bold flex items-center gap-1.5 border-2 rounded-sm transition-all ${
+   760→                    isPlaying && playbackMode === 'exercise' && !isPaused
+   761→                      ? 'bg-[#9b3939] text-white border-[#9b3939]'
+   762→                      : 'sketch-btn border-[#6b5b47]'
+   763→                  }`}
+   764→                  onClick={handlePlayExercise}
+   765→                  title="Play exercise"
+   766→                >
+   767→                  {isPlaying && playbackMode === 'exercise' && !isPaused ? <Pause className="w-3 h-3" /> : <Play className="w-3 h-3" />}
+   768→                  {isPlaying && playbackMode === 'exercise' && !isPaused ? 'PAUSE' : 'EXERCISE'}
+   769→                </button>
+   770→                <button
+   771→                  className={`px-3 py-1.5 text-[10px] font-bold flex items-center gap-1.5 border-2 rounded-sm transition-all ${
+   772→                    isPlaying && playbackMode === 'scale' && !isPaused
+   773→                      ? 'bg-[#4a5a8a] text-white border-[#4a5a8a]'
+   774→                      : 'sketch-btn border-[#4a5a8a]'
+   775→                  }`}
+   776→                  onClick={handlePlayScale}
+   777→                  title="Play scale"
+   778→                >
+   779→                  {isPlaying && playbackMode === 'scale' && !isPaused ? <Pause className="w-3 h-3" /> : <Music className="w-3 h-3" />}
+   780→                  {isPlaying && playbackMode === 'scale' && !isPaused ? 'PAUSE' : 'SCALE'}
+   781→                </button>
+   782→                {isPlaying && (
+   783→                  <button
+   784→                    className="px-3 py-1.5 text-[10px] font-bold flex items-center gap-1.5 border-2 rounded-sm bg-[#4a4a4a] text-white border-[#4a4a4a] transition-all"
+   785→                    onClick={stopPlayback}
+   786→                    title="Stop playback"
+   787→                  >
+   788→                    <Square className="w-3 h-3" />
+   789→                    STOP
+   790→                  </button>
+   791→                )}
+   792→              </div>
+   793→            </div>
+   794→          </div>
+   795→        </div>
+   796→
+   797→        {/* ══════════════════════════════════════════════
+   798→            EXERCISE SELECTOR — Horizontal grouped pills
+   799→            ══════════════════════════════════════════════ */}
+   800→        <div className="sketch-card bg-[#faf6ef] p-4 space-y-3">
+   801→          <div className="flex items-center justify-between">
+   802→            <div className="flex items-center gap-2">
+   803→              <Zap className="w-3.5 h-3.5 text-[#8b7355]" />
+   804→              <h3 className="text-[11px] uppercase tracking-[0.15em] text-[#8b7355] font-serif italic font-bold">Exercise</h3>
+   805→              <span className="text-[9px] text-[#b8a88a] font-serif italic">— {EXERCISE_TYPES[exerciseType].description}</span>
+   806→            </div>
+   807→            <button
+   808→              className="sketch-btn text-[10px] px-2 py-1 border-[#8b7355] text-[#6b5b47] font-semibold flex items-center gap-1"
+   809→              onClick={handleRandomize}
+   810→            >
+   811→              <Shuffle className="w-3 h-3" />
+   812→              Random
+   813→            </button>
+   814→          </div>
+   815→
+   816→          {EXERCISE_CATEGORIES.map(cat => {
+   817→            const Icon = cat.icon;
+   818→            const isActiveCat = cat.types.includes(exerciseType);
+   819→            return (
+   820→              <div key={cat.label} className="flex items-center gap-2 flex-wrap">
+   821→                <span className={`inline-flex items-center gap-1 text-[9px] uppercase tracking-[0.1em] font-serif italic font-bold shrink-0 ${
+   822→                  isActiveCat ? 'text-[#9b3939]' : 'text-[#8b7355]'
+   823→                }`}>
+   824→                  <Icon className="w-3 h-3" />
+   825→                  {cat.label}
+   826→                </span>
+   827→                <div className="flex flex-wrap gap-1">
+   828→                  {cat.types.map(typeId => {
+   829→                    const info = EXERCISE_TYPES[typeId];
+   830→                    const isSelected = exerciseType === typeId;
+   831→                    return (
+   832→                      <button
+   833→                        key={typeId}
+   834→                        className={`text-[10px] py-1.5 px-2.5 rounded-sm transition-all border font-semibold ${
+   835→                          isSelected
+   836→                            ? 'bg-[rgba(155,57,57,0.12)] border-[#9b393970] text-[#9b3939]'
+   837→                            : 'sketch-btn border-[#c4b89c] hover:border-[#8b7355]'
+   838→                        }`}
+   839→                        onClick={() => { setExerciseType(typeId); stopPlayback(); }}
+   840→                        title={info.description}
+   841→                      >
+   842→                        {info.name}
+   843→                      </button>
+   844→                    );
+   845→                  })}
+   846→                </div>
+   847→              </div>
+   848→            );
+   849→          })}
+   850→        </div>
+   851→
+   852→        {/* ══════════════════════════════════════════════
+   853→            TAB NOTATION — Interactive
+   854→            ══════════════════════════════════════════════ */}
+   855→        <TabNotation
+   856→          exercise={currentExercise}
+   857→          onNoteClick={handleTabNoteClick}
+   858→          playingIdx={playingIdx}
+   859→          isPlaying={isPlaying}
+   860→          isPaused={isPaused}
+   861→          playbackMode={playbackMode}
+   862→          onPlayExercise={handlePlayExercise}
+   863→          onPlayScale={handlePlayScale}
+   864→          onPause={togglePausePlayback}
+   865→          onStop={stopPlayback}
+   866→        />
+   867→
+   868→        {/* ══════════════════════════════════════════════
+   869→            CAGED PATTERNS
+   870→            ══════════════════════════════════════════════ */}
+   871→        <div className="sketch-card bg-[#faf6ef] p-4">
+   872→          <div className="flex items-center gap-2 mb-3">
+   873→            <GitBranch className="w-3.5 h-3.5 text-[#8b7355]" />
+   874→            <h3 className="text-[11px] uppercase tracking-[0.15em] text-[#8b7355] font-serif italic font-bold">
+   875→              CAGED Patterns — {keyNote} {scale.name}
+   876→            </h3>
+   877→            <span className="text-[9px] text-[#b8a88a] font-serif italic">— Click to navigate to position</span>
+   878→          </div>
+   879→          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
+   880→            {patternExercises.map((pat) => (
+   881→              <button
+   882→                key={pat.position}
+   883→                onClick={() => handlePatternClick(pat.position - 1)}
+   884→                className="text-left"
+   885→              >
+   886→                <PatternDiagram
+   887→                  keyNote={keyNote}
+   888→                  scaleId={scaleId}
+   889→                  fretStart={pat.fretStart}
+   890→                  fretEnd={pat.fretEnd}
+   891→                  positionNumber={pat.position}
+   892→                  exerciseNotes={pat.notes}
+   893→                  selected={positionIndex === pat.position - 1 && !showAllPositions}
+   894→                />
+   895→              </button>
+   896→            ))}
+   897→          </div>
+   898→        </div>
+   899→
+   900→      </main>
+   901→
+   902→      {/* ── FOOTER ── */}
+   903→      <footer className="border-t-2 border-[#c4b89c] mt-auto">
+   904→        <div className="max-w-[1440px] mx-auto px-4 py-2.5 flex items-center justify-between">
+   905→          <p className="text-[10px] text-[#8b7355] font-serif italic">
+   906→            FretBoard Forge — Procedural Guitar Exercise Generator
+   907→          </p>
+   908→          <p className="text-[10px] text-[#b8a88a] font-serif italic">
+   909→            {Object.keys(EXERCISE_TYPES).length} exercises · 12 keys · 12 scales · 5 positions
+   910→          </p>
+   911→        </div>
+   912→      </footer>
+   913→    </div>
+   914→  );
+   915→}
+   916→

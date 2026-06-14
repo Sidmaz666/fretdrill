@@ -31,14 +31,14 @@ interface TabNotationProps {
   className?: string;
 }
 
-// Layout constants — truly compact
-const LM = 18;        // left margin
-const SS = 11;        // string spacing
-const CW = 16;        // cell width
-const TM = 6;         // top margin
-const BM = 4;         // bottom margin
-const RG = 6;         // row gap
-const NPR = 24;       // notes per row
+// Ultra-compact layout constants
+const LM = 14;        // left margin
+const SS = 9;         // string spacing
+const CW = 13;        // cell width
+const TM = 5;         // top margin
+const BM = 3;         // bottom margin
+const RG = 5;         // row gap
+const NPR = 30;       // notes per row
 const LH = 5 * SS + TM + BM; // line height
 
 export default function TabNotation({
@@ -73,8 +73,8 @@ export default function TabNotation({
 
   if (!exercise || !exercise.notes.length) {
     return (
-      <div className={`sketch-card bg-[#faf6ef] flex items-center justify-center h-20 ${className}`}>
-        <p className="text-[#8b7355] text-xs italic font-serif">Select an exercise to see tabs...</p>
+      <div className={`sketch-card bg-[#faf6ef] flex items-center justify-center h-16 ${className}`}>
+        <p className="text-[#8b7355] text-[10px] italic font-serif">Select an exercise to see tabs...</p>
       </div>
     );
   }
@@ -159,32 +159,31 @@ export default function TabNotation({
     setShowExportMenu(false);
   };
 
-  const svgWidth = LM + NPR * CW + 12;
+  const svgWidth = LM + NPR * CW + 10;
   const totalHeight = rows.length * LH + (rows.length - 1) * RG + 4;
 
-  // Currently playing note info
-  // Only highlight in tabs during exercise playback, NOT during scale playback (which has different notes)
+  // Only highlight in tabs during exercise playback
   const showTabHighlight = isPlaying && playbackMode === 'exercise';
   const currentPlayingNote = showTabHighlight && playingIdx >= 0 && playingIdx < allNotes.length ? allNotes[playingIdx] : null;
 
   return (
-    <div className={`sketch-card bg-[#faf6ef] p-3 ${className}`}>
-      {/* Title bar + controls */}
-      <div className="mb-2 flex items-center justify-between border-b border-[#e8e2d6] pb-1.5">
-        <div className="flex items-center gap-1.5">
-          <span className="text-[11px] font-bold text-[#9b3939] font-serif italic">{exercise.name}</span>
-          <span className="text-[9px] text-[#8b7355] font-serif italic">— {exercise.description}</span>
-          <span className="text-[8px] text-[#b8a88a] font-serif italic">· {exercise.notes.length} notes</span>
+    <div className={`sketch-card bg-[#faf6ef] p-2 ${className}`}>
+      {/* Title bar + inline controls */}
+      <div className="mb-1.5 flex items-center justify-between border-b border-[#e8e2d6] pb-1">
+        <div className="flex items-center gap-1 min-w-0">
+          <span className="text-[10px] font-bold text-[#9b3939] font-serif italic truncate">{exercise.name}</span>
+          <span className="text-[8px] text-[#8b7355] font-serif italic hidden sm:inline">— {exercise.description}</span>
+          <span className="text-[7px] text-[#b8a88a] font-serif italic">· {exercise.notes.length} notes</span>
           {currentPlayingNote && (
-            <span className="text-[9px] text-[#9b3939] font-serif italic font-bold ml-1">
-              ▸ {currentPlayingNote.note} ({currentPlayingNote.intervalLabel}) S{6 - currentPlayingNote.string} F{currentPlayingNote.fret}
+            <span className="text-[8px] text-[#9b3939] font-serif italic font-bold ml-1">
+              ▸ {currentPlayingNote.note} ({currentPlayingNote.intervalLabel})
             </span>
           )}
         </div>
-        <div className="flex items-center gap-1.5">
-          {/* Play / Pause / Stop buttons */}
+        <div className="flex items-center gap-1">
+          {/* Play / Pause / Stop */}
           <button
-            className={`h-6 px-2 text-[9px] font-bold flex items-center gap-1 border-2 rounded-sm transition-all ${
+            className={`h-5 px-1.5 text-[8px] font-bold flex items-center gap-0.5 border-2 rounded-sm transition-all ${
               isPlaying && playbackMode === 'exercise' && !isPaused
                 ? 'bg-[#9b3939] text-white border-[#9b3939]'
                 : 'sketch-btn border-[#6b5b47]'
@@ -193,10 +192,9 @@ export default function TabNotation({
             title="Play exercise"
           >
             {isPlaying && playbackMode === 'exercise' && !isPaused ? <Pause className="w-2.5 h-2.5" /> : <Play className="w-2.5 h-2.5" />}
-            {isPlaying && playbackMode === 'exercise' && !isPaused ? '' : '▶'}
           </button>
           <button
-            className={`h-6 px-2 text-[9px] font-bold flex items-center gap-1 border-2 rounded-sm transition-all ${
+            className={`h-5 px-1.5 text-[8px] font-bold flex items-center gap-0.5 border-2 rounded-sm transition-all ${
               isPlaying && playbackMode === 'scale' && !isPaused
                 ? 'bg-[#4a5a8a] text-white border-[#4a5a8a]'
                 : 'sketch-btn border-[#4a5a8a]'
@@ -205,42 +203,41 @@ export default function TabNotation({
             title="Play scale"
           >
             {isPlaying && playbackMode === 'scale' && !isPaused ? <Pause className="w-2.5 h-2.5" /> : <Music className="w-2.5 h-2.5" />}
-            {isPlaying && playbackMode === 'scale' && !isPaused ? '' : '♪'}
           </button>
           {isPlaying && (
-            <button className="h-6 px-2 text-[9px] font-bold flex items-center gap-1 border-2 rounded-sm bg-[#4a4a4a] text-white border-[#4a4a4a]" onClick={onStop} title="Stop">
+            <button className="h-5 px-1.5 text-[8px] font-bold flex items-center gap-0.5 border-2 rounded-sm bg-[#4a4a4a] text-white border-[#4a4a4a]" onClick={onStop} title="Stop">
               <Square className="w-2.5 h-2.5" />
             </button>
           )}
 
           {/* Export */}
           <div className="relative" ref={exportMenuRef}>
-            <button className="sketch-btn h-6 text-[9px] px-1.5 border-[#c4b89c] text-[#8b7355] flex items-center gap-0.5" onClick={() => setShowExportMenu(!showExportMenu)}>
+            <button className="sketch-btn h-5 text-[8px] px-1 border-[#c4b89c] text-[#8b7355] flex items-center gap-0.5" onClick={() => setShowExportMenu(!showExportMenu)}>
               <Share2 className="w-2.5 h-2.5" />
             </button>
             {showExportMenu && (
-              <div className="absolute right-0 top-full mt-1 z-50 sketch-card bg-[#faf6ef] py-1 min-w-[140px]">
-                <button className="w-full text-left px-2.5 py-1 text-[9px] text-[#4a4a4a] hover:bg-[rgba(139,115,85,0.1)] flex items-center gap-1.5 font-serif italic" onClick={handleDownloadPNG}><FileImage className="w-2.5 h-2.5" /> PNG</button>
-                <button className="w-full text-left px-2.5 py-1 text-[9px] text-[#4a4a4a] hover:bg-[rgba(139,115,85,0.1)] flex items-center gap-1.5 font-serif italic" onClick={handleDownloadSVG}><Download className="w-2.5 h-2.5" /> SVG</button>
-                <button className="w-full text-left px-2.5 py-1 text-[9px] text-[#4a4a4a] hover:bg-[rgba(139,115,85,0.1)] flex items-center gap-1.5 font-serif italic" onClick={handleCopyText}><FileText className="w-2.5 h-2.5" /> Text</button>
-                <button className="w-full text-left px-2.5 py-1 text-[9px] text-[#4a4a4a] hover:bg-[rgba(139,115,85,0.1)] flex items-center gap-1.5 font-serif italic" onClick={handleCopyImage}><Copy className="w-2.5 h-2.5" /> Image</button>
+              <div className="absolute right-0 top-full mt-1 z-50 sketch-card bg-[#faf6ef] py-1 min-w-[120px]">
+                <button className="w-full text-left px-2 py-0.5 text-[8px] text-[#4a4a4a] hover:bg-[rgba(139,115,85,0.1)] flex items-center gap-1 font-serif italic" onClick={handleDownloadPNG}><FileImage className="w-2.5 h-2.5" /> PNG</button>
+                <button className="w-full text-left px-2 py-0.5 text-[8px] text-[#4a4a4a] hover:bg-[rgba(139,115,85,0.1)] flex items-center gap-1 font-serif italic" onClick={handleDownloadSVG}><Download className="w-2.5 h-2.5" /> SVG</button>
+                <button className="w-full text-left px-2 py-0.5 text-[8px] text-[#4a4a4a] hover:bg-[rgba(139,115,85,0.1)] flex items-center gap-1 font-serif italic" onClick={handleCopyText}><FileText className="w-2.5 h-2.5" /> Text</button>
+                <button className="w-full text-left px-2 py-0.5 text-[8px] text-[#4a4a4a] hover:bg-[rgba(139,115,85,0.1)] flex items-center gap-1 font-serif italic" onClick={handleCopyImage}><Copy className="w-2.5 h-2.5" /> Image</button>
                 <div className="border-t border-[#e8e2d6] my-0.5" />
-                <button className="w-full text-left px-2.5 py-1 text-[9px] text-[#4a4a4a] hover:bg-[rgba(139,115,85,0.1)] flex items-center gap-1.5 font-serif italic" onClick={handlePrint}><Printer className="w-2.5 h-2.5" /> Print</button>
+                <button className="w-full text-left px-2 py-0.5 text-[8px] text-[#4a4a4a] hover:bg-[rgba(139,115,85,0.1)] flex items-center gap-1 font-serif italic" onClick={handlePrint}><Printer className="w-2.5 h-2.5" /> Print</button>
               </div>
             )}
           </div>
-          {copied && <span className="text-[8px] text-[#4a7a4a] font-serif italic font-bold flex items-center gap-0.5"><Check className="w-2.5 h-2.5" />OK</span>}
+          {copied && <span className="text-[7px] text-[#4a7a4a] font-serif italic font-bold flex items-center gap-0.5"><Check className="w-2 h-2" />OK</span>}
         </div>
       </div>
 
-      {/* SVG Tab — compact, properly wrapping */}
+      {/* SVG Tab — ultra-compact */}
       <div ref={tabRef} className="bg-[#faf6ef] overflow-x-auto">
         <svg
           width={svgWidth}
           height={totalHeight}
           viewBox={`0 0 ${svgWidth} ${totalHeight}`}
           className="w-full h-auto"
-          style={{ minWidth: Math.min(svgWidth, 400) }}
+          style={{ minWidth: Math.min(svgWidth, 300) }}
         >
           {rows.map((rowNotes, rowIdx) => {
             const yOff = rowIdx * (LH + RG);
@@ -252,23 +249,23 @@ export default function TabNotation({
                 {/* String lines */}
                 {stringLabels.map((_, si) => {
                   const y = TM + si * SS;
-                  const th = si <= 1 ? 1 : si <= 3 ? 0.7 : 0.4;
-                  return <line key={`s${rowIdx}${si}`} x1={LM - 2} y1={y} x2={LM + nc * CW + 2} y2={y} stroke="#6b5b47" strokeWidth={th} strokeLinecap="round" opacity={0.45} />;
+                  const th = si <= 1 ? 0.8 : si <= 3 ? 0.5 : 0.3;
+                  return <line key={`s${rowIdx}${si}`} x1={LM - 1} y1={y} x2={LM + nc * CW + 1} y2={y} stroke="#6b5b47" strokeWidth={th} strokeLinecap="round" opacity={0.4} />;
                 })}
 
                 {/* String labels */}
                 {stringLabels.map((l, si) => (
-                  <text key={`l${rowIdx}${si}`} x={LM - 6} y={TM + si * SS + 2.5} textAnchor="middle" fill="#6b5b47" fontSize={6} fontWeight="bold" fontFamily="Georgia,serif" fontStyle="italic">{l}</text>
+                  <text key={`l${rowIdx}${si}`} x={LM - 5} y={TM + si * SS + 2} textAnchor="middle" fill="#6b5b47" fontSize={5} fontWeight="bold" fontFamily="Georgia,serif" fontStyle="italic">{l}</text>
                 ))}
 
                 {/* Bar lines */}
-                <line x1={LM - 2} y1={TM - 2} x2={LM - 2} y2={TM + 5 * SS + 2} stroke="#6b5b47" strokeWidth={1.2} strokeLinecap="round" />
-                <line x1={LM + nc * CW + 2} y1={TM - 2} x2={LM + nc * CW + 2} y2={TM + 5 * SS + 2} stroke={isLast ? '#6b5b47' : '#c4b89c'} strokeWidth={isLast ? 1.5 : 0.8} strokeLinecap="round" />
-                {isLast && <line x1={LM + nc * CW + 5} y1={TM - 2} x2={LM + nc * CW + 5} y2={TM + 5 * SS + 2} stroke="#6b5b47" strokeWidth={0.8} strokeLinecap="round" />}
+                <line x1={LM - 1} y1={TM - 1} x2={LM - 1} y2={TM + 5 * SS + 1} stroke="#6b5b47" strokeWidth={0.8} strokeLinecap="round" />
+                <line x1={LM + nc * CW + 1} y1={TM - 1} x2={LM + nc * CW + 1} y2={TM + 5 * SS + 1} stroke={isLast ? '#6b5b47' : '#c4b89c'} strokeWidth={isLast ? 1 : 0.5} strokeLinecap="round" />
+                {isLast && <line x1={LM + nc * CW + 3} y1={TM - 1} x2={LM + nc * CW + 3} y2={TM + 5 * SS + 1} stroke="#6b5b47" strokeWidth={0.5} strokeLinecap="round" />}
 
                 {/* Notes */}
                 {rowNotes.map((note, ni) => {
-                  const gi = rowIdx * NPR + ni; // global index — THE ONLY source of truth
+                  const gi = rowIdx * NPR + ni;
                   const x = LM + ni * CW + CW / 2;
                   const y = TM + (5 - note.string) * SS;
                   const isHov = hoveredIdx === gi;
@@ -276,7 +273,7 @@ export default function TabNotation({
                   const isAct = isHov || isPlay;
 
                   const fs = note.fret.toString();
-                  const fz = fs.length > 1 ? 6.5 : 7.5;
+                  const fz = fs.length > 1 ? 5.5 : 6.5;
 
                   return (
                     <g key={`n${rowIdx}${ni}`}
@@ -285,8 +282,8 @@ export default function TabNotation({
                       onMouseLeave={() => setHoveredIdx(null)}
                       onClick={() => onNoteClick?.(note)}
                     >
-                      {isAct && <rect x={x - CW / 2} y={y - SS / 2 + 0.5} width={CW} height={SS - 1} fill={isPlay ? 'rgba(155,57,57,0.2)' : 'rgba(155,57,57,0.08)'} rx={1} />}
-                      <text x={x} y={y + 2.5} textAnchor="middle" fill={isAct ? '#9b3939' : '#3a3a3a'} fontSize={fz} fontWeight="bold" fontFamily="'Courier New',monospace" opacity={isAct ? 1 : 0.8}>
+                      {isAct && <rect x={x - CW / 2} y={y - SS / 2 + 0.5} width={CW} height={SS - 1} fill={isPlay ? 'rgba(155,57,57,0.18)' : 'rgba(155,57,57,0.06)'} rx={0.5} />}
+                      <text x={x} y={y + 2} textAnchor="middle" fill={isAct ? '#9b3939' : '#3a3a3a'} fontSize={fz} fontWeight="bold" fontFamily="'Courier New',monospace" opacity={isAct ? 1 : 0.75}>
                         {fs}
                       </text>
                     </g>
@@ -294,7 +291,7 @@ export default function TabNotation({
                 })}
 
                 {/* Continuation arrow */}
-                {!isLast && <text x={LM + nc * CW + 8} y={TM + 2.5 * SS + 2} fill="#8b7355" fontSize={7} fontFamily="Georgia,serif" fontStyle="italic">→</text>}
+                {!isLast && <text x={LM + nc * CW + 6} y={TM + 2.5 * SS + 2} fill="#8b7355" fontSize={6} fontFamily="Georgia,serif" fontStyle="italic">&rarr;</text>}
               </g>
             );
           })}
