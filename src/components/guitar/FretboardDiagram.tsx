@@ -94,7 +94,7 @@ export default function FretboardDiagram({
   const bm = compact ? COMPACT_BOTTOM_MARGIN : FULL_BOTTOM_MARGIN;
   const nr = compact ? COMPACT_NOTE_RADIUS : FULL_NOTE_RADIUS;
 
-  const svgWidth = Math.max(width || 0, lm + fretRange * fs + 20);
+  const svgWidth = Math.max(width || 0, lm + (fretRange + 1) * fs + 20);
   const svgHeight = tm + 5 * ss + bm;
 
   // Highlight set for exercise notes
@@ -258,7 +258,6 @@ export default function FretboardDiagram({
         height={svgHeight}
         viewBox={`0 0 ${svgWidth} ${svgHeight}`}
         className="w-full h-auto"
-        style={{ minWidth: svgWidth }}
         preserveAspectRatio="xMinYMid meet"
       >
         <defs>

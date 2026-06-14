@@ -13,13 +13,62 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+const APP_NAME = "FretDrill";
+const APP_DESCRIPTION = "Interactive guitar fretboard practice tool with CAGED positions, scale patterns, tab notation, and exercise generation. Master the neck, one pattern at a time.";
+const APP_URL = "https://fretdrill.app";
+
 export const metadata: Metadata = {
-  title: "ScaleForge — Exercise Generator",
-  description: "Procedural exercise generator with scale patterns, tab notation, and practice tools. Master the neck, one pattern at a time.",
-  keywords: ["exercises", "scales", "pentatonic", "fretboard", "tabs", "CAGED", "music theory", "practice"],
-  icons: {
-    icon: "https://z-cdn.chatglm.cn/z-ai/static/logo.svg",
+  title: {
+    default: `${APP_NAME} — Guitar Fretboard Practice & Exercise Generator`,
+    template: `%s — ${APP_NAME}`,
   },
+  description: APP_DESCRIPTION,
+  keywords: [
+    "guitar", "fretboard", "scales", "CAGED", "pentatonic",
+    "guitar exercises", "music theory", "guitar practice",
+    "tab notation", "guitar fretboard diagram", "scale patterns",
+  ],
+  authors: [{ name: "FretDrill" }],
+  creator: "FretDrill",
+  publisher: "FretDrill",
+  metadataBase: new URL(APP_URL),
+  openGraph: {
+    type: "website",
+    locale: "en_US",
+    url: APP_URL,
+    siteName: APP_NAME,
+    title: `${APP_NAME} — Guitar Fretboard Practice & Exercise Generator`,
+    description: APP_DESCRIPTION,
+    images: [
+      {
+        url: "/guitar-icon.png",
+        width: 1024,
+        height: 1024,
+        alt: APP_NAME,
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: `${APP_NAME} — Guitar Fretboard Practice & Exercise Generator`,
+    description: APP_DESCRIPTION,
+    images: ["/guitar-icon.png"],
+  },
+  icons: {
+    icon: [
+      { url: "/favicon.ico", sizes: "any" },
+      { url: "/logo.svg", type: "image/svg+xml" },
+    ],
+    apple: [
+      { url: "/guitar-icon.png", sizes: "1024x1024", type: "image/png" },
+    ],
+  },
+  manifest: "/manifest.json",
+  robots: {
+    index: true,
+    follow: true,
+  },
+  category: "music",
 };
 
 export default function RootLayout({

@@ -498,7 +498,7 @@ export default function Home() {
   useEffect(() => {
     if (initialized) return;
     try {
-      const saved = localStorage.getItem('scaleforge_state');
+      const saved = localStorage.getItem('fretdrill_state');
       if (saved) {
         const parsed = JSON.parse(saved);
         if (typeof parsed.keyIndex === 'number') setKeyIndex(parsed.keyIndex);
@@ -528,7 +528,7 @@ export default function Home() {
   useEffect(() => {
     if (!initialized) return;
     try {
-      localStorage.setItem('scaleforge_state', JSON.stringify({
+      localStorage.setItem('fretdrill_state', JSON.stringify({
         keyIndex,
         scaleId,
         positionIndex,
@@ -629,21 +629,22 @@ export default function Home() {
   const scale = SCALES[scaleId];
   const positions = useMemo(() => getCAGEDPositions(keyNote, scaleId), [keyNote, scaleId]);
 
-  // Clamp positionIndex when positions change (e.g., key/scale change reduces available positions)
+  // Clamp positionIndex synchronously when positions change (e.g., key/scale reduces available positions)
+  const safePositionIndex = positionIndex < positions.length ? positionIndex : 0;
   useEffect(() => {
-    if (positionIndex >= positions.length && positions.length > 0) {
-      setPositionIndex(0);
+    if (positionIndex !== safePositionIndex) {
+      setPositionIndex(safePositionIndex);
     }
-  }, [positions.length, positionIndex]);
+  }, [positionIndex, safePositionIndex]);
 
-  const currentPosition = positions[positionIndex] || { fretStart: 0, fretEnd: FRET_COUNT, name: 'Full Fretboard', cagedShape: 'All', octave: 1 };
+  const currentPosition = positions[safePositionIndex];
   const startFret = showAllPositions ? 0 : currentPosition.fretStart;
   const endFret = showAllPositions ? FRET_COUNT : currentPosition.fretEnd;
 
   // Current exercise
   const currentExercise = useMemo(
-    () => generateExercise(exerciseType, keyNote, scaleId, positionIndex),
-    [exerciseType, keyNote, scaleId, positionIndex]
+    () => generateExercise(exerciseType, keyNote, scaleId, safePositionIndex),
+    [exerciseType, keyNote, scaleId, safePositionIndex]
   );
 
   // Exercise stats (verbose, nerdy)
@@ -713,6 +714,17 @@ export default function Home() {
     const types = Object.keys(EXERCISE_TYPES) as ExerciseType[];
     setExerciseType(types[Math.floor(Math.random() * types.length)]);
     setExercisesPlayed(p => p + 1);
+  }, []);
+
+  const handleRandomizeAll = useCallback(() => {
+    const scaleKeys = Object.keys(SCALES);
+    const allExerciseTypes = Object.keys(EXERCISE_TYPES) as ExerciseType[];
+    setKeyIndex(Math.floor(Math.random() * KEY_NAMES.length));
+    setScaleId(scaleKeys[Math.floor(Math.random() * scaleKeys.length)]);
+    setExerciseType(allExerciseTypes[Math.floor(Math.random() * allExerciseTypes.length)]);
+    setPositionIndex(0);
+    setExercisesPlayed(p => p + 1);
+    stopPlayback();
   }, []);
 
 
@@ -1066,7 +1078,7 @@ export default function Home() {
             <div className="w-6 h-6 rounded-sm border-2 border-[#8b7355] flex items-center justify-center bg-[#f5f0e8]">
               <Guitar className="w-3.5 h-3.5 text-[#6b5b47]" />
             </div>
-            <h1 className="text-[12px] font-bold text-[#2c2c2c] hidden sm:block" style={{ fontFamily: "'Georgia', serif", fontStyle: 'italic' }}>ScaleForge</h1>
+            <h1 className="text-[12px] font-bold text-[#2c2c2c] hidden sm:block" style={{ fontFamily: "'Georgia', serif", fontStyle: 'italic' }}>FretDrill</h1>
           </div>
           <div className="w-px h-5 bg-[#c4b89c] hidden md:block" />
           {/* Key */}
@@ -1112,9 +1124,14 @@ export default function Home() {
           </div>
           {/* Mobile context pill */}
           <div className="md:hidden flex-1 flex items-center justify-center">
-            <span className="text-[11px] font-serif italic text-[#4a4a4a] font-bold">{keyNote} {scale.name} · P{positionIndex + 1} ({currentPosition.cagedShape})</span>
+            <span className="text-[11px] font-serif italic text-[#4a4a4a] font-bold">{keyNote} {scale.name} · P{safePositionIndex + 1} ({currentPosition.cagedShape})</span>
           </div>
           <div className="flex-1 hidden md:block" />
+          <button className="sketch-btn px-1.5 py-0.5 text-[10px] flex items-center gap-0.5 shrink-0 border-[#8b7355]" onClick={handleRandomizeAll} title="Random Key, Scale & Exercise">
+            <Dice5 className="w-3 h-3" />
+            <span className="hidden sm:inline text-[9px] font-serif italic">Random</span>
+          </button>
+          <div className="w-px h-5 bg-[#c4b89c] hidden sm:block" />
           <div className="hidden lg:flex items-center gap-1.5 shrink-0">
             <span className="text-[10px] text-[#8b7355] font-serif italic">{currentPosition.name} · {currentPosition.cagedShape} Shape · Frets {currentPosition.fretStart}–{currentPosition.fretEnd}{currentPosition.octave === 2 ? ' (Oct 2)' : ''}</span>
             <span className="text-[10px] text-[#b8a88a] font-serif italic">· {Object.keys(EXERCISE_TYPES).length} exercises</span>
@@ -1241,7 +1258,7 @@ export default function Home() {
                     <DifficultyBadge level={exerciseMeta.difficulty} />
                   </div>
                   <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-                    <span className="text-[9px] text-[#6b5b47] font-serif italic font-semibold">{keyNote} {scale.name} · {showAllPositions ? 'All Pos' : `P${positionIndex + 1}`}</span>
+                    <span className="text-[9px] text-[#6b5b47] font-serif italic font-semibold">{keyNote} {scale.name} · {showAllPositions ? 'All Pos' : `P${safePositionIndex + 1}`}</span>
                     <span className="text-[9px] text-[#b8a88a] font-serif italic">{exerciseMeta.focus}</span>
                     <span className="text-[9px] text-[#b8a88a] font-serif italic">~{exerciseMeta.estimatedTime}</span>
                     {isPlaying && playbackActiveNote && (
@@ -1286,7 +1303,7 @@ export default function Home() {
               <div className="sketch-card bg-[#faf6ef] overflow-hidden">
                 <div className="px-1 py-1 overflow-x-auto overflow-y-visible">
                   <FretboardDiagram keyNote={keyNote} scaleId={scaleId} startFret={startFret} endFret={endFret}
-                    showAllPositions={showAllPositions} positionIndex={positionIndex}
+                    showAllPositions={showAllPositions} positionIndex={safePositionIndex}
                     highlightNotes={exerciseHighlightNotes}
                     exercisePath={exercisePath}
                     activeNote={effectiveActiveNote} onNoteClick={handleFretboardNoteClick}
@@ -1309,7 +1326,7 @@ export default function Home() {
                 <div className="sketch-card bg-[#faf6ef] overflow-hidden">
                   <div className="px-1 py-1 overflow-x-auto overflow-y-visible">
                     <FretboardDiagram keyNote={keyNote} scaleId={scaleId} startFret={startFret} endFret={endFret}
-                      showAllPositions={showAllPositions} positionIndex={positionIndex}
+                      showAllPositions={showAllPositions} positionIndex={safePositionIndex}
                       highlightNotes={exerciseHighlightNotes}
                       exercisePath={exercisePath}
                       activeNote={effectiveActiveNote} onNoteClick={handleFretboardNoteClick}
@@ -1447,7 +1464,7 @@ export default function Home() {
                     <div className="grid grid-cols-2 gap-x-4 gap-y-0.5">
                       <div className="flex justify-between text-[9px]"><span className="text-[#8b7355] font-serif italic">Focus</span><span className="text-[#4a4a4a] font-bold">{exerciseMeta.focus}</span></div>
                       <div className="flex justify-between text-[9px]"><span className="text-[#8b7355] font-serif italic">Duration</span><span className="text-[#4a4a4a] font-bold">{exerciseMeta.estimatedTime}</span></div>
-                      <div className="flex justify-between text-[9px]"><span className="text-[#8b7355] font-serif italic">Position</span><span className="text-[#4a4a4a] font-bold">{showAllPositions ? 'All' : `P${positionIndex + 1} · ${currentPosition.cagedShape} Shape`} ({currentPosition.fretStart}–{currentPosition.fretEnd})</span></div>
+                      <div className="flex justify-between text-[9px]"><span className="text-[#8b7355] font-serif italic">Position</span><span className="text-[#4a4a4a] font-bold">{showAllPositions ? 'All' : `P${safePositionIndex + 1} · ${currentPosition.cagedShape} Shape`} ({currentPosition.fretStart}–{currentPosition.fretEnd})</span></div>
                       <div className="flex justify-between text-[9px]"><span className="text-[#8b7355] font-serif italic">Category</span><span className="text-[#4a4a4a] font-bold">{exerciseStats.patternType}</span></div>
                       <div className="flex justify-between text-[9px]"><span className="text-[#8b7355] font-serif italic">Notes</span><span className="text-[#4a4a4a] font-bold">{exerciseStats.totalNotes}</span></div>
                       <div className="flex justify-between text-[9px]"><span className="text-[#8b7355] font-serif italic">Fret Span</span><span className="text-[#4a4a4a] font-bold">{exerciseStats.fretRange[1] - exerciseStats.fretRange[0] + 1} frets</span></div>
@@ -2059,7 +2076,7 @@ export default function Home() {
                 <Guitar className="w-5 h-5 text-[#6b5b47]" />
               </div>
               <div>
-                <h1 className="text-lg font-bold text-[#2c2c2c]" style={{ fontFamily: "'Georgia', serif", fontStyle: 'italic' }}>ScaleForge — Complete Guide</h1>
+                <h1 className="text-lg font-bold text-[#2c2c2c]" style={{ fontFamily: "'Georgia', serif", fontStyle: 'italic' }}>FretDrill — Complete Guide</h1>
                 <p className="text-xs text-[#8b7355] font-serif italic">Everything you need to know about mastering the fretboard</p>
               </div>
             </div>
@@ -2073,10 +2090,10 @@ export default function Home() {
             {/* ─── Welcome ─── */}
             <section>
               <h2 className="text-base font-bold text-[#9b3939] mb-3 flex items-center gap-2" style={{ fontFamily: "'Georgia', serif", fontStyle: 'italic' }}>
-                <BookOpen className="w-4 h-4" /> Welcome to ScaleForge
+                <BookOpen className="w-4 h-4" /> Welcome to FretDrill
               </h2>
-              <p className="mb-2">ScaleForge is an interactive guitar practice tool designed to help guitarists of all levels master the fretboard. It provides a visual, hands-on approach to learning scales, positions, exercises, and music theory directly on a realistic fretboard diagram. Whether you are a beginner learning your first pentatonic shape or an advanced player working through complex arpeggio sequences, this tool adapts to your needs.</p>
-              <p className="mb-2">At its core, ScaleForge shows you <strong>exactly where to place your fingers</strong> on the fretboard for any scale, in any key, at any position. It then generates structured exercises from those scale patterns, complete with tab notation, playback, and a professional metronome to keep your timing solid.</p>
+              <p className="mb-2">FretDrill is an interactive guitar practice tool designed to help guitarists of all levels master the fretboard. It provides a visual, hands-on approach to learning scales, positions, exercises, and music theory directly on a realistic fretboard diagram. Whether you are a beginner learning your first pentatonic shape or an advanced player working through complex arpeggio sequences, this tool adapts to your needs.</p>
+              <p className="mb-2">At its core, FretDrill shows you <strong>exactly where to place your fingers</strong> on the fretboard for any scale, in any key, at any position. It then generates structured exercises from those scale patterns, complete with tab notation, playback, and a professional metronome to keep your timing solid.</p>
               <p>The philosophy behind this tool is simple: <em>see it, hear it, play it, internalize it</em>. Visual learning combined with auditory feedback and structured repetition is the fastest path to fretboard mastery.</p>
             </section>
 
@@ -2118,7 +2135,7 @@ export default function Home() {
               <h2 className="text-base font-bold text-[#9b3939] mb-3 flex items-center gap-2" style={{ fontFamily: "'Georgia', serif", fontStyle: 'italic' }}>
                 <Music className="w-4 h-4" /> Scales & Modes Explained
               </h2>
-              <p className="mb-3">Scales are the foundation of all melody and improvisation. Each scale has a unique combination of intervals that gives it its characteristic sound. Here is a breakdown of every scale available in ScaleForge:</p>
+              <p className="mb-3">Scales are the foundation of all melody and improvisation. Each scale has a unique combination of intervals that gives it its characteristic sound. Here is a breakdown of every scale available in FretDrill:</p>
               <div className="space-y-3">
                 <div className="border-l-3 border-[#9b3939] pl-3">
                   <h3 className="font-bold text-[12px]">Minor Pentatonic</h3>
@@ -2179,7 +2196,7 @@ export default function Home() {
                 <Layers className="w-4 h-4" /> The CAGED System
               </h2>
               <p className="mb-2">The CAGED system is the most important fretboard navigation concept you will ever learn. It is based on the fact that the five basic open chord shapes — <strong>C, A, G, E, D</strong> — can be moved up the neck as barre chords to play any chord in any position. When applied to scales, these same five shapes give you a complete map of the fretboard.</p>
-              <p className="mb-2">In ScaleForge, when you select a key and scale, the CAGED positions are calculated automatically across the full fretboard. Each position covers a 4–5 fret zone and connects to the next position through overlapping notes. The five CAGED shapes (E, D, C, A, G) cycle at the 12th fret, so you may see up to 10 positions — the upper octave positions use the same fingerings shifted up an octave. This means you can practice the same shape vocabulary in the lower and upper register.</p>
+              <p className="mb-2">In FretDrill, when you select a key and scale, the CAGED positions are calculated automatically across the full fretboard. Each position covers a 4–5 fret zone and connects to the next position through overlapping notes. The five CAGED shapes (E, D, C, A, G) cycle at the 12th fret, so you may see up to 10 positions — the upper octave positions use the same fingerings shifted up an octave. This means you can practice the same shape vocabulary in the lower and upper register.</p>
               <div className="bg-[#f5f0e8] rounded border border-[#c4b89c] p-3 mb-2">
                 <h3 className="font-bold text-[11px] uppercase tracking-wider text-[#8b7355] mb-1">The Five Shapes</h3>
                 <ul className="text-[11px] space-y-1">
@@ -2200,7 +2217,7 @@ export default function Home() {
               <h2 className="text-base font-bold text-[#9b3939] mb-3 flex items-center gap-2" style={{ fontFamily: "'Georgia', serif", fontStyle: 'italic' }}>
                 <FileText className="w-4 h-4" /> Exercise Library — Complete Reference
               </h2>
-              <p className="mb-3">ScaleForge includes 232+ exercise types organized into 43+ categories across four sections, with over 700+ variations. Every exercise is dynamically generated based on your selected key, scale, and position. This is one of the most comprehensive guitar exercise libraries available anywhere. Here is a complete breakdown:</p>
+              <p className="mb-3">FretDrill includes 232+ exercise types organized into 43+ categories across four sections, with over 700+ variations. Every exercise is dynamically generated based on your selected key, scale, and position. This is one of the most comprehensive guitar exercise libraries available anywhere. Here is a complete breakdown:</p>
 
               <div className="space-y-4">
                 <div>
@@ -2450,7 +2467,7 @@ export default function Home() {
                 </div>
                 <div>
                   <h3 className="font-bold text-[12px] mb-1">The Nashville Number System</h3>
-                  <p className="text-[11px]">ScaleForge uses scale degrees (R, 2, 3, 4, 5, 6, 7 for major; R, flat 3, 4, 5, flat 7 for minor pentatonic, etc.) to label notes. This is similar to the Nashville Number System used by session musicians worldwide. By thinking in numbers rather than note names, you can transpose any pattern to any key instantly — just change the root and the intervals stay the same.</p>
+                  <p className="text-[11px]">FretDrill uses scale degrees (R, 2, 3, 4, 5, 6, 7 for major; R, flat 3, 4, 5, flat 7 for minor pentatonic, etc.) to label notes. This is similar to the Nashville Number System used by session musicians worldwide. By thinking in numbers rather than note names, you can transpose any pattern to any key instantly — just change the root and the intervals stay the same.</p>
                 </div>
                 <div>
                   <h3 className="font-bold text-[12px] mb-1">Relative Major/Minor</h3>
@@ -2470,7 +2487,7 @@ export default function Home() {
                 </div>
                 <div>
                   <h3 className="font-bold text-[12px] mb-1">String Tuning and Standard Tuning</h3>
-                  <p className="text-[11px]">ScaleForge uses standard tuning: E-A-D-G-B-E (low to high). The intervals between adjacent strings are: 4th, 4th, 4th, Major 3rd, 4th — that Major 3rd between G and B strings is the B string bump that makes guitar tuning unique and requires a fret adjustment when crossing between the G and B strings.</p>
+                  <p className="text-[11px]">FretDrill uses standard tuning: E-A-D-G-B-E (low to high). The intervals between adjacent strings are: 4th, 4th, 4th, Major 3rd, 4th — that Major 3rd between G and B strings is the B string bump that makes guitar tuning unique and requires a fret adjustment when crossing between the G and B strings.</p>
                 </div>
               </div>
             </section>
@@ -2482,7 +2499,7 @@ export default function Home() {
               <h2 className="text-base font-bold text-[#9b3939] mb-3 flex items-center gap-2" style={{ fontFamily: "'Georgia', serif", fontStyle: 'italic' }}>
                 <Eye className="w-4 h-4" /> View Modes
               </h2>
-              <p className="mb-2">ScaleForge offers three view modes, selectable with the eye icon in the right panel:</p>
+              <p className="mb-2">FretDrill offers three view modes, selectable with the eye icon in the right panel:</p>
               <div className="space-y-2">
                 <div className="bg-[#f5f0e8] rounded border border-[#c4b89c] p-2">
                   <h4 className="font-bold text-[11px] text-[#6b5b47]">Hybrid View</h4>
@@ -2647,7 +2664,7 @@ export default function Home() {
               <div className="w-8 h-8 rounded border-2 border-[#8b7355] flex items-center justify-center bg-[#f5f0e8] mx-auto mb-2">
                 <Guitar className="w-5 h-5 text-[#6b5b47]" />
               </div>
-              <p className="text-[12px] font-serif italic text-[#8b7355] font-bold">ScaleForge</p>
+              <p className="text-[12px] font-serif italic text-[#8b7355] font-bold">FretDrill</p>
               <p className="text-[10px] text-[#b8a88a] font-serif italic">Master the fretboard, one note at a time.</p>
             </div>
 

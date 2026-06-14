@@ -1,0 +1,24 @@
+{
+  "name": "FretDrill",
+  "short_name": "FretDrill",
+  "description": "Interactive guitar fretboard practice tool with CAGED positions, scale patterns, tab notation, and exercise generation.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f5f0e8",
+  "theme_color": "#2c2c2c",
+  "icons": [
+    {
+      "src": "/guitar-icon.png",
+      "sizes": "1024x1024",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/logo.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ],
+  "categories": ["music", "education", "utilities"]
+}
