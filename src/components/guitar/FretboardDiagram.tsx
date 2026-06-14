@@ -252,13 +252,14 @@ export default function FretboardDiagram({
   const smallFontSize = compact ? 7 : 9;
 
   return (
-    <div className={`fretboard-container ${className}`}>
+    <div className={`fretboard-container w-full ${className}`}>
       <svg
         width={svgWidth}
         height={svgHeight}
         viewBox={`0 0 ${svgWidth} ${svgHeight}`}
         className="w-full h-auto"
-        style={{ maxWidth: svgWidth, minWidth: compact ? undefined : svgWidth }}
+        style={{ minWidth: svgWidth }}
+        preserveAspectRatio="xMinYMid meet"
       >
         <defs>
           {/* Arrow marker for exercise paths */}

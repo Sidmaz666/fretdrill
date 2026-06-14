@@ -1237,7 +1237,7 @@ export default function Home() {
             {/* Fretboard Only */}
             {viewMode === 'fretboard' && (
               <div className="sketch-card bg-[#faf6ef] overflow-hidden">
-                <div className="px-1 py-1 overflow-x-auto">
+                <div className="px-1 py-1 overflow-x-auto overflow-y-visible">
                   <FretboardDiagram keyNote={keyNote} scaleId={scaleId} startFret={startFret} endFret={endFret}
                     showAllPositions={showAllPositions} positionIndex={positionIndex}
                     highlightNotes={exerciseHighlightNotes}
@@ -1260,7 +1260,7 @@ export default function Home() {
             {viewMode === 'hybrid' && (
               <>
                 <div className="sketch-card bg-[#faf6ef] overflow-hidden">
-                  <div className="px-1 py-1 overflow-x-auto">
+                  <div className="px-1 py-1 overflow-x-auto overflow-y-visible">
                     <FretboardDiagram keyNote={keyNote} scaleId={scaleId} startFret={startFret} endFret={endFret}
                       showAllPositions={showAllPositions} positionIndex={positionIndex}
                       highlightNotes={exerciseHighlightNotes}
