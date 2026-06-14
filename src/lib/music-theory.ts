@@ -16,7 +16,7 @@ export const STANDARD_TUNING: NoteName[] = ['E', 'B', 'G', 'D', 'A', 'E'];
 export const STRING_OPEN_NOTES: NoteName[] = ['E', 'A', 'D', 'G', 'B', 'E']; // index 0 = low E, 5 = high E
 
 // Number of frets to display
-export const FRET_COUNT = 15;
+export const FRET_COUNT = 22;
 
 // Scale definitions: interval patterns relative to root (in semitones)
 export interface ScaleDefinition {
@@ -247,6 +247,9 @@ export function getCAGEDPositions(key: NoteName, scaleId: string): CAGEDPosition
   
   // Sort by fret position
   positions.sort((a, b) => a.fretStart - b.fretStart);
+  
+  // Cap at 6 positions so every key/scale always shows exactly 6
+  positions.length = Math.min(positions.length, 6);
   
   // Re-number after sorting
   for (let i = 0; i < positions.length; i++) {
