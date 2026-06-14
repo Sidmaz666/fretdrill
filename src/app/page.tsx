@@ -105,92 +105,65 @@ function playGuitarNote(stringIdx: number, fret: number, duration: number = 0.5)
     const baseFreq = STRING_FREQUENCIES[stringIdx];
     const freq = baseFreq * Math.pow(2, fret / 12);
     const now = ctx.currentTime;
+    const sampleRate = ctx.sampleRate;
 
-    // ── Fundamental (pulse wave — close to plucked string) ──
-    const osc1 = ctx.createOscillator();
-    const gain1 = ctx.createGain();
-    osc1.type = 'triangle';
-    osc1.frequency.setValueAtTime(freq, now);
-    // Slight pitch envelope (attack transient — string stretches then settles)
-    osc1.frequency.setValueAtTime(freq * 1.005, now);
-    osc1.frequency.exponentialRampToValueAtTime(freq, now + 0.02);
-    gain1.gain.setValueAtTime(0, now);
-    gain1.gain.linearRampToValueAtTime(0.32, now + 0.004);  // Fast pluck attack
-    gain1.gain.exponentialRampToValueAtTime(0.12, now + 0.08);
-    gain1.gain.exponentialRampToValueAtTime(0.001, now + duration);
+    // ── Karplus-Strong string synthesis ──
+    // Creates a plucked-string sound by feeding noise through a delay line
+    // with feedback and a lowpass filter (physical model of a vibrating string).
 
-    // ── 2nd harmonic (octave above, softer) ──
-    const osc2 = ctx.createOscillator();
-    const gain2 = ctx.createGain();
-    osc2.type = 'sine';
-    osc2.frequency.setValueAtTime(freq * 2, now);
-    gain2.gain.setValueAtTime(0, now);
-    gain2.gain.linearRampToValueAtTime(0.06, now + 0.003);
-    gain2.gain.exponentialRampToValueAtTime(0.001, now + duration * 0.4);
-
-    // ── 3rd harmonic ──
-    const osc3 = ctx.createOscillator();
-    const gain3 = ctx.createGain();
-    osc3.type = 'sine';
-    osc3.frequency.setValueAtTime(freq * 3, now);
-    gain3.gain.setValueAtTime(0, now);
-    gain3.gain.linearRampToValueAtTime(0.025, now + 0.003);
-    gain3.gain.exponentialRampToValueAtTime(0.001, now + duration * 0.25);
-
-    // ── Body resonance (low-pass filtered sub-harmonic) ──
-    const oscBody = ctx.createOscillator();
-    const gainBody = ctx.createGain();
-    const filterBody = ctx.createBiquadFilter();
-    oscBody.type = 'sine';
-    oscBody.frequency.setValueAtTime(freq * 0.5, now);
-    filterBody.type = 'lowpass';
-    filterBody.frequency.setValueAtTime(300, now);
-    filterBody.Q.setValueAtTime(1, now);
-    gainBody.gain.setValueAtTime(0, now);
-    gainBody.gain.linearRampToValueAtTime(0.04, now + 0.01);
-    gainBody.gain.exponentialRampToValueAtTime(0.001, now + duration * 0.4);
-
-    // ── Brightness (sawtooth → lowpass, simulates pick attack brightness) ──
-    const oscBright = ctx.createOscillator();
-    const gainBright = ctx.createGain();
-    const filterBright = ctx.createBiquadFilter();
-    oscBright.type = 'sawtooth';
-    oscBright.frequency.setValueAtTime(freq, now);
-    filterBright.type = 'lowpass';
-    filterBright.frequency.setValueAtTime(4000, now);           // Bright attack
-    filterBright.frequency.exponentialRampToValueAtTime(800, now + 0.15); // Dulls quickly
-    filterBright.Q.setValueAtTime(0.7, now);
-    gainBright.gain.setValueAtTime(0, now);
-    gainBright.gain.linearRampToValueAtTime(0.05, now + 0.002);
-    gainBright.gain.exponentialRampToValueAtTime(0.001, now + duration * 0.3);
-
-    // ── Pluck noise burst (very short, simulates pick/finger noise) ──
-    const noiseLen = 0.015;
-    const noiseBuffer = ctx.createBuffer(1, ctx.sampleRate * noiseLen, ctx.sampleRate);
+    const delayLength = Math.max(1, Math.round(sampleRate / freq));
+    const noiseBuffer = ctx.createBuffer(1, delayLength, sampleRate);
     const noiseData = noiseBuffer.getChannelData(0);
-    for (let i = 0; i < noiseData.length; i++) noiseData[i] = (Math.random() * 2 - 1) * 0.3;
+    // Strike noise: mix of random and filtered to match string gauge
+    for (let i = 0; i < delayLength; i++) {
+      const t = i / delayLength;
+      noiseData[i] = (Math.random() * 2 - 1) * (1 - t * 0.7);
+    }
+
     const noiseSource = ctx.createBufferSource();
     noiseSource.buffer = noiseBuffer;
-    const noiseGain = ctx.createGain();
-    const noiseFilter = ctx.createBiquadFilter();
-    noiseFilter.type = 'bandpass';
-    noiseFilter.frequency.setValueAtTime(2000 + stringIdx * 500, now); // Higher strings = brighter noise
-    noiseFilter.Q.setValueAtTime(2, now);
-    noiseGain.gain.setValueAtTime(0.12, now);
-    noiseGain.gain.exponentialRampToValueAtTime(0.001, now + noiseLen);
 
-    // Connect everything
-    osc1.connect(gain1); gain1.connect(master);
-    osc2.connect(gain2); gain2.connect(master);
-    osc3.connect(gain3); gain3.connect(master);
-    oscBody.connect(filterBody); filterBody.connect(gainBody); gainBody.connect(master);
-    oscBright.connect(filterBright); filterBright.connect(gainBright); gainBright.connect(master);
-    noiseSource.connect(noiseFilter); noiseFilter.connect(noiseGain); noiseGain.connect(master);
+    const delay = ctx.createDelay(1);
+    delay.delayTime.setValueAtTime(delayLength / sampleRate, now);
 
-    // Start all
-    const stopTime = now + duration + 0.1;
-    osc1.start(now); osc2.start(now); osc3.start(now); oscBody.start(now); oscBright.start(now); noiseSource.start(now);
-    osc1.stop(stopTime); osc2.stop(stopTime); osc3.stop(stopTime); oscBody.stop(stopTime); oscBright.stop(stopTime);
+    const feedback = ctx.createGain();
+    // Feedback gain just under 1 — higher = longer sustain, lower = shorter
+    const fbGain = 0.97 + (0.02 * (stringIdx / 5));
+    feedback.gain.setValueAtTime(fbGain, now);
+
+    const lpFilter = ctx.createBiquadFilter();
+    lpFilter.type = 'lowpass';
+    // Lower cutoff on low strings (darker), higher on high strings (brighter)
+    lpFilter.frequency.setValueAtTime(6000 + stringIdx * 200, now);
+    lpFilter.Q.setValueAtTime(0.5, now);
+
+    const output = ctx.createGain();
+    // Natural volume per string (higher strings project more)
+    const vol = 0.15 + 0.04 * (stringIdx / 5);
+    output.gain.setValueAtTime(vol, now);
+    output.gain.exponentialRampToValueAtTime(0.001, now + Math.min(duration, 2.5));
+
+    // Body resonance filter (adds acoustic body warmth)
+    const bodyFilter = ctx.createBiquadFilter();
+    bodyFilter.type = 'bandpass';
+    bodyFilter.frequency.setValueAtTime(120 + stringIdx * 30, now);
+    bodyFilter.Q.setValueAtTime(1.5, now);
+
+    // ── Connect the Karplus-Strong loop ──
+    // Noise → delay → (feedback → filter → delay) loop → body_filter → output
+    noiseSource.connect(delay);
+    delay.connect(lpFilter);
+    lpFilter.connect(feedback);
+    feedback.connect(delay);
+
+    // Output tap
+    lpFilter.connect(bodyFilter);
+    bodyFilter.connect(output);
+    output.connect(master);
+
+    // Start
+    noiseSource.start(now);
+    noiseSource.stop(now + Math.min(duration + 0.1, 3));
   } catch (e) {}
 }
 
