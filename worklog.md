@@ -1,37 +1,38 @@
 ---
 Task ID: 1
-Agent: main
-Task: Upgrade audio engine, fix playback visualizations, add BPM controls
+Agent: Main
+Task: Expand exercise library, add info page with guide, add info button to header, start dev server
 
 Work Log:
-- Read current page.tsx audio engine (3-oscillator synth, simple sine metronome)
-- Identified issues: basic guitar sound, simple metronome click, limited BPM presets, scale vs exercise playback visualization differences
-- Rewrote guitar sound engine with 6-layer professional synthesis:
-  1. Fundamental (triangle wave with pitch envelope for string stretch transient)
-  2. 2nd harmonic (sine, octave above)
-  3. 3rd harmonic (sine)
-  4. Body resonance (low-pass filtered sub-harmonic)
-  5. Brightness (sawtooth → lowpass filter that decays quickly, simulating pick attack)
-  6. Pluck noise burst (bandpass filtered noise, string-dependent frequency)
-  - Added singleton DynamicsCompressor for overall dynamics
-  - Proper standard tuning frequencies: E2=82.41, A2=110.00, D3=146.83, G3=196.00, B3=246.94, E4=329.63
-- Rewrote metronome with professional wood block sound:
-  1. Tone component (sine burst at G6/C6 for accent/normal)
-  2. Click noise burst (highpass filtered, simulates wood block "clack")
-  3. Resonance body (low sine for woody tone)
-- Added BPM controls: +1/-1 increment buttons, 15 presets (40-220 in steps of 10), finer slider
-- Fixed scale vs exercise playback visualization:
-  - Fretboard: Now always shows exercise highlight notes AND exercise path during both exercise and scale playback (removed the isPlaying conditional that was hiding them)
-  - Tabs: Added `activePlayingNote` prop for position-based matching during scale playback
-  - Exercise mode: highlights tab note by index (playingIdx === gi)
-  - Scale mode: highlights tab note by string+fret position (scaleHighlightIdx)
-  - Both modes now properly highlight the active note on BOTH fretboard and tabs
-- Build passes successfully
+- Read and analyzed music-theory.ts (274 lines) and exercise-generator.ts (2936 lines → 4506 lines after expansion)
+- Read and analyzed page.tsx (1987 lines → ~2400 lines after additions)
+- Delegated exercise library expansion to subagent: added 63 new exercise types (107 → 174 total)
+- Added Info, BookOpen icons to lucide-react imports
+- Added `infoPageOpen` state variable
+- Added Info/Guide button to header next to sound toggle
+- Created comprehensive documentation Sheet component with 14 sections:
+  - Welcome & Philosophy
+  - Getting Started (5-step guide)
+  - Scales & Modes Explained (all 12 scales with detailed descriptions)
+  - The CAGED System (with all 5 shapes explained)
+  - Exercise Library Complete Reference (all 30+ categories, PRACTICE/TECHNIQUE/ADVANCED/WARMUP)
+  - Practice Engine & Metronome (transport, tempo, 9 sound types, practice tools)
+  - Essential Guitar Theory (intervals, Nashville numbers, relative keys, chord construction, diatonic harmony, fretboard layout, tuning)
+  - View Modes (Hybrid, Fretboard Only, Diagram Only)
+  - Color Coding System (7 interval colors explained)
+  - Difficulty Levels (1-5 scale)
+  - Keyboard Shortcuts
+  - Practice Tips (8 professional tips including spider walk emphasis)
+  - FAQ (8 common questions answered)
+  - Closing branding
+- Verified TypeScript build passes with zero new errors
+- Started dev server on port 3000 (responding 200)
 
 Stage Summary:
-- Professional guitar sound: 6-oscillator synthesis with pick noise, body resonance, harmonic overtones, and dynamics compressor
-- Professional metronome: wood block sound with tone + click noise + resonance body
-- BPM: 15 presets (40-220), +1/-1 buttons, tap tempo
-- Scale playback now properly visualizes on both fretboard and tabs
-- Exercise playback shows exercise highlights + active note simultaneously
-- Single highlight on fretboard (playbackActiveNote) + exercise context (highlightNotes + exercisePath) visible together
+- Exercise library expanded from 107 to 174 types (+63 new exercises)
+- New exercise categories: Spider Exercises, String Crossing, Sweep Picking, Legato (expanded), Position Shifting, Scale Patterns, Interval Studies, Arpeggio Studies, Rhythm & Timing, Bending & Expression (expanded), Adv. Harmonics, Adv. Tapping, Blues, Fretboard Knowledge, Speed & Agility
+- Key exercises added: Chromatic Spider Walk, all spider variants, sweep picking, legato drills, blues licks, arpeggio studies (dim/aug/min7/dom7/maj7/min9), position shifting, speed training
+- Full-page documentation accessible via Info/Guide button in header
+- Documentation covers: app usage, all 12 scales, CAGED system, complete exercise reference, practice engine, music theory, guitar theory, color coding, keyboard shortcuts, practice tips, FAQ
+- No tech stack discussed in documentation - focuses entirely on the app, guitar theory, and practice methodology
+- Dev server running at http://localhost:3000

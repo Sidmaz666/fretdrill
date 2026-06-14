@@ -1,6 +1,6 @@
 // Exercise Generator for Guitar
 // Generates various practice exercises from scale patterns
-// Expanded: 107 base exercise types, 250+ variations, rich metadata
+// Expanded: 174 base exercise types, 400+ variations, rich metadata
 
 import {
   FretboardNote,
@@ -34,7 +34,7 @@ export interface Exercise {
   patternId?: string;
 }
 
-// ─── EXERCISE TYPE UNION (107 types) ───
+// ─── EXERCISE TYPE UNION (174 types) ───
 
 export type ExerciseType =
   // Scale Runs (8)
@@ -165,7 +165,86 @@ export type ExerciseType =
   | 'chromatic-1324'
   | 'chromatic-1423'
   | 'chromatic-2413'
-  | 'finger-stretch';
+  | 'finger-stretch'
+  // New Chromatic Drills (6)
+  | 'chromatic-2341'
+  | 'chromatic-3142'
+  | 'chromatic-4132'
+  | 'chromatic-3241'
+  | 'chromatic-desc-warmup'
+  | 'chromatic-all-strings'
+  // Spider Exercises (5)
+  | 'chromatic-spider-walk'
+  | 'spider-cross-1'
+  | 'spider-cross-2'
+  | 'spider-inward'
+  | 'spider-outward'
+  // String Crossing (4)
+  | 'string-cross-asc'
+  | 'string-cross-desc'
+  | 'string-cross-skip'
+  | 'string-cross-alternate'
+  // Sweep Picking (4)
+  | 'sweep-3string'
+  | 'sweep-5string'
+  | 'sweep-minor'
+  | 'sweep-major'
+  // Legato (5)
+  | 'legato-hammer-asc'
+  | 'legato-hammer-desc'
+  | 'legato-pull-asc'
+  | 'legato-pull-desc'
+  | 'legato-trill'
+  // Position Shifting (3)
+  | 'pos-shift-1-fret'
+  | 'pos-shift-2-fret'
+  | 'pos-shift-3-fret'
+  // Scale Patterns (5)
+  | 'scale-2nps'
+  | 'scale-4nps'
+  | 'scale-offset-run'
+  | 'scale-spiral'
+  | 'scale-box-run'
+  // Interval Studies (4)
+  | 'intervals-octave'
+  | 'intervals-tritone'
+  | 'intervals-compound'
+  | 'intervals-chromatic'
+  // Arpeggio Studies (6)
+  | 'arp-diminished'
+  | 'arp-augmented'
+  | 'arp-minor7'
+  | 'arp-dom7'
+  | 'arp-maj7'
+  | 'arp-min9'
+  // Rhythm & Timing (3)
+  | 'rhythm-gallop'
+  | 'rhythm-triplet'
+  | 'rhythm-dotted'
+  // Bending & Expression (3)
+  | 'bend-release'
+  | 'bend-1step'
+  | 'bend-1half'
+  // Harmonics (2)
+  | 'harmonics-tap'
+  | 'harmonics-pinch-scale'
+  // Tapping (3)
+  | 'tap-8finger'
+  | 'tap-sweep'
+  | 'tap-tap-pull'
+  // Blues (3)
+  | 'blues-lick-1'
+  | 'blues-lick-2'
+  | 'blues-turnaround'
+  // Fretboard Knowledge (4)
+  | 'caged-shapes'
+  | 'note-triplets'
+  | 'relative-note'
+  | 'fretboard-map'
+  // Speed & Agility (3)
+  | 'speed-ladder'
+  | 'speed-burst-16th'
+  | 'speed-triplet-run';
 
 // ─── EXTENDED METADATA ───
 
@@ -325,6 +404,101 @@ export const EXERCISE_TYPES: Record<ExerciseType, ExerciseTypeMeta> = {
   'chromatic-1423': { name: 'Chromatic 1-4-2-3', description: 'Finger independence pattern 1-4-2-3 across strings', difficulty: 2, focus: 'Finger Independence', estimatedTime: '2-4 min', tags: ['warmup', 'chromatic', 'independence'] },
   'chromatic-2413': { name: 'Chromatic 2-4-1-3', description: 'Finger independence pattern 2-4-1-3 — advanced separation', difficulty: 2, focus: 'Finger Independence', estimatedTime: '2-4 min', tags: ['warmup', 'chromatic', 'independence'] },
   'finger-stretch': { name: 'Finger Stretch', description: 'Wide-fret spacing exercises to build finger span and flexibility', difficulty: 2, focus: 'Flexibility', estimatedTime: '2-3 min', tags: ['warmup', 'stretch', 'flexibility'] },
+
+  // ── New Chromatic Drills ──
+  'chromatic-2341': { name: 'Chromatic 2-3-4-1', description: 'Chromatic permutation pattern 2-3-4-1 for finger independence', difficulty: 2, focus: 'Finger Independence', estimatedTime: '2-4 min', tags: ['warmup', 'chromatic', 'permutation'] },
+  'chromatic-3142': { name: 'Chromatic 3-1-4-2', description: 'Chromatic permutation pattern 3-1-4-2 for finger independence', difficulty: 2, focus: 'Finger Independence', estimatedTime: '2-4 min', tags: ['warmup', 'chromatic', 'permutation'] },
+  'chromatic-4132': { name: 'Chromatic 4-1-3-2', description: 'Chromatic permutation pattern 4-1-3-2 for finger independence', difficulty: 3, focus: 'Finger Independence', estimatedTime: '2-4 min', tags: ['warmup', 'chromatic', 'permutation'] },
+  'chromatic-3241': { name: 'Chromatic 3-2-4-1', description: 'Chromatic permutation pattern 3-2-4-1 for finger independence', difficulty: 3, focus: 'Finger Independence', estimatedTime: '2-4 min', tags: ['warmup', 'chromatic', 'permutation'] },
+  'chromatic-desc-warmup': { name: 'Descending Chromatic Warmup', description: 'Descending chromatic 4-3-2-1 pattern per string for warmup', difficulty: 1, focus: 'Warmup', estimatedTime: '2-3 min', tags: ['warmup', 'chromatic', 'descending'] },
+  'chromatic-all-strings': { name: 'Full Chromatic Run', description: 'Chromatic run across all strings ascending then descending', difficulty: 2, focus: 'Alternate Picking', estimatedTime: '3-5 min', tags: ['chromatic', 'full-run', 'picking'] },
+
+  // ── Spider Exercises ──
+  'chromatic-spider-walk': { name: 'Spider Walk', description: 'Classic spider walk: one finger per string then cross back', difficulty: 2, focus: 'Finger Independence', estimatedTime: '3-5 min', tags: ['spider', 'independence', 'warmup'] },
+  'spider-cross-1': { name: 'Spider Cross Ascending', description: 'Spider exercise crossing strings 1-2-3-4 ascending', difficulty: 3, focus: 'String Crossing', estimatedTime: '3-5 min', tags: ['spider', 'crossing', 'dexterity'] },
+  'spider-cross-2': { name: 'Spider Cross Descending', description: 'Spider exercise crossing strings 4-3-2-1 descending', difficulty: 3, focus: 'String Crossing', estimatedTime: '3-5 min', tags: ['spider', 'crossing', 'dexterity'] },
+  'spider-inward': { name: 'Spider Inward', description: 'Spider walking inward from outside strings toward center', difficulty: 3, focus: 'String Crossing', estimatedTime: '3-5 min', tags: ['spider', 'inward', 'dexterity'] },
+  'spider-outward': { name: 'Spider Outward', description: 'Spider walking outward from middle strings toward edges', difficulty: 3, focus: 'String Crossing', estimatedTime: '3-5 min', tags: ['spider', 'outward', 'dexterity'] },
+
+  // ── String Crossing ──
+  'string-cross-asc': { name: 'Ascending String Cross', description: 'Ascending string crossing pattern for smooth transitions', difficulty: 2, focus: 'String Crossing', estimatedTime: '3-5 min', tags: ['crossing', 'ascending', 'picking'] },
+  'string-cross-desc': { name: 'Descending String Cross', description: 'Descending string crossing pattern for smooth transitions', difficulty: 2, focus: 'String Crossing', estimatedTime: '3-5 min', tags: ['crossing', 'descending', 'picking'] },
+  'string-cross-skip': { name: 'String Cross Skip', description: 'String crossing while skipping strings for accuracy', difficulty: 3, focus: 'String Crossing', estimatedTime: '3-5 min', tags: ['crossing', 'skip', 'accuracy'] },
+  'string-cross-alternate': { name: 'Alternate String Cross', description: 'Alternating string crossing direction for versatility', difficulty: 3, focus: 'String Crossing', estimatedTime: '3-5 min', tags: ['crossing', 'alternate', 'versatility'] },
+
+  // ── Sweep Picking ──
+  'sweep-3string': { name: '3-String Sweep', description: '3-string sweep arpeggio for fundamental sweep technique', difficulty: 3, focus: 'Sweep Picking', estimatedTime: '3-5 min', tags: ['sweep', 'arpeggio', '3-string'] },
+  'sweep-5string': { name: '5-String Sweep', description: '5-string sweep arpeggio for extended sweep technique', difficulty: 4, focus: 'Sweep Picking', estimatedTime: '4-6 min', tags: ['sweep', 'arpeggio', '5-string'] },
+  'sweep-minor': { name: 'Minor Sweep Shape', description: 'Minor triad sweep arpeggio shape across strings', difficulty: 3, focus: 'Sweep Picking', estimatedTime: '3-5 min', tags: ['sweep', 'minor', 'arpeggio'] },
+  'sweep-major': { name: 'Major Sweep Shape', description: 'Major triad sweep arpeggio shape across strings', difficulty: 3, focus: 'Sweep Picking', estimatedTime: '3-5 min', tags: ['sweep', 'major', 'arpeggio'] },
+
+  // ── Legato ──
+  'legato-hammer-asc': { name: 'Hammer-On Ascending', description: 'Ascending hammer-on exercise for legato strength', difficulty: 2, focus: 'Legato', estimatedTime: '3-5 min', tags: ['legato', 'hammer-on', 'ascending'] },
+  'legato-hammer-desc': { name: 'Hammer-On Descending', description: 'Descending hammer-on exercise for legato control', difficulty: 2, focus: 'Legato', estimatedTime: '3-5 min', tags: ['legato', 'hammer-on', 'descending'] },
+  'legato-pull-asc': { name: 'Pull-Off Ascending', description: 'Ascending pull-off exercise for legato fluidity', difficulty: 2, focus: 'Legato', estimatedTime: '3-5 min', tags: ['legato', 'pull-off', 'ascending'] },
+  'legato-pull-desc': { name: 'Pull-Off Descending', description: 'Descending pull-off exercise for legato fluidity', difficulty: 3, focus: 'Legato', estimatedTime: '3-5 min', tags: ['legato', 'pull-off', 'descending'] },
+  'legato-trill': { name: 'Trill Exercise', description: 'Rapid hammer-pull on same note pair for finger endurance', difficulty: 2, focus: 'Legato', estimatedTime: '2-4 min', tags: ['legato', 'trill', 'endurance'] },
+
+  // ── Position Shifting ──
+  'pos-shift-1-fret': { name: '1-Fret Position Shift', description: 'Smooth position shifts moving 1 fret up and down the neck', difficulty: 2, focus: 'Position Playing', estimatedTime: '3-5 min', tags: ['position', 'shift', '1-fret'] },
+  'pos-shift-2-fret': { name: '2-Fret Position Shift', description: 'Position shifts moving 2 frets for wider transitions', difficulty: 3, focus: 'Position Playing', estimatedTime: '3-5 min', tags: ['position', 'shift', '2-fret'] },
+  'pos-shift-3-fret': { name: '3-Fret Position Shift', description: 'Position shifts moving 3 frets for extended transitions', difficulty: 3, focus: 'Position Playing', estimatedTime: '3-5 min', tags: ['position', 'shift', '3-fret'] },
+
+  // ── Scale Patterns ──
+  'scale-2nps': { name: '2 Notes Per String', description: 'Scale pattern with 2 notes per string for pentatonic style', difficulty: 2, focus: 'Alternate Picking', estimatedTime: '3-5 min', tags: ['2nps', 'pentatonic', 'picking'] },
+  'scale-4nps': { name: '4 Notes Per String', description: 'Scale pattern with 4 notes per string for advanced picking', difficulty: 4, focus: 'Alternate Picking', estimatedTime: '4-6 min', tags: ['4nps', 'speed', 'picking'] },
+  'scale-offset-run': { name: 'Offset Scale Run', description: 'Run starting from different scale degrees for versatility', difficulty: 3, focus: 'Fretboard Knowledge', estimatedTime: '3-5 min', tags: ['offset', 'degrees', 'versatility'] },
+  'scale-spiral': { name: 'Spiral Pattern', description: 'Spiral pattern ascending across strings and positions', difficulty: 4, focus: 'Fretboard Knowledge', estimatedTime: '4-6 min', tags: ['spiral', 'navigation', 'positions'] },
+  'scale-box-run': { name: 'Box Pattern Run', description: 'Box pattern runs connecting adjacent CAGED positions', difficulty: 3, focus: 'Position Playing', estimatedTime: '3-5 min', tags: ['box', 'caged', 'positions'] },
+
+  // ── Interval Studies ──
+  'intervals-octave': { name: 'Octave Intervals', description: 'Play octave interval shapes across the fretboard', difficulty: 2, focus: 'Ear Training', estimatedTime: '3-5 min', tags: ['intervals', 'octave', 'ear'] },
+  'intervals-tritone': { name: 'Tritone Intervals', description: 'Tritone (augmented 4th / diminished 5th) interval drill', difficulty: 3, focus: 'Ear Training', estimatedTime: '3-5 min', tags: ['intervals', 'tritone', 'ear'] },
+  'intervals-compound': { name: 'Compound Intervals', description: 'Intervals beyond the octave for advanced ear training', difficulty: 4, focus: 'Ear Training', estimatedTime: '4-6 min', tags: ['intervals', 'compound', 'advanced'] },
+  'intervals-chromatic': { name: 'Chromatic Intervals', description: 'Chromatic interval walking through all semitones', difficulty: 3, focus: 'Ear Training', estimatedTime: '3-5 min', tags: ['intervals', 'chromatic', 'ear'] },
+
+  // ── Arpeggio Studies ──
+  'arp-diminished': { name: 'Diminished Arpeggio', description: 'Diminished triad arpeggio (R, b3, b5) for tension and release', difficulty: 4, focus: 'Arpeggio Knowledge', estimatedTime: '3-5 min', tags: ['arpeggio', 'diminished', 'tension'] },
+  'arp-augmented': { name: 'Augmented Arpeggio', description: 'Augmented triad arpeggio (R, 3, #5) for symmetrical sound', difficulty: 4, focus: 'Arpeggio Knowledge', estimatedTime: '3-5 min', tags: ['arpeggio', 'augmented', 'symmetrical'] },
+  'arp-minor7': { name: 'Minor 7th Arpeggio', description: 'Minor 7th arpeggio (R, b3, 5, b7) for jazz and funk', difficulty: 3, focus: 'Arpeggio Knowledge', estimatedTime: '3-5 min', tags: ['arpeggio', 'minor7', 'jazz'] },
+  'arp-dom7': { name: 'Dominant 7th Arpeggio', description: 'Dominant 7th arpeggio (R, 3, 5, b7) for blues and jazz', difficulty: 3, focus: 'Arpeggio Knowledge', estimatedTime: '3-5 min', tags: ['arpeggio', 'dom7', 'blues'] },
+  'arp-maj7': { name: 'Major 7th Arpeggio', description: 'Major 7th arpeggio (R, 3, 5, 7) for jazz and melody', difficulty: 3, focus: 'Arpeggio Knowledge', estimatedTime: '3-5 min', tags: ['arpeggio', 'maj7', 'jazz'] },
+  'arp-min9': { name: 'Minor 9th Arpeggio', description: 'Minor 9th arpeggio (R, b3, 5, b7, 9) for advanced harmony', difficulty: 5, focus: 'Arpeggio Knowledge', estimatedTime: '4-6 min', tags: ['arpeggio', 'min9', 'advanced'] },
+
+  // ── Rhythm & Timing ──
+  'rhythm-gallop': { name: 'Gallop Rhythm', description: 'Gallop rhythm pattern (long-short-short) for metal and rock', difficulty: 3, focus: 'Rhythm', estimatedTime: '3-5 min', tags: ['rhythm', 'gallop', 'metal'] },
+  'rhythm-triplet': { name: 'Triplet Feel', description: 'Triplet feel exercise for swing and blues timing', difficulty: 2, focus: 'Rhythm', estimatedTime: '3-5 min', tags: ['rhythm', 'triplet', 'swing'] },
+  'rhythm-dotted': { name: 'Dotted Rhythm', description: 'Dotted rhythm exercise for precise timing control', difficulty: 3, focus: 'Rhythm', estimatedTime: '3-5 min', tags: ['rhythm', 'dotted', 'timing'] },
+
+  // ── Bending & Expression ──
+  'bend-release': { name: 'Bend & Release', description: 'Bend up to target pitch then release back down', difficulty: 3, focus: 'Bending', estimatedTime: '3-5 min', tags: ['bend', 'release', 'expression'] },
+  'bend-1step': { name: '1-Step Bend', description: 'Full step (2 fret) bend exercise for pitch accuracy', difficulty: 3, focus: 'Bending', estimatedTime: '3-5 min', tags: ['bend', '1-step', 'pitch'] },
+  'bend-1half': { name: '1.5-Step Bend', description: 'One and a half step (3 fret) bend for advanced control', difficulty: 4, focus: 'Bending', estimatedTime: '3-5 min', tags: ['bend', '1.5-step', 'advanced'] },
+
+  // ── Harmonics ──
+  'harmonics-tap': { name: 'Tapped Harmonics', description: 'Tapped harmonics exercise — tap fret 12 above each note', difficulty: 4, focus: 'Harmonics', estimatedTime: '3-5 min', tags: ['harmonics', 'tapped', 'advanced'] },
+  'harmonics-pinch-scale': { name: 'Pinch Harmonic Scale', description: 'Pinch harmonics played along a scale for consistent squeals', difficulty: 4, focus: 'Harmonics', estimatedTime: '3-5 min', tags: ['harmonics', 'pinch', 'scale'] },
+
+  // ── Tapping ──
+  'tap-8finger': { name: '8-Finger Tapping', description: 'Eight-finger tapping exercise using both hands on fretboard', difficulty: 5, focus: 'Tapping', estimatedTime: '5-8 min', tags: ['tapping', '8-finger', 'advanced'] },
+  'tap-sweep': { name: 'Sweep Tapping', description: 'Sweep picking combined with tapping for extended arpeggios', difficulty: 5, focus: 'Tapping', estimatedTime: '4-6 min', tags: ['tapping', 'sweep', 'combination'] },
+  'tap-tap-pull': { name: 'Tap-Pull Combination', description: 'Tap then pull-off combination pattern for fluid tapping', difficulty: 4, focus: 'Tapping', estimatedTime: '3-5 min', tags: ['tapping', 'pull-off', 'combination'] },
+
+  // ── Blues ──
+  'blues-lick-1': { name: 'Blues Lick 1', description: 'Classic blues lick pattern using bends and slides', difficulty: 3, focus: 'Blues Vocabulary', estimatedTime: '3-5 min', tags: ['blues', 'lick', 'vocabulary'] },
+  'blues-lick-2': { name: 'Blues Lick 2', description: 'Blues lick with triplet feel and double stops', difficulty: 3, focus: 'Blues Vocabulary', estimatedTime: '3-5 min', tags: ['blues', 'lick', 'double-stops'] },
+  'blues-turnaround': { name: 'Blues Turnaround', description: 'Classic blues turnaround at the end of a 12-bar progression', difficulty: 3, focus: 'Blues Vocabulary', estimatedTime: '3-5 min', tags: ['blues', 'turnaround', 'progression'] },
+
+  // ── Fretboard Knowledge ──
+  'caged-shapes': { name: 'CAGED Shapes', description: 'All CAGED chord shapes exercise for fretboard mastery', difficulty: 3, focus: 'Fretboard Knowledge', estimatedTime: '4-6 min', tags: ['caged', 'shapes', 'fretboard'] },
+  'note-triplets': { name: 'Note Triplets', description: 'Find the same note on 3 different strings across the fretboard', difficulty: 3, focus: 'Fretboard Knowledge', estimatedTime: '3-5 min', tags: ['notes', 'triplets', 'navigation'] },
+  'relative-note': { name: 'Relative Note Finder', description: 'Find relative major/minor across the fretboard', difficulty: 3, focus: 'Fretboard Knowledge', estimatedTime: '3-5 min', tags: ['relative', 'major-minor', 'theory'] },
+  'fretboard-map': { name: 'Fretboard Map', description: 'Full fretboard note mapping drill for complete memorization', difficulty: 2, focus: 'Fretboard Knowledge', estimatedTime: '5-8 min', tags: ['fretboard', 'map', 'memorization'] },
+
+  // ── Speed & Agility ──
+  'speed-ladder': { name: 'Speed Ladder', description: 'Progressive tempo exercise building speed incrementally', difficulty: 3, focus: 'Speed', estimatedTime: '5-8 min', tags: ['speed', 'ladder', 'progressive'] },
+  'speed-burst-16th': { name: '16th Note Speed Burst', description: '16th note speed bursts for maximum picking velocity', difficulty: 4, focus: 'Speed', estimatedTime: '3-5 min', tags: ['speed', '16th', 'burst'] },
+  'speed-triplet-run': { name: 'Triplet Speed Run', description: 'Triplet speed runs for fluid 3-note-per-string patterns', difficulty: 4, focus: 'Speed', estimatedTime: '3-5 min', tags: ['speed', 'triplet', '3nps'] },
 };
 
 // ─── VARIATION SYSTEM ───
@@ -461,9 +635,96 @@ function buildVariations(): ExerciseVariation[] {
     }
 
     // Extended warmups: extended + compact
-    if (['chromatic-1234', 'chromatic-4321', 'chromatic-1324', 'chromatic-1423', 'chromatic-2413', 'finger-stretch'].includes(typeId)) {
+    if (['chromatic-1234', 'chromatic-4321', 'chromatic-1324', 'chromatic-1423', 'chromatic-2413', 'finger-stretch', 'chromatic-2341', 'chromatic-3142', 'chromatic-4132', 'chromatic-3241', 'chromatic-desc-warmup', 'chromatic-all-strings'].includes(typeId)) {
       addVariation({ id: `${typeId}-extended`, typeId, variantName: 'Extended', suffix: 'Ext', modifier: 'extended' });
       addVariation({ id: `${typeId}-compact`, typeId, variantName: 'Compact', suffix: 'Cmp', modifier: 'compact' });
+    }
+
+    // Spider exercises: extended + reverse
+    if (['chromatic-spider-walk', 'spider-cross-1', 'spider-cross-2', 'spider-inward', 'spider-outward'].includes(typeId)) {
+      addVariation({ id: `${typeId}-extended`, typeId, variantName: 'Extended', suffix: 'Ext', modifier: 'extended' });
+      addVariation({ id: `${typeId}-reverse`, typeId, variantName: 'Reverse', suffix: 'Rev', modifier: 'reverse' });
+    }
+
+    // String crossing: extended + reverse
+    if (['string-cross-asc', 'string-cross-desc', 'string-cross-skip', 'string-cross-alternate'].includes(typeId)) {
+      addVariation({ id: `${typeId}-extended`, typeId, variantName: 'Extended', suffix: 'Ext', modifier: 'extended' });
+      addVariation({ id: `${typeId}-reverse`, typeId, variantName: 'Reverse', suffix: 'Rev', modifier: 'reverse' });
+    }
+
+    // Sweep picking: extended + inverted
+    if (['sweep-3string', 'sweep-5string', 'sweep-minor', 'sweep-major'].includes(typeId)) {
+      addVariation({ id: `${typeId}-extended`, typeId, variantName: 'Extended', suffix: 'Ext', modifier: 'extended' });
+      addVariation({ id: `${typeId}-inverted`, typeId, variantName: 'Inverted', suffix: 'Inv', modifier: 'inverted' });
+    }
+
+    // Legato: extended + reverse
+    if (['legato-hammer-asc', 'legato-hammer-desc', 'legato-pull-asc', 'legato-pull-desc', 'legato-trill'].includes(typeId)) {
+      addVariation({ id: `${typeId}-extended`, typeId, variantName: 'Extended', suffix: 'Ext', modifier: 'extended' });
+      addVariation({ id: `${typeId}-reverse`, typeId, variantName: 'Reverse', suffix: 'Rev', modifier: 'reverse' });
+    }
+
+    // Position shifting: extended
+    if (['pos-shift-1-fret', 'pos-shift-2-fret', 'pos-shift-3-fret'].includes(typeId)) {
+      addVariation({ id: `${typeId}-extended`, typeId, variantName: 'Extended', suffix: 'Ext', modifier: 'extended' });
+    }
+
+    // New scale patterns: extended + reverse
+    if (['scale-2nps', 'scale-4nps', 'scale-offset-run', 'scale-spiral', 'scale-box-run'].includes(typeId)) {
+      addVariation({ id: `${typeId}-extended`, typeId, variantName: 'Extended', suffix: 'Ext', modifier: 'extended' });
+      addVariation({ id: `${typeId}-reverse`, typeId, variantName: 'Reverse', suffix: 'Rev', modifier: 'reverse' });
+    }
+
+    // New interval studies: inverted + compact
+    if (['intervals-octave', 'intervals-tritone', 'intervals-compound', 'intervals-chromatic'].includes(typeId)) {
+      addVariation({ id: `${typeId}-inverted`, typeId, variantName: 'Inverted', suffix: 'Inv', modifier: 'inverted' });
+      addVariation({ id: `${typeId}-compact`, typeId, variantName: 'Compact', suffix: 'Cmp', modifier: 'compact' });
+    }
+
+    // New arpeggio studies: extended + inverted
+    if (['arp-diminished', 'arp-augmented', 'arp-minor7', 'arp-dom7', 'arp-maj7', 'arp-min9'].includes(typeId)) {
+      addVariation({ id: `${typeId}-extended`, typeId, variantName: 'Extended', suffix: 'Ext', modifier: 'extended' });
+      addVariation({ id: `${typeId}-inverted`, typeId, variantName: 'Inverted', suffix: 'Inv', modifier: 'inverted' });
+    }
+
+    // New rhythm: extended + compact
+    if (['rhythm-gallop', 'rhythm-triplet', 'rhythm-dotted'].includes(typeId)) {
+      addVariation({ id: `${typeId}-extended`, typeId, variantName: 'Extended', suffix: 'Ext', modifier: 'extended' });
+      addVariation({ id: `${typeId}-compact`, typeId, variantName: 'Compact', suffix: 'Cmp', modifier: 'compact' });
+    }
+
+    // New bending: extended
+    if (['bend-release', 'bend-1step', 'bend-1half'].includes(typeId)) {
+      addVariation({ id: `${typeId}-extended`, typeId, variantName: 'Extended', suffix: 'Ext', modifier: 'extended' });
+    }
+
+    // New harmonics: extended
+    if (['harmonics-tap', 'harmonics-pinch-scale'].includes(typeId)) {
+      addVariation({ id: `${typeId}-extended`, typeId, variantName: 'Extended', suffix: 'Ext', modifier: 'extended' });
+    }
+
+    // New tapping: extended + reverse
+    if (['tap-8finger', 'tap-sweep', 'tap-tap-pull'].includes(typeId)) {
+      addVariation({ id: `${typeId}-extended`, typeId, variantName: 'Extended', suffix: 'Ext', modifier: 'extended' });
+      addVariation({ id: `${typeId}-reverse`, typeId, variantName: 'Reverse', suffix: 'Rev', modifier: 'reverse' });
+    }
+
+    // Blues: extended + reverse
+    if (['blues-lick-1', 'blues-lick-2', 'blues-turnaround'].includes(typeId)) {
+      addVariation({ id: `${typeId}-extended`, typeId, variantName: 'Extended', suffix: 'Ext', modifier: 'extended' });
+      addVariation({ id: `${typeId}-reverse`, typeId, variantName: 'Reverse', suffix: 'Rev', modifier: 'reverse' });
+    }
+
+    // Fretboard knowledge: extended + compact
+    if (['caged-shapes', 'note-triplets', 'relative-note', 'fretboard-map'].includes(typeId)) {
+      addVariation({ id: `${typeId}-extended`, typeId, variantName: 'Extended', suffix: 'Ext', modifier: 'extended' });
+      addVariation({ id: `${typeId}-compact`, typeId, variantName: 'Compact', suffix: 'Cmp', modifier: 'compact' });
+    }
+
+    // Speed & agility: extended + reverse
+    if (['speed-ladder', 'speed-burst-16th', 'speed-triplet-run'].includes(typeId)) {
+      addVariation({ id: `${typeId}-extended`, typeId, variantName: 'Extended', suffix: 'Ext', modifier: 'extended' });
+      addVariation({ id: `${typeId}-reverse`, typeId, variantName: 'Reverse', suffix: 'Rev', modifier: 'reverse' });
     }
   }
 
@@ -501,7 +762,22 @@ export const EXERCISE_CATEGORIES: Array<{
   { id: 'ext-technique', label: 'Adv. Technique', section: 'TECHNIQUE', types: ['hybrid-picking', 'chicken-pick', 'banjo-roll', 'palm-mute', 'staccato', 'sweep-tap'] },
   { id: 'ext-shapes', label: 'Adv. Shapes', section: 'ADVANCED', types: ['barre-shapes', 'drop2-voicings', 'guide-tones', 'quartal-voicings', 'stacked-fourths'] },
   { id: 'fretboard-nav', label: 'Fretboard Nav', section: 'ADVANCED', types: ['note-finder', 'octave-drill', 'unison-drill', 'interval-matrix'] },
-  { id: 'ext-warmups', label: 'Chromatic Drills', section: 'WARMUP', types: ['chromatic-1234', 'chromatic-4321', 'chromatic-1324', 'chromatic-1423', 'chromatic-2413', 'finger-stretch'] },
+  { id: 'ext-warmups', label: 'Chromatic Drills', section: 'WARMUP', types: ['chromatic-1234', 'chromatic-4321', 'chromatic-1324', 'chromatic-1423', 'chromatic-2413', 'finger-stretch', 'chromatic-2341', 'chromatic-3142', 'chromatic-4132', 'chromatic-3241', 'chromatic-desc-warmup', 'chromatic-all-strings'] },
+  { id: 'spider-exercises', label: 'Spider Exercises', section: 'TECHNIQUE', types: ['chromatic-spider-walk', 'spider-cross-1', 'spider-cross-2', 'spider-inward', 'spider-outward'] },
+  { id: 'string-crossing', label: 'String Crossing', section: 'TECHNIQUE', types: ['string-cross-asc', 'string-cross-desc', 'string-cross-skip', 'string-cross-alternate'] },
+  { id: 'sweep-picking', label: 'Sweep Picking', section: 'TECHNIQUE', types: ['sweep-3string', 'sweep-5string', 'sweep-minor', 'sweep-major'] },
+  { id: 'legato', label: 'Legato', section: 'TECHNIQUE', types: ['legato-hammer-asc', 'legato-hammer-desc', 'legato-pull-asc', 'legato-pull-desc', 'legato-trill'] },
+  { id: 'position-shifting', label: 'Position Shifting', section: 'TECHNIQUE', types: ['pos-shift-1-fret', 'pos-shift-2-fret', 'pos-shift-3-fret'] },
+  { id: 'scale-patterns', label: 'Scale Patterns', section: 'PRACTICE', types: ['scale-2nps', 'scale-4nps', 'scale-offset-run', 'scale-spiral', 'scale-box-run'] },
+  { id: 'interval-studies', label: 'Interval Studies', section: 'ADVANCED', types: ['intervals-octave', 'intervals-tritone', 'intervals-compound', 'intervals-chromatic'] },
+  { id: 'arp-studies', label: 'Arpeggio Studies', section: 'ADVANCED', types: ['arp-diminished', 'arp-augmented', 'arp-minor7', 'arp-dom7', 'arp-maj7', 'arp-min9'] },
+  { id: 'rhythm-timing', label: 'Rhythm & Timing', section: 'PRACTICE', types: ['rhythm-gallop', 'rhythm-triplet', 'rhythm-dotted'] },
+  { id: 'bend-expression', label: 'Bending & Expression', section: 'TECHNIQUE', types: ['bend-release', 'bend-1step', 'bend-1half'] },
+  { id: 'harmonics-ext', label: 'Adv. Harmonics', section: 'TECHNIQUE', types: ['harmonics-tap', 'harmonics-pinch-scale'] },
+  { id: 'tapping-ext', label: 'Adv. Tapping', section: 'TECHNIQUE', types: ['tap-8finger', 'tap-sweep', 'tap-tap-pull'] },
+  { id: 'blues', label: 'Blues', section: 'PRACTICE', types: ['blues-lick-1', 'blues-lick-2', 'blues-turnaround'] },
+  { id: 'fretboard-knowledge', label: 'Fretboard Knowledge', section: 'ADVANCED', types: ['caged-shapes', 'note-triplets', 'relative-note', 'fretboard-map'] },
+  { id: 'speed-agility', label: 'Speed & Agility', section: 'TECHNIQUE', types: ['speed-ladder', 'speed-burst-16th', 'speed-triplet-run'] },
 ];
 
 // ─── HELPER FUNCTIONS ───
@@ -2506,6 +2782,1206 @@ function generateFingerStretch(key: NoteName, scaleId: string, startFret: number
   return makeExercise('finger-stretch', stretchNotes.length >= 4 ? stretchNotes : sorted, sorted);
 }
 
+// ─── NEW CHROMATIC DRILL GENERATORS ───
+
+function generateChromaticDescWarmup(key: NoteName, scaleId: string, startFret: number, endFret: number): Exercise {
+  const rootIndex = NOTES.indexOf(key);
+  const warmupNotes: FretboardNote[] = [];
+  for (let stringIdx = 5; stringIdx >= 0; stringIdx--) {
+    const openNote = STRING_OPEN_NOTES[stringIdx];
+    const openIdx = NOTES.indexOf(openNote);
+    const baseFret = Math.max(startFret, 4);
+    for (let base = baseFret; base <= Math.min(endFret, startFret + 7); base += 4) {
+      for (let offset = 3; offset >= 0; offset--) {
+        const f = base + offset - 3;
+        if (f < startFret || f > endFret) continue;
+        const noteIdx = (openIdx + f) % 12;
+        const intervalFromRoot = (noteIdx - rootIndex + 12) % 12;
+        warmupNotes.push({
+          string: stringIdx, fret: f, note: NOTES[noteIdx],
+          interval: intervalFromRoot, intervalLabel: intervalFromRoot === 0 ? 'R' : `${intervalFromRoot}`,
+          isRoot: intervalFromRoot === 0,
+        });
+      }
+    }
+  }
+  const allNotes = getScaleOnFretboard(key, scaleId, startFret, endFret);
+  const sorted = sortNotesAscending(dedupNotes(allNotes));
+  return makeExercise('chromatic-desc-warmup', warmupNotes.length >= 4 ? warmupNotes : sorted, sorted);
+}
+
+function generateChromaticAllStrings(key: NoteName, scaleId: string, startFret: number, endFret: number): Exercise {
+  const rootIndex = NOTES.indexOf(key);
+  const runNotes: FretboardNote[] = [];
+  const maxFret = Math.min(endFret, startFret + 4);
+  const minFret = Math.max(startFret, 1);
+  // Ascending across all strings
+  for (let stringIdx = 5; stringIdx >= 0; stringIdx--) {
+    const openNote = STRING_OPEN_NOTES[stringIdx];
+    const openIdx = NOTES.indexOf(openNote);
+    for (let f = minFret; f <= maxFret; f++) {
+      const noteIdx = (openIdx + f) % 12;
+      const intervalFromRoot = (noteIdx - rootIndex + 12) % 12;
+      runNotes.push({
+        string: stringIdx, fret: f, note: NOTES[noteIdx],
+        interval: intervalFromRoot, intervalLabel: intervalFromRoot === 0 ? 'R' : `${intervalFromRoot}`,
+        isRoot: intervalFromRoot === 0,
+      });
+    }
+  }
+  // Descending across all strings
+  for (let stringIdx = 0; stringIdx <= 5; stringIdx++) {
+    const openNote = STRING_OPEN_NOTES[stringIdx];
+    const openIdx = NOTES.indexOf(openNote);
+    for (let f = maxFret; f >= minFret; f--) {
+      const noteIdx = (openIdx + f) % 12;
+      const intervalFromRoot = (noteIdx - rootIndex + 12) % 12;
+      runNotes.push({
+        string: stringIdx, fret: f, note: NOTES[noteIdx],
+        interval: intervalFromRoot, intervalLabel: intervalFromRoot === 0 ? 'R' : `${intervalFromRoot}`,
+        isRoot: intervalFromRoot === 0,
+      });
+    }
+  }
+  const allNotes = getScaleOnFretboard(key, scaleId, startFret, endFret);
+  const sorted = sortNotesAscending(dedupNotes(allNotes));
+  return makeExercise('chromatic-all-strings', runNotes.length >= 4 ? runNotes : sorted, sorted);
+}
+
+// ─── SPIDER EXERCISE GENERATORS ───
+
+function generateSpiderWalkClassic(key: NoteName, scaleId: string, startFret: number, endFret: number): Exercise {
+  const rootIndex = NOTES.indexOf(key);
+  const spiderNotes: FretboardNote[] = [];
+  const baseFret = Math.max(startFret, 1);
+  // Finger 1 on string 5, finger 2 on string 4, finger 3 on string 3, finger 4 on string 2
+  for (let finger = 0; finger < 4; finger++) {
+    const stringIdx = 5 - finger;
+    const f = baseFret + finger;
+    if (f > endFret || stringIdx < 0) continue;
+    const openNote = STRING_OPEN_NOTES[stringIdx];
+    const openIdx = NOTES.indexOf(openNote);
+    const noteIdx = (openIdx + f) % 12;
+    const intervalFromRoot = (noteIdx - rootIndex + 12) % 12;
+    spiderNotes.push({
+      string: stringIdx, fret: f, note: NOTES[noteIdx],
+      interval: intervalFromRoot, intervalLabel: intervalFromRoot === 0 ? 'R' : `${intervalFromRoot}`,
+      isRoot: intervalFromRoot === 0,
+    });
+  }
+  // Cross back: finger 4 on string 2, finger 3 on string 3, etc.
+  for (let finger = 3; finger >= 0; finger--) {
+    const stringIdx = 5 - finger;
+    const f = baseFret + finger;
+    if (f > endFret || stringIdx < 0) continue;
+    const openNote = STRING_OPEN_NOTES[stringIdx];
+    const openIdx = NOTES.indexOf(openNote);
+    const noteIdx = (openIdx + f) % 12;
+    const intervalFromRoot = (noteIdx - rootIndex + 12) % 12;
+    spiderNotes.push({
+      string: stringIdx, fret: f, note: NOTES[noteIdx],
+      interval: intervalFromRoot, intervalLabel: intervalFromRoot === 0 ? 'R' : `${intervalFromRoot}`,
+      isRoot: intervalFromRoot === 0,
+    });
+  }
+  const allNotes = getScaleOnFretboard(key, scaleId, startFret, endFret);
+  const sorted = sortNotesAscending(dedupNotes(allNotes));
+  return makeExercise('chromatic-spider-walk', spiderNotes.length >= 4 ? spiderNotes : sorted, sorted);
+}
+
+function generateSpiderCross(key: NoteName, scaleId: string, startFret: number, endFret: number, direction: 'asc' | 'desc'): Exercise {
+  const rootIndex = NOTES.indexOf(key);
+  const spiderNotes: FretboardNote[] = [];
+  const baseFret = Math.max(startFret, 1);
+  const stringOrder = direction === 'asc' ? [5, 4, 3, 2] : [2, 3, 4, 5];
+  // Multiple positions
+  for (let pos = 0; pos < 3; pos++) {
+    for (let i = 0; i < stringOrder.length; i++) {
+      const stringIdx = stringOrder[i];
+      const f = baseFret + i + pos * 2;
+      if (f > endFret) continue;
+      const openNote = STRING_OPEN_NOTES[stringIdx];
+      const openIdx = NOTES.indexOf(openNote);
+      const noteIdx = (openIdx + f) % 12;
+      const intervalFromRoot = (noteIdx - rootIndex + 12) % 12;
+      spiderNotes.push({
+        string: stringIdx, fret: f, note: NOTES[noteIdx],
+        interval: intervalFromRoot, intervalLabel: intervalFromRoot === 0 ? 'R' : `${intervalFromRoot}`,
+        isRoot: intervalFromRoot === 0,
+      });
+    }
+  }
+  const allNotes = getScaleOnFretboard(key, scaleId, startFret, endFret);
+  const sorted = sortNotesAscending(dedupNotes(allNotes));
+  return makeExercise(direction === 'asc' ? 'spider-cross-1' : 'spider-cross-2', spiderNotes.length >= 4 ? spiderNotes : sorted, sorted);
+}
+
+function generateSpiderInward(key: NoteName, scaleId: string, startFret: number, endFret: number): Exercise {
+  const rootIndex = NOTES.indexOf(key);
+  const spiderNotes: FretboardNote[] = [];
+  const baseFret = Math.max(startFret, 1);
+  // Walk inward from outside strings: (5,0), (4,1), (3,2)
+  const pairs = [[5, 0], [4, 1], [3, 2]];
+  for (const [high, low] of pairs) {
+    for (let pos = 0; pos < 2; pos++) {
+      const f1 = baseFret + pos * 2;
+      const f2 = baseFret + 1 + pos * 2;
+      if (f1 > endFret || f2 > endFret) continue;
+      const open1 = STRING_OPEN_NOTES[high];
+      const idx1 = (NOTES.indexOf(open1) + f1) % 12;
+      const iv1 = (idx1 - rootIndex + 12) % 12;
+      spiderNotes.push({ string: high, fret: f1, note: NOTES[idx1], interval: iv1, intervalLabel: iv1 === 0 ? 'R' : `${iv1}`, isRoot: iv1 === 0 });
+      const open2 = STRING_OPEN_NOTES[low];
+      const idx2 = (NOTES.indexOf(open2) + f2) % 12;
+      const iv2 = (idx2 - rootIndex + 12) % 12;
+      spiderNotes.push({ string: low, fret: f2, note: NOTES[idx2], interval: iv2, intervalLabel: iv2 === 0 ? 'R' : `${iv2}`, isRoot: iv2 === 0 });
+    }
+  }
+  const allNotes = getScaleOnFretboard(key, scaleId, startFret, endFret);
+  const sorted = sortNotesAscending(dedupNotes(allNotes));
+  return makeExercise('spider-inward', spiderNotes.length >= 4 ? spiderNotes : sorted, sorted);
+}
+
+function generateSpiderOutward(key: NoteName, scaleId: string, startFret: number, endFret: number): Exercise {
+  const rootIndex = NOTES.indexOf(key);
+  const spiderNotes: FretboardNote[] = [];
+  const baseFret = Math.max(startFret, 1);
+  // Walk outward from middle strings: (3,2), (4,1), (5,0)
+  const pairs = [[3, 2], [4, 1], [5, 0]];
+  for (const [high, low] of pairs) {
+    for (let pos = 0; pos < 2; pos++) {
+      const f1 = baseFret + pos * 2;
+      const f2 = baseFret + 1 + pos * 2;
+      if (f1 > endFret || f2 > endFret) continue;
+      const open1 = STRING_OPEN_NOTES[high];
+      const idx1 = (NOTES.indexOf(open1) + f1) % 12;
+      const iv1 = (idx1 - rootIndex + 12) % 12;
+      spiderNotes.push({ string: high, fret: f1, note: NOTES[idx1], interval: iv1, intervalLabel: iv1 === 0 ? 'R' : `${iv1}`, isRoot: iv1 === 0 });
+      const open2 = STRING_OPEN_NOTES[low];
+      const idx2 = (NOTES.indexOf(open2) + f2) % 12;
+      const iv2 = (idx2 - rootIndex + 12) % 12;
+      spiderNotes.push({ string: low, fret: f2, note: NOTES[idx2], interval: iv2, intervalLabel: iv2 === 0 ? 'R' : `${iv2}`, isRoot: iv2 === 0 });
+    }
+  }
+  const allNotes = getScaleOnFretboard(key, scaleId, startFret, endFret);
+  const sorted = sortNotesAscending(dedupNotes(allNotes));
+  return makeExercise('spider-outward', spiderNotes.length >= 4 ? spiderNotes : sorted, sorted);
+}
+
+// ─── STRING CROSSING GENERATORS ───
+
+function generateStringCrossAsc(key: NoteName, scaleId: string, startFret: number, endFret: number): Exercise {
+  const notes = getScaleOnFretboard(key, scaleId, startFret, endFret);
+  const byString: Map<number, FretboardNote[]> = new Map();
+  for (const note of notes) {
+    if (!byString.has(note.string)) byString.set(note.string, []);
+    byString.get(note.string)!.push(note);
+  }
+  const crossNotes: FretboardNote[] = [];
+  // Pick one note from each string ascending (low to high pitch)
+  for (let stringIdx = 5; stringIdx >= 1; stringIdx--) {
+    const currentNotes = byString.get(stringIdx);
+    const nextNotes = byString.get(stringIdx - 1);
+    if (currentNotes && nextNotes) {
+      const cSorted = [...currentNotes].sort((a, b) => a.fret - b.fret);
+      const nSorted = [...nextNotes].sort((a, b) => a.fret - b.fret);
+      if (cSorted.length > 0) crossNotes.push(cSorted[0]);
+      if (nSorted.length > 0) crossNotes.push(nSorted[0]);
+    }
+  }
+  const sorted = sortNotesAscending(dedupNotes(notes));
+  return makeExercise('string-cross-asc', crossNotes.length >= 3 ? crossNotes : sorted, sorted);
+}
+
+function generateStringCrossDesc(key: NoteName, scaleId: string, startFret: number, endFret: number): Exercise {
+  const notes = getScaleOnFretboard(key, scaleId, startFret, endFret);
+  const byString: Map<number, FretboardNote[]> = new Map();
+  for (const note of notes) {
+    if (!byString.has(note.string)) byString.set(note.string, []);
+    byString.get(note.string)!.push(note);
+  }
+  const crossNotes: FretboardNote[] = [];
+  // Pick one note from each string descending (high to low pitch)
+  for (let stringIdx = 0; stringIdx <= 4; stringIdx++) {
+    const currentNotes = byString.get(stringIdx);
+    const nextNotes = byString.get(stringIdx + 1);
+    if (currentNotes && nextNotes) {
+      const cSorted = [...currentNotes].sort((a, b) => b.fret - a.fret);
+      const nSorted = [...nextNotes].sort((a, b) => b.fret - a.fret);
+      if (cSorted.length > 0) crossNotes.push(cSorted[0]);
+      if (nSorted.length > 0) crossNotes.push(nSorted[0]);
+    }
+  }
+  const sorted = sortNotesAscending(dedupNotes(notes));
+  return makeExercise('string-cross-desc', crossNotes.length >= 3 ? crossNotes : sorted, sorted);
+}
+
+function generateStringCrossSkip(key: NoteName, scaleId: string, startFret: number, endFret: number): Exercise {
+  const notes = getScaleOnFretboard(key, scaleId, startFret, endFret);
+  const sorted = sortNotesAscending(dedupNotes(notes));
+  const crossNotes: FretboardNote[] = [];
+  // Skip strings: play on string 5, then 3, then 1, then 4, then 2, then 0
+  const skipPattern = [5, 3, 1, 4, 2, 0];
+  for (const stringIdx of skipPattern) {
+    const stringNotes = sorted.filter(n => n.string === stringIdx);
+    if (stringNotes.length > 0) {
+      crossNotes.push(stringNotes[0]);
+    }
+  }
+  return makeExercise('string-cross-skip', crossNotes.length >= 3 ? crossNotes : sorted, sorted);
+}
+
+function generateStringCrossAlternate(key: NoteName, scaleId: string, startFret: number, endFret: number): Exercise {
+  const notes = getScaleOnFretboard(key, scaleId, startFret, endFret);
+  const byString: Map<number, FretboardNote[]> = new Map();
+  for (const note of notes) {
+    if (!byString.has(note.string)) byString.set(note.string, []);
+    byString.get(note.string)!.push(note);
+  }
+  const crossNotes: FretboardNote[] = [];
+  // Alternate: go up one string, down the next
+  let goingUp = true;
+  for (let pair = 0; pair < 5; pair++) {
+    const stringIdx1 = goingUp ? 5 - pair : pair;
+    const stringIdx2 = goingUp ? 4 - pair : pair + 1;
+    const notes1 = byString.get(stringIdx1);
+    const notes2 = byString.get(stringIdx2);
+    if (notes1) {
+      const s1 = [...notes1].sort((a, b) => a.fret - b.fret);
+      crossNotes.push(s1[0]);
+    }
+    if (notes2) {
+      const s2 = [...notes2].sort((a, b) => a.fret - b.fret);
+      crossNotes.push(s2[0]);
+    }
+    goingUp = !goingUp;
+  }
+  const sorted = sortNotesAscending(dedupNotes(notes));
+  return makeExercise('string-cross-alternate', crossNotes.length >= 3 ? crossNotes : sorted, sorted);
+}
+
+// ─── SWEEP PICKING GENERATORS ───
+
+function generateSweepNString(key: NoteName, scaleId: string, startFret: number, endFret: number, stringCount: number, type: ExerciseType): Exercise {
+  const notes = getScaleOnFretboard(key, scaleId, startFret, endFret);
+  const sorted = sortNotesAscending(dedupNotes(notes));
+  const sweepNotes: FretboardNote[] = [];
+  const byString: Map<number, FretboardNote[]> = new Map();
+  for (const note of sorted) {
+    if (!byString.has(note.string)) byString.set(note.string, []);
+    byString.get(note.string)!.push(note);
+  }
+  // Sweep across specified number of strings
+  const startString = 5;
+  const endString = Math.max(0, 5 - stringCount + 1);
+  // Downward sweep (low to high pitch)
+  for (let s = startString; s >= endString; s--) {
+    const stringNotes = byString.get(s);
+    if (stringNotes) {
+      const sSorted = [...stringNotes].sort((a, b) => a.fret - b.fret);
+      sweepNotes.push(sSorted[0]);
+    }
+  }
+  // Upward sweep (high to low pitch)
+  for (let s = endString; s <= startString; s++) {
+    const stringNotes = byString.get(s);
+    if (stringNotes) {
+      const sSorted = [...stringNotes].sort((a, b) => a.fret - b.fret);
+      const highest = sSorted[sSorted.length - 1];
+      if (!sweepNotes.find(n => n.string === s && n.fret === highest.fret)) {
+        sweepNotes.push(highest);
+      }
+    }
+  }
+  return makeExercise(type, sweepNotes, sorted);
+}
+
+function generateSweepMinor(key: NoteName, scaleId: string, startFret: number, endFret: number): Exercise {
+  const notes = getScaleOnFretboard(key, scaleId, startFret, endFret);
+  const sorted = sortNotesAscending(dedupNotes(notes));
+  const sweepNotes: FretboardNote[] = [];
+  // Minor triad: R, b3, 5 — one note per string
+  const roots = sorted.filter(n => n.isRoot);
+  const minorThirds = sorted.filter(n => n.interval === 3);
+  const fifths = sorted.filter(n => n.interval === 7);
+  // Build sweep from root on low string
+  for (const root of roots.slice(0, 2)) {
+    sweepNotes.push(root);
+    const third = minorThirds.find(n => n.string < root.string && Math.abs(n.fret - root.fret) <= 5);
+    if (third) sweepNotes.push(third);
+    const fifth = fifths.find(n => n.string < (third?.string ?? root.string) && Math.abs(n.fret - root.fret) <= 7);
+    if (fifth) sweepNotes.push(fifth);
+    // Octave
+    const octave = sorted.find(n => n.isRoot && n !== root && n.string < (fifth?.string ?? root.string));
+    if (octave) sweepNotes.push(octave);
+  }
+  return makeExercise('sweep-minor', sweepNotes.length >= 3 ? sweepNotes : sorted, sorted);
+}
+
+function generateSweepMajor(key: NoteName, scaleId: string, startFret: number, endFret: number): Exercise {
+  const notes = getScaleOnFretboard(key, scaleId, startFret, endFret);
+  const sorted = sortNotesAscending(dedupNotes(notes));
+  const sweepNotes: FretboardNote[] = [];
+  // Major triad: R, 3, 5 — one note per string
+  const roots = sorted.filter(n => n.isRoot);
+  const majorThirds = sorted.filter(n => n.interval === 4);
+  const fifths = sorted.filter(n => n.interval === 7);
+  for (const root of roots.slice(0, 2)) {
+    sweepNotes.push(root);
+    const third = majorThirds.find(n => n.string < root.string && Math.abs(n.fret - root.fret) <= 5);
+    if (third) sweepNotes.push(third);
+    const fifth = fifths.find(n => n.string < (third?.string ?? root.string) && Math.abs(n.fret - root.fret) <= 7);
+    if (fifth) sweepNotes.push(fifth);
+    const octave = sorted.find(n => n.isRoot && n !== root && n.string < (fifth?.string ?? root.string));
+    if (octave) sweepNotes.push(octave);
+  }
+  return makeExercise('sweep-major', sweepNotes.length >= 3 ? sweepNotes : sorted, sorted);
+}
+
+// ─── LEGATO GENERATORS ───
+
+function generateLegatoHammerAsc(key: NoteName, scaleId: string, startFret: number, endFret: number): Exercise {
+  const notes = getScaleOnFretboard(key, scaleId, startFret, endFret);
+  const byString: Map<number, FretboardNote[]> = new Map();
+  for (const note of notes) {
+    if (!byString.has(note.string)) byString.set(note.string, []);
+    byString.get(note.string)!.push(note);
+  }
+  const legatoNotes: FretboardNote[] = [];
+  for (let s = 5; s >= 0; s--) {
+    const stringNotes = byString.get(s);
+    if (stringNotes && stringNotes.length >= 2) {
+      const sSorted = [...stringNotes].sort((a, b) => a.fret - b.fret);
+      // Hammer-on: pick lowest, hammer to each higher note
+      for (let i = 0; i < sSorted.length - 1; i++) {
+        legatoNotes.push(sSorted[i]);
+        legatoNotes.push(sSorted[i + 1]);
+      }
+    }
+  }
+  const sorted = sortNotesAscending(dedupNotes(notes));
+  return makeExercise('legato-hammer-asc', legatoNotes.length >= 3 ? legatoNotes : sorted, sorted);
+}
+
+function generateLegatoHammerDesc(key: NoteName, scaleId: string, startFret: number, endFret: number): Exercise {
+  const notes = getScaleOnFretboard(key, scaleId, startFret, endFret);
+  const byString: Map<number, FretboardNote[]> = new Map();
+  for (const note of notes) {
+    if (!byString.has(note.string)) byString.set(note.string, []);
+    byString.get(note.string)!.push(note);
+  }
+  const legatoNotes: FretboardNote[] = [];
+  for (let s = 0; s <= 5; s++) {
+    const stringNotes = byString.get(s);
+    if (stringNotes && stringNotes.length >= 2) {
+      const sSorted = [...stringNotes].sort((a, b) => b.fret - a.fret);
+      for (let i = 0; i < sSorted.length - 1; i++) {
+        legatoNotes.push(sSorted[i]);
+        legatoNotes.push(sSorted[i + 1]);
+      }
+    }
+  }
+  const sorted = sortNotesAscending(dedupNotes(notes));
+  return makeExercise('legato-hammer-desc', legatoNotes.length >= 3 ? legatoNotes : sorted, sorted);
+}
+
+function generateLegatoPullAsc(key: NoteName, scaleId: string, startFret: number, endFret: number): Exercise {
+  const notes = getScaleOnFretboard(key, scaleId, startFret, endFret);
+  const byString: Map<number, FretboardNote[]> = new Map();
+  for (const note of notes) {
+    if (!byString.has(note.string)) byString.set(note.string, []);
+    byString.get(note.string)!.push(note);
+  }
+  const legatoNotes: FretboardNote[] = [];
+  for (let s = 5; s >= 0; s--) {
+    const stringNotes = byString.get(s);
+    if (stringNotes && stringNotes.length >= 2) {
+      const sSorted = [...stringNotes].sort((a, b) => a.fret - b.fret);
+      // Pull-off: pick highest, pull to each lower note
+      for (let i = sSorted.length - 1; i > 0; i--) {
+        legatoNotes.push(sSorted[i]);
+        legatoNotes.push(sSorted[i - 1]);
+      }
+    }
+  }
+  const sorted = sortNotesAscending(dedupNotes(notes));
+  return makeExercise('legato-pull-asc', legatoNotes.length >= 3 ? legatoNotes : sorted, sorted);
+}
+
+function generateLegatoPullDesc(key: NoteName, scaleId: string, startFret: number, endFret: number): Exercise {
+  const notes = getScaleOnFretboard(key, scaleId, startFret, endFret);
+  const byString: Map<number, FretboardNote[]> = new Map();
+  for (const note of notes) {
+    if (!byString.has(note.string)) byString.set(note.string, []);
+    byString.get(note.string)!.push(note);
+  }
+  const legatoNotes: FretboardNote[] = [];
+  for (let s = 0; s <= 5; s++) {
+    const stringNotes = byString.get(s);
+    if (stringNotes && stringNotes.length >= 2) {
+      const sSorted = [...stringNotes].sort((a, b) => b.fret - a.fret);
+      for (let i = sSorted.length - 1; i > 0; i--) {
+        legatoNotes.push(sSorted[i]);
+        legatoNotes.push(sSorted[i - 1]);
+      }
+    }
+  }
+  const sorted = sortNotesAscending(dedupNotes(notes));
+  return makeExercise('legato-pull-desc', legatoNotes.length >= 3 ? legatoNotes : sorted, sorted);
+}
+
+function generateLegatoTrill(key: NoteName, scaleId: string, startFret: number, endFret: number): Exercise {
+  const notes = getScaleOnFretboard(key, scaleId, startFret, endFret);
+  const byString: Map<number, FretboardNote[]> = new Map();
+  for (const note of notes) {
+    if (!byString.has(note.string)) byString.set(note.string, []);
+    byString.get(note.string)!.push(note);
+  }
+  const trillNotes: FretboardNote[] = [];
+  for (let s = 5; s >= 0; s--) {
+    const stringNotes = byString.get(s);
+    if (stringNotes && stringNotes.length >= 2) {
+      const sSorted = [...stringNotes].sort((a, b) => a.fret - b.fret);
+      // Trill between adjacent notes: hammer-pull-hammer-pull
+      const low = sSorted[0];
+      const high = sSorted[1];
+      for (let rep = 0; rep < 3; rep++) {
+        trillNotes.push(low);
+        trillNotes.push(high);
+        trillNotes.push(high);
+        trillNotes.push(low);
+      }
+    }
+  }
+  const sorted = sortNotesAscending(dedupNotes(notes));
+  return makeExercise('legato-trill', trillNotes.length >= 3 ? trillNotes : sorted, sorted);
+}
+
+// ─── POSITION SHIFTING GENERATORS ───
+
+function generatePositionShiftN(key: NoteName, scaleId: string, shiftAmount: number, type: ExerciseType): Exercise {
+  const positions = getCAGEDPositions(key, scaleId);
+  const shiftNotes: FretboardNote[] = [];
+  for (let i = 0; i < positions.length; i++) {
+    const posNotes = getScaleInPosition(key, scaleId, positions[i]);
+    const sorted = sortNotesAscending(posNotes);
+    shiftNotes.push(...sorted.slice(0, 3));
+    // Add shift note from next position
+    if (i + 1 < positions.length) {
+      const nextPosNotes = getScaleInPosition(key, scaleId, positions[i + 1]);
+      const nextSorted = sortNotesAscending(nextPosNotes);
+      // Find a note that is shiftAmount frets away
+      const shiftTarget = nextSorted.find(n => Math.abs(n.fret - sorted[0]?.fret) <= shiftAmount + 1);
+      if (shiftTarget) shiftNotes.push(shiftTarget);
+    }
+  }
+  const allNotes = getScaleOnFretboard(key, scaleId, 0, FRET_COUNT);
+  const sorted = sortNotesAscending(dedupNotes(allNotes));
+  return makeExercise(type, shiftNotes, sorted);
+}
+
+// ─── SCALE PATTERN GENERATORS ───
+
+function generateScale2NPS(key: NoteName, scaleId: string, startFret: number, endFret: number): Exercise {
+  const notes = getScaleOnFretboard(key, scaleId, startFret, endFret);
+  const byString: Map<number, FretboardNote[]> = new Map();
+  for (const note of notes) {
+    if (!byString.has(note.string)) byString.set(note.string, []);
+    byString.get(note.string)!.push(note);
+  }
+  const npsNotes: FretboardNote[] = [];
+  for (let s = 5; s >= 0; s--) {
+    const stringNotes = byString.get(s);
+    if (stringNotes) {
+      const sSorted = [...stringNotes].sort((a, b) => a.fret - b.fret);
+      npsNotes.push(...sSorted.slice(0, 2));
+    }
+  }
+  const sorted = sortNotesAscending(dedupNotes(notes));
+  return makeExercise('scale-2nps', npsNotes, sorted);
+}
+
+function generateScale4NPS(key: NoteName, scaleId: string, startFret: number, endFret: number): Exercise {
+  const notes = getScaleOnFretboard(key, scaleId, startFret, endFret);
+  const byString: Map<number, FretboardNote[]> = new Map();
+  for (const note of notes) {
+    if (!byString.has(note.string)) byString.set(note.string, []);
+    byString.get(note.string)!.push(note);
+  }
+  const npsNotes: FretboardNote[] = [];
+  for (let s = 5; s >= 0; s--) {
+    const stringNotes = byString.get(s);
+    if (stringNotes) {
+      const sSorted = [...stringNotes].sort((a, b) => a.fret - b.fret);
+      npsNotes.push(...sSorted.slice(0, 4));
+    }
+  }
+  const sorted = sortNotesAscending(dedupNotes(notes));
+  return makeExercise('scale-4nps', npsNotes, sorted);
+}
+
+function generateScaleOffsetRun(key: NoteName, scaleId: string, startFret: number, endFret: number): Exercise {
+  const notes = getScaleOnFretboard(key, scaleId, startFret, endFret);
+  const sorted = sortNotesAscending(dedupNotes(notes));
+  const offsetNotes: FretboardNote[] = [];
+  const scale = SCALES[scaleId];
+  if (!scale) return makeExercise('scale-offset-run', sorted, sorted);
+  // Start run from each scale degree
+  const intervalCount = scale.intervals.length;
+  for (let offset = 0; offset < intervalCount; offset++) {
+    const startInterval = scale.intervals[offset];
+    const startNote = sorted.find(n => n.interval === startInterval);
+    if (startNote) {
+      const startIdx = sorted.indexOf(startNote);
+      // Play a few notes from this starting point
+      for (let j = 0; j < 3 && startIdx + j < sorted.length; j++) {
+        offsetNotes.push(sorted[startIdx + j]);
+      }
+    }
+  }
+  return makeExercise('scale-offset-run', offsetNotes, sorted);
+}
+
+function generateScaleSpiral(key: NoteName, scaleId: string, startFret: number, endFret: number): Exercise {
+  const notes = getScaleOnFretboard(key, scaleId, startFret, endFret);
+  const sorted = sortNotesAscending(dedupNotes(notes));
+  const spiralNotes: FretboardNote[] = [];
+  // Spiral: go up one string, move to next string, go up again
+  const byString: Map<number, FretboardNote[]> = new Map();
+  for (const note of sorted) {
+    if (!byString.has(note.string)) byString.set(note.string, []);
+    byString.get(note.string)!.push(note);
+  }
+  let fretOffset = 0;
+  for (let s = 5; s >= 0; s--) {
+    const stringNotes = byString.get(s);
+    if (stringNotes) {
+      const sSorted = [...stringNotes].sort((a, b) => a.fret - b.fret);
+      // Pick notes with ascending fret positions
+      const targetFret = startFret + fretOffset;
+      const closest = sSorted.reduce((best, n) => {
+        if (!best) return n;
+        return Math.abs(n.fret - targetFret) < Math.abs(best.fret - targetFret) ? n : best;
+      }, null as FretboardNote | null);
+      if (closest) spiralNotes.push(closest);
+      fretOffset += 2;
+    }
+  }
+  return makeExercise('scale-spiral', spiralNotes.length >= 3 ? spiralNotes : sorted, sorted);
+}
+
+function generateScaleBoxRun(key: NoteName, scaleId: string): Exercise {
+  const positions = getCAGEDPositions(key, scaleId);
+  const boxNotes: FretboardNote[] = [];
+  for (let i = 0; i < positions.length - 1; i++) {
+    const pos1Notes = getScaleInPosition(key, scaleId, positions[i]);
+    const pos2Notes = getScaleInPosition(key, scaleId, positions[i + 1]);
+    const sorted1 = sortNotesAscending(pos1Notes);
+    const sorted2 = sortNotesAscending(pos2Notes);
+    // Last few notes of position 1
+    boxNotes.push(...sorted1.slice(-3));
+    // First few notes of position 2
+    boxNotes.push(...sorted2.slice(0, 3));
+  }
+  const allNotes = getScaleOnFretboard(key, scaleId, 0, FRET_COUNT);
+  const sorted = sortNotesAscending(dedupNotes(allNotes));
+  return makeExercise('scale-box-run', boxNotes, sorted);
+}
+
+// ─── INTERVAL STUDY GENERATORS ───
+
+function generateIntervalsOctave(key: NoteName, scaleId: string, startFret: number, endFret: number): Exercise {
+  const notes = getScaleOnFretboard(key, scaleId, startFret, endFret);
+  const sorted = sortNotesAscending(dedupNotes(notes));
+  const octaveNotes: FretboardNote[] = [];
+  // Find all octave pairs (same note name, different string/fret)
+  const byNoteName: Map<string, FretboardNote[]> = new Map();
+  for (const n of sorted) {
+    if (!byNoteName.has(n.note)) byNoteName.set(n.note, []);
+    byNoteName.get(n.note)!.push(n);
+  }
+  byNoteName.forEach((noteList) => {
+    if (noteList.length >= 2) {
+      // Find pairs that are approximately an octave apart (fret diff ~12 or string diff ~2)
+      for (let i = 0; i < noteList.length - 1; i++) {
+        for (let j = i + 1; j < noteList.length; j++) {
+          const fretDiff = Math.abs(noteList[j].fret - noteList[i].fret);
+          const stringDiff = Math.abs(noteList[j].string - noteList[i].string);
+          if ((fretDiff >= 10 && fretDiff <= 14) || (stringDiff >= 2 && stringDiff <= 3 && fretDiff <= 3)) {
+            octaveNotes.push(noteList[i]);
+            octaveNotes.push(noteList[j]);
+          }
+        }
+      }
+    }
+  });
+  return makeExercise('intervals-octave', octaveNotes.length >= 3 ? octaveNotes : sorted, sorted);
+}
+
+function generateIntervalsTritone(key: NoteName, scaleId: string, startFret: number, endFret: number): Exercise {
+  return generateIntervalN(key, scaleId, startFret, endFret, 6, 'intervals-tritone');
+}
+
+function generateIntervalsCompound(key: NoteName, scaleId: string, startFret: number, endFret: number): Exercise {
+  const notes = getScaleOnFretboard(key, scaleId, startFret, endFret);
+  const sorted = sortNotesAscending(dedupNotes(notes));
+  const compoundNotes: FretboardNote[] = [];
+  // Compound intervals: 9th, 11th, 13th (octave + 2nd, 4th, 6th)
+  const compoundIntervals = [2, 5, 9]; // semitone values for 9th, 11th, 13th relative to root
+  const roots = sorted.filter(n => n.isRoot);
+  for (const root of roots.slice(0, 2)) {
+    for (const ci of compoundIntervals) {
+      compoundNotes.push(root);
+      const target = sorted.find(n =>
+        n.interval === ci &&
+        n !== root &&
+        (5 - n.string) * 5 + n.fret > (5 - root.string) * 5 + root.fret + 10 // Must be beyond octave
+      );
+      if (target) compoundNotes.push(target);
+    }
+  }
+  return makeExercise('intervals-compound', compoundNotes.length >= 3 ? compoundNotes : sorted, sorted);
+}
+
+function generateIntervalsChromatic(key: NoteName, scaleId: string, startFret: number, endFret: number): Exercise {
+  const rootIndex = NOTES.indexOf(key);
+  const chromNotes: FretboardNote[] = [];
+  // Walk through all 12 chromatic intervals from the root
+  for (let semitone = 1; semitone <= 11; semitone++) {
+    const targetNoteIdx = (rootIndex + semitone) % 12;
+    const targetNote = NOTES[targetNoteIdx];
+    // Find this note on the fretboard near startFret
+    let found = false;
+    for (let s = 5; s >= 0 && !found; s--) {
+      const openNote = STRING_OPEN_NOTES[s];
+      const openIdx = NOTES.indexOf(openNote);
+      for (let f = startFret; f <= endFret; f++) {
+        const noteIdx = (openIdx + f) % 12;
+        if (noteIdx === targetNoteIdx) {
+          const intervalFromRoot = (noteIdx - rootIndex + 12) % 12;
+          chromNotes.push({
+            string: s, fret: f, note: NOTES[noteIdx],
+            interval: intervalFromRoot, intervalLabel: intervalFromRoot === 0 ? 'R' : `${intervalFromRoot}`,
+            isRoot: intervalFromRoot === 0,
+          });
+          found = true;
+          break;
+        }
+      }
+    }
+  }
+  const allNotes = getScaleOnFretboard(key, scaleId, startFret, endFret);
+  const sorted = sortNotesAscending(dedupNotes(allNotes));
+  return makeExercise('intervals-chromatic', chromNotes.length >= 3 ? chromNotes : sorted, sorted);
+}
+
+// ─── ARPEGGIO STUDY GENERATORS ───
+
+function generateArpByIntervals(key: NoteName, scaleId: string, startFret: number, endFret: number, intervals: number[], type: ExerciseType): Exercise {
+  const notes = getScaleOnFretboard(key, scaleId, startFret, endFret);
+  const sorted = sortNotesAscending(dedupNotes(notes));
+  const arpNotes: FretboardNote[] = [];
+  const rootIndex = NOTES.indexOf(key);
+  // Find root note
+  const roots = sorted.filter(n => n.isRoot);
+  for (const root of roots.slice(0, 2)) {
+    for (const interval of intervals) {
+      const targetInterval = (root.interval + interval) % 12;
+      const match = sorted.find(n =>
+        n.interval === targetInterval &&
+        (5 - n.string) * 5 + n.fret >= (5 - root.string) * 5 + root.fret - 2 &&
+        Math.abs(n.string - root.string) <= 4
+      );
+      if (match) arpNotes.push(match);
+    }
+  }
+  // If too few notes, also search by building from chromatic
+  if (arpNotes.length < 3) {
+    arpNotes.length = 0;
+    for (const root of roots.slice(0, 1)) {
+      for (const interval of intervals) {
+        const targetFret = root.fret + interval;
+        for (let s = root.string; s >= Math.max(0, root.string - 4); s--) {
+          const openNote = STRING_OPEN_NOTES[s];
+          const openIdx = NOTES.indexOf(openNote);
+          const rootOpenIdx = NOTES.indexOf(STRING_OPEN_NOTES[root.string]);
+          const fretOnString = targetFret - (rootOpenIdx - openIdx);
+          if (fretOnString >= startFret && fretOnString <= endFret && fretOnString >= 0) {
+            const noteIdx = (openIdx + fretOnString) % 12;
+            const intervalFromRoot = (noteIdx - rootIndex + 12) % 12;
+            arpNotes.push({
+              string: s, fret: fretOnString, note: NOTES[noteIdx],
+              interval: intervalFromRoot, intervalLabel: intervalFromRoot === 0 ? 'R' : `${intervalFromRoot}`,
+              isRoot: intervalFromRoot === 0,
+            });
+            break;
+          }
+        }
+      }
+    }
+  }
+  return makeExercise(type, arpNotes.length >= 3 ? arpNotes : sorted, sorted);
+}
+
+// ─── RHYTHM GENERATORS ───
+
+function generateRhythmGallop(key: NoteName, scaleId: string, startFret: number, endFret: number): Exercise {
+  const notes = getScaleOnFretboard(key, scaleId, startFret, endFret);
+  const sorted = sortNotesAscending(dedupNotes(notes));
+  const gallopNotes: FretboardNote[] = [];
+  // Gallop: long-short-short pattern (8th-16th-16th)
+  for (let i = 0; i < sorted.length; i++) {
+    gallopNotes.push(sorted[i]); // Long
+    if (i + 1 < sorted.length) {
+      gallopNotes.push(sorted[i + 1]); // Short
+      gallopNotes.push(sorted[i + 1]); // Short (repeat for rhythm feel)
+    }
+  }
+  return makeExercise('rhythm-gallop', gallopNotes, sorted);
+}
+
+function generateRhythmTriplet(key: NoteName, scaleId: string, startFret: number, endFret: number): Exercise {
+  const notes = getScaleOnFretboard(key, scaleId, startFret, endFret);
+  const sorted = sortNotesAscending(dedupNotes(notes));
+  const tripletNotes: FretboardNote[] = [];
+  // Triplet feel: group notes in threes
+  for (let i = 0; i < sorted.length; i += 3) {
+    if (i < sorted.length) tripletNotes.push(sorted[i]);
+    if (i + 1 < sorted.length) tripletNotes.push(sorted[i + 1]);
+    if (i + 2 < sorted.length) tripletNotes.push(sorted[i + 2]);
+    // Repeat the last note for emphasis
+    if (i + 2 < sorted.length) tripletNotes.push(sorted[i + 2]);
+  }
+  return makeExercise('rhythm-triplet', tripletNotes, sorted);
+}
+
+function generateRhythmDotted(key: NoteName, scaleId: string, startFret: number, endFret: number): Exercise {
+  const notes = getScaleOnFretboard(key, scaleId, startFret, endFret);
+  const sorted = sortNotesAscending(dedupNotes(notes));
+  const dottedNotes: FretboardNote[] = [];
+  // Dotted rhythm: long-short (dotted quarter + eighth)
+  for (let i = 0; i < sorted.length; i += 2) {
+    dottedNotes.push(sorted[i]);
+    dottedNotes.push(sorted[i]); // Hold (repeat for long note)
+    if (i + 1 < sorted.length) dottedNotes.push(sorted[i + 1]); // Short
+  }
+  return makeExercise('rhythm-dotted', dottedNotes, sorted);
+}
+
+// ─── BENDING & EXPRESSION GENERATORS ───
+
+function generateBendRelease(key: NoteName, scaleId: string, startFret: number, endFret: number): Exercise {
+  const notes = getScaleOnFretboard(key, scaleId, startFret, endFret);
+  const sorted = sortNotesAscending(dedupNotes(notes));
+  const bendNotes: FretboardNote[] = [];
+  for (let i = 0; i < sorted.length - 2; i++) {
+    // Find notes where bending up 2 frets reaches another scale note
+    const target = sorted.find(n => n.string === sorted[i].string && n.fret === sorted[i].fret + 2);
+    if (target) {
+      bendNotes.push(sorted[i]);   // Start note
+      bendNotes.push(target);       // Bend target
+      bendNotes.push(sorted[i]);    // Release back
+    }
+  }
+  return makeExercise('bend-release', bendNotes.length >= 3 ? bendNotes : sorted, sorted);
+}
+
+function generateBend1Step(key: NoteName, scaleId: string, startFret: number, endFret: number): Exercise {
+  const notes = getScaleOnFretboard(key, scaleId, startFret, endFret);
+  const sorted = sortNotesAscending(dedupNotes(notes));
+  const bendNotes: FretboardNote[] = [];
+  for (let i = 0; i < sorted.length; i++) {
+    // 1 step = 2 frets: find note 2 frets higher on same string
+    const target = sorted.find(n => n.string === sorted[i].string && n.fret === sorted[i].fret + 2);
+    if (target) {
+      bendNotes.push(sorted[i]);
+      bendNotes.push(target);
+    }
+  }
+  return makeExercise('bend-1step', bendNotes.length >= 3 ? bendNotes : sorted, sorted);
+}
+
+function generateBend1Half(key: NoteName, scaleId: string, startFret: number, endFret: number): Exercise {
+  const notes = getScaleOnFretboard(key, scaleId, startFret, endFret);
+  const sorted = sortNotesAscending(dedupNotes(notes));
+  const bendNotes: FretboardNote[] = [];
+  const rootIndex = NOTES.indexOf(key);
+  for (let i = 0; i < sorted.length; i++) {
+    // 1.5 steps = 3 frets
+    const targetFret = sorted[i].fret + 3;
+    if (targetFret <= endFret) {
+      const openNote = STRING_OPEN_NOTES[sorted[i].string];
+      const openIdx = NOTES.indexOf(openNote);
+      const noteIdx = (openIdx + targetFret) % 12;
+      const intervalFromRoot = (noteIdx - rootIndex + 12) % 12;
+      bendNotes.push(sorted[i]);
+      bendNotes.push({
+        string: sorted[i].string, fret: targetFret, note: NOTES[noteIdx],
+        interval: intervalFromRoot, intervalLabel: intervalFromRoot === 0 ? 'R' : `${intervalFromRoot}`,
+        isRoot: intervalFromRoot === 0,
+      });
+    }
+  }
+  return makeExercise('bend-1half', bendNotes.length >= 3 ? bendNotes : sorted, sorted);
+}
+
+// ─── HARMONICS GENERATORS ───
+
+function generateHarmonicsTap(key: NoteName, scaleId: string, startFret: number, endFret: number): Exercise {
+  const notes = getScaleOnFretboard(key, scaleId, startFret, endFret);
+  const sorted = sortNotesAscending(dedupNotes(notes));
+  const tapNotes: FretboardNote[] = [];
+  const rootIndex = NOTES.indexOf(key);
+  for (const note of sorted) {
+    // Tapped harmonic: tap 12 frets above the fretted note
+    const tapFret = note.fret + 12;
+    if (tapFret <= endFret && tapFret <= FRET_COUNT) {
+      tapNotes.push(note); // Fretted note
+      const openNote = STRING_OPEN_NOTES[note.string];
+      const openIdx = NOTES.indexOf(openNote);
+      const noteIdx = (openIdx + tapFret) % 12;
+      const intervalFromRoot = (noteIdx - rootIndex + 12) % 12;
+      tapNotes.push({
+        string: note.string, fret: tapFret, note: NOTES[noteIdx],
+        interval: intervalFromRoot, intervalLabel: intervalFromRoot === 0 ? 'R' : `${intervalFromRoot}`,
+        isRoot: intervalFromRoot === 0,
+      });
+    }
+  }
+  return makeExercise('harmonics-tap', tapNotes.length >= 3 ? tapNotes : sorted, sorted);
+}
+
+function generateHarmonicsPinchScale(key: NoteName, scaleId: string, startFret: number, endFret: number): Exercise {
+  const notes = getScaleOnFretboard(key, scaleId, startFret, endFret);
+  const sorted = sortNotesAscending(dedupNotes(notes));
+  // Pinch harmonics along the scale — emphasize root, 3rd, 5th positions
+  const pinchNotes = sorted.filter(n => n.isRoot || n.interval === 3 || n.interval === 4 || n.interval === 7);
+  // Double each pinch note for emphasis
+  const doubled: FretboardNote[] = [];
+  for (const n of pinchNotes) {
+    doubled.push(n);
+    doubled.push(n);
+  }
+  return makeExercise('harmonics-pinch-scale', doubled.length >= 3 ? doubled : sorted, sorted);
+}
+
+// ─── TAPPING GENERATORS ───
+
+function generateTap8Finger(key: NoteName, scaleId: string, startFret: number, endFret: number): Exercise {
+  const notes = getScaleOnFretboard(key, scaleId, startFret, endFret);
+  const sorted = sortNotesAscending(dedupNotes(notes));
+  const byString: Map<number, FretboardNote[]> = new Map();
+  for (const note of sorted) {
+    if (!byString.has(note.string)) byString.set(note.string, []);
+    byString.get(note.string)!.push(note);
+  }
+  const tapNotes: FretboardNote[] = [];
+  // 8-finger tapping: 4 left hand notes + 4 right hand tap notes
+  for (let s = 5; s >= 2; s -= 2) {
+    const lowStringNotes = byString.get(s);
+    const highStringNotes = byString.get(s - 1);
+    if (lowStringNotes && highStringNotes) {
+      const lowSorted = [...lowStringNotes].sort((a, b) => a.fret - b.fret);
+      const highSorted = [...highStringNotes].sort((a, b) => a.fret - b.fret);
+      // Left hand: first 2 notes on each string
+      if (lowSorted.length >= 2) { tapNotes.push(lowSorted[0]); tapNotes.push(lowSorted[1]); }
+      // Right hand tap: highest notes
+      if (highSorted.length >= 2) { tapNotes.push(highSorted[highSorted.length - 1]); tapNotes.push(highSorted[highSorted.length - 2]); }
+    }
+  }
+  return makeExercise('tap-8finger', tapNotes.length >= 3 ? tapNotes : sorted, sorted);
+}
+
+function generateTapSweep(key: NoteName, scaleId: string, startFret: number, endFret: number): Exercise {
+  const notes = getScaleOnFretboard(key, scaleId, startFret, endFret);
+  const sorted = sortNotesAscending(dedupNotes(notes));
+  const byString: Map<number, FretboardNote[]> = new Map();
+  for (const note of sorted) {
+    if (!byString.has(note.string)) byString.set(note.string, []);
+    byString.get(note.string)!.push(note);
+  }
+  const tapNotes: FretboardNote[] = [];
+  // Sweep down with left hand
+  for (let s = 5; s >= 0; s--) {
+    const stringNotes = byString.get(s);
+    if (stringNotes) {
+      const sSorted = [...stringNotes].sort((a, b) => a.fret - b.fret);
+      tapNotes.push(sSorted[0]); // Lowest note per string (sweep)
+    }
+  }
+  // Tap on highest string
+  const highStringNotes = byString.get(0);
+  if (highStringNotes) {
+    const hSorted = [...highStringNotes].sort((a, b) => b.fret - a.fret);
+    if (hSorted.length > 1) tapNotes.push(hSorted[0]); // Tap note
+  }
+  // Sweep back up
+  for (let s = 0; s <= 5; s++) {
+    const stringNotes = byString.get(s);
+    if (stringNotes) {
+      const sSorted = [...stringNotes].sort((a, b) => a.fret - b.fret);
+      tapNotes.push(sSorted[0]);
+    }
+  }
+  return makeExercise('tap-sweep', tapNotes, sorted);
+}
+
+function generateTapTapPull(key: NoteName, scaleId: string, startFret: number, endFret: number): Exercise {
+  const notes = getScaleOnFretboard(key, scaleId, startFret, endFret);
+  const sorted = sortNotesAscending(dedupNotes(notes));
+  const byString: Map<number, FretboardNote[]> = new Map();
+  for (const note of sorted) {
+    if (!byString.has(note.string)) byString.set(note.string, []);
+    byString.get(note.string)!.push(note);
+  }
+  const tapNotes: FretboardNote[] = [];
+  for (let s = 5; s >= 0; s--) {
+    const stringNotes = byString.get(s);
+    if (stringNotes && stringNotes.length >= 3) {
+      const sSorted = [...stringNotes].sort((a, b) => a.fret - b.fret);
+      // Tap highest, pull to middle, pull to lowest
+      tapNotes.push(sSorted[sSorted.length - 1]); // Tap
+      tapNotes.push(sSorted[1]); // Pull-off
+      tapNotes.push(sSorted[0]); // Pull-off
+    }
+  }
+  return makeExercise('tap-tap-pull', tapNotes.length >= 3 ? tapNotes : sorted, sorted);
+}
+
+// ─── BLUES GENERATORS ───
+
+function generateBluesLick1(key: NoteName, scaleId: string, startFret: number, endFret: number): Exercise {
+  const notes = getScaleOnFretboard(key, scaleId, startFret, endFret);
+  const sorted = sortNotesAscending(dedupNotes(notes));
+  const lickNotes: FretboardNote[] = [];
+  // Classic blues lick: root, b3rd bend to 3rd, root, 5th, b7th
+  const roots = sorted.filter(n => n.isRoot);
+  const minorThirds = sorted.filter(n => n.interval === 3);
+  const majorThirds = sorted.filter(n => n.interval === 4);
+  const fifths = sorted.filter(n => n.interval === 7);
+  const minorSevenths = sorted.filter(n => n.interval === 10);
+  for (const root of roots.slice(0, 2)) {
+    lickNotes.push(root);
+    const b3 = minorThirds.find(n => n.string === root.string && n.fret > root.fret);
+    if (b3) lickNotes.push(b3);
+    const m3 = majorThirds.find(n => n.string === root.string && n.fret > root.fret);
+    if (m3) lickNotes.push(m3);
+    lickNotes.push(root);
+    const fifth = fifths.find(n => Math.abs(n.string - root.string) <= 2 && n.fret >= root.fret);
+    if (fifth) lickNotes.push(fifth);
+    const b7 = minorSevenths.find(n => Math.abs(n.string - root.string) <= 3 && n.fret >= root.fret);
+    if (b7) lickNotes.push(b7);
+  }
+  return makeExercise('blues-lick-1', lickNotes.length >= 3 ? lickNotes : sorted, sorted);
+}
+
+function generateBluesLick2(key: NoteName, scaleId: string, startFret: number, endFret: number): Exercise {
+  const notes = getScaleOnFretboard(key, scaleId, startFret, endFret);
+  const sorted = sortNotesAscending(dedupNotes(notes));
+  const lickNotes: FretboardNote[] = [];
+  // Blues lick with double stops: play adjacent string pairs
+  for (let s = 5; s >= 1; s--) {
+    const lowerNotes = sorted.filter(n => n.string === s);
+    const higherNotes = sorted.filter(n => n.string === s - 1);
+    for (const ln of lowerNotes.slice(0, 2)) {
+      const closest = higherNotes.reduce((best: FretboardNote | null, hn) => {
+        if (Math.abs(hn.fret - ln.fret) <= 2) {
+          if (!best || Math.abs(hn.fret - ln.fret) < Math.abs(best.fret - ln.fret)) return hn;
+        }
+        return best;
+      }, null);
+      if (closest) {
+        lickNotes.push(ln);
+        lickNotes.push(closest);
+        // Then slide up
+        const slideUp = lowerNotes.find(n => n.fret > ln.fret);
+        if (slideUp) lickNotes.push(slideUp);
+      }
+    }
+  }
+  return makeExercise('blues-lick-2', lickNotes.length >= 3 ? lickNotes : sorted, sorted);
+}
+
+function generateBluesTurnaround(key: NoteName, scaleId: string, startFret: number, endFret: number): Exercise {
+  const notes = getScaleOnFretboard(key, scaleId, startFret, endFret);
+  const sorted = sortNotesAscending(dedupNotes(notes));
+  const turnaroundNotes: FretboardNote[] = [];
+  // Classic turnaround: walk down from root through b7, 5, b3, root on high strings
+  const roots = sorted.filter(n => n.isRoot);
+  const minorSevenths = sorted.filter(n => n.interval === 10);
+  const fifths = sorted.filter(n => n.interval === 7);
+  const minorThirds = sorted.filter(n => n.interval === 3);
+  // Descending pattern
+  const highRoots = roots.filter(n => n.string <= 2);
+  if (highRoots.length > 0) {
+    const root = highRoots[0];
+    turnaroundNotes.push(root);
+    const b7 = minorSevenths.find(n => (5 - n.string) * 5 + n.fret < (5 - root.string) * 5 + root.fret);
+    if (b7) turnaroundNotes.push(b7);
+    const fifth = fifths.find(n => (5 - n.string) * 5 + n.fret < (5 - (b7?.string ?? root.string)) * 5 + (b7?.fret ?? root.fret));
+    if (fifth) turnaroundNotes.push(fifth);
+    const b3 = minorThirds.find(n => (5 - n.string) * 5 + n.fret < (5 - (fifth?.string ?? root.string)) * 5 + (fifth?.fret ?? root.fret));
+    if (b3) turnaroundNotes.push(b3);
+    // End on root
+    const endRoot = roots.find(n => (5 - n.string) * 5 + n.fret < (5 - (b3?.string ?? root.string)) * 5 + (b3?.fret ?? root.fret));
+    if (endRoot) turnaroundNotes.push(endRoot);
+  }
+  return makeExercise('blues-turnaround', turnaroundNotes.length >= 3 ? turnaroundNotes : sorted, sorted);
+}
+
+// ─── FRETBOARD KNOWLEDGE GENERATORS ───
+
+function generateCagedShapes(key: NoteName, scaleId: string): Exercise {
+  const positions = getCAGEDPositions(key, scaleId);
+  const shapeNotes: FretboardNote[] = [];
+  for (const pos of positions) {
+    const posNotes = getScaleInPosition(key, scaleId, pos);
+    const sorted = sortNotesAscending(posNotes);
+    // Find chord tones (root, 3rd, 5th) in this position
+    const chordTones = sorted.filter(n => n.isRoot || n.interval === 3 || n.interval === 4 || n.interval === 7);
+    shapeNotes.push(...chordTones.slice(0, 5));
+  }
+  const allNotes = getScaleOnFretboard(key, scaleId, 0, FRET_COUNT);
+  const sorted = sortNotesAscending(dedupNotes(allNotes));
+  return makeExercise('caged-shapes', shapeNotes, sorted);
+}
+
+function generateNoteTriplets(key: NoteName, scaleId: string, startFret: number, endFret: number): Exercise {
+  const rootIndex = NOTES.indexOf(key);
+  const tripletNotes: FretboardNote[] = [];
+  // Find each scale note on 3 different strings
+  const scale = SCALES[scaleId];
+  if (!scale) {
+    const allNotes = getScaleOnFretboard(key, scaleId, startFret, endFret);
+    return makeExercise('note-triplets', sortNotesAscending(dedupNotes(allNotes)), sortNotesAscending(dedupNotes(allNotes)));
+  }
+  for (const interval of scale.intervals) {
+    const targetNoteIdx = (rootIndex + interval) % 12;
+    const targetNote = NOTES[targetNoteIdx];
+    const locations: FretboardNote[] = [];
+    for (let s = 5; s >= 0 && locations.length < 3; s--) {
+      const openNote = STRING_OPEN_NOTES[s];
+      const openIdx = NOTES.indexOf(openNote);
+      for (let f = startFret; f <= endFret && locations.length < 3; f++) {
+        const noteIdx = (openIdx + f) % 12;
+        if (noteIdx === targetNoteIdx) {
+          const intervalFromRoot = (noteIdx - rootIndex + 12) % 12;
+          locations.push({
+            string: s, fret: f, note: targetNote,
+            interval: intervalFromRoot, intervalLabel: intervalFromRoot === 0 ? 'R' : `${intervalFromRoot}`,
+            isRoot: intervalFromRoot === 0,
+          });
+        }
+      }
+    }
+    tripletNotes.push(...locations.slice(0, 3));
+  }
+  const allNotes = getScaleOnFretboard(key, scaleId, startFret, endFret);
+  const sorted = sortNotesAscending(dedupNotes(allNotes));
+  return makeExercise('note-triplets', tripletNotes.length >= 3 ? tripletNotes : sorted, sorted);
+}
+
+function generateRelativeNote(key: NoteName, scaleId: string, startFret: number, endFret: number): Exercise {
+  const rootIndex = NOTES.indexOf(key);
+  const relNotes: FretboardNote[] = [];
+  // Find the relative minor (3 semitones down) or relative major (3 semitones up)
+  const relativeIdx = (rootIndex + 3) % 12;
+  const relativeNote = NOTES[relativeIdx];
+  // Find root note locations
+  for (let s = 5; s >= 0; s--) {
+    const openNote = STRING_OPEN_NOTES[s];
+    const openIdx = NOTES.indexOf(openNote);
+    for (let f = startFret; f <= endFret; f++) {
+      const noteIdx = (openIdx + f) % 12;
+      if (noteIdx === rootIndex) {
+        relNotes.push({
+          string: s, fret: f, note: key,
+          interval: 0, intervalLabel: 'R', isRoot: true,
+        });
+      }
+      if (noteIdx === relativeIdx) {
+        const intervalFromRoot = (noteIdx - rootIndex + 12) % 12;
+        relNotes.push({
+          string: s, fret: f, note: relativeNote,
+          interval: intervalFromRoot, intervalLabel: 'Rel', isRoot: false,
+        });
+      }
+    }
+  }
+  const allNotes = getScaleOnFretboard(key, scaleId, startFret, endFret);
+  const sorted = sortNotesAscending(dedupNotes(allNotes));
+  return makeExercise('relative-note', relNotes.length >= 3 ? relNotes : sorted, sorted);
+}
+
+function generateFretboardMap(key: NoteName, scaleId: string, startFret: number, endFret: number): Exercise {
+  const rootIndex = NOTES.indexOf(key);
+  const mapNotes: FretboardNote[] = [];
+  // Map all natural notes in the scale across the entire fretboard range
+  for (let s = 5; s >= 0; s--) {
+    const openNote = STRING_OPEN_NOTES[s];
+    const openIdx = NOTES.indexOf(openNote);
+    for (let f = startFret; f <= endFret; f++) {
+      const noteIdx = (openIdx + f) % 12;
+      const intervalFromRoot = (noteIdx - rootIndex + 12) % 12;
+      mapNotes.push({
+        string: s, fret: f, note: NOTES[noteIdx],
+        interval: intervalFromRoot, intervalLabel: intervalFromRoot === 0 ? 'R' : `${intervalFromRoot}`,
+        isRoot: intervalFromRoot === 0,
+      });
+    }
+  }
+  const allNotes = getScaleOnFretboard(key, scaleId, startFret, endFret);
+  const sorted = sortNotesAscending(dedupNotes(allNotes));
+  return makeExercise('fretboard-map', mapNotes.length >= 3 ? mapNotes : sorted, sorted);
+}
+
+// ─── SPEED & AGILITY GENERATORS ───
+
+function generateSpeedLadder(key: NoteName, scaleId: string, startFret: number, endFret: number): Exercise {
+  const notes = getScaleOnFretboard(key, scaleId, startFret, endFret);
+  const sorted = sortNotesAscending(dedupNotes(notes));
+  const ladderNotes: FretboardNote[] = [];
+  // Progressive speed: play 2 notes, then 3, then 4, then 5 etc.
+  for (let groupSize = 2; groupSize <= 5; groupSize++) {
+    for (let i = 0; i <= sorted.length - groupSize; i += groupSize) {
+      for (let j = 0; j < groupSize && i + j < sorted.length; j++) {
+        ladderNotes.push(sorted[i + j]);
+      }
+    }
+  }
+  return makeExercise('speed-ladder', ladderNotes.length >= 3 ? ladderNotes : sorted, sorted);
+}
+
+function generateSpeedBurst16th(key: NoteName, scaleId: string, startFret: number, endFret: number): Exercise {
+  const notes = getScaleOnFretboard(key, scaleId, startFret, endFret);
+  const sorted = sortNotesAscending(dedupNotes(notes));
+  const burstNotes: FretboardNote[] = [];
+  // 16th note bursts: groups of 4 rapid notes
+  for (let i = 0; i <= sorted.length - 4; i++) {
+    for (let j = 0; j < 4; j++) {
+      burstNotes.push(sorted[i + j]);
+    }
+    // Repeat the burst for emphasis
+    for (let j = 0; j < 4 && i + j < sorted.length; j++) {
+      burstNotes.push(sorted[i + j]);
+    }
+  }
+  return makeExercise('speed-burst-16th', burstNotes.length >= 3 ? burstNotes : sorted, sorted);
+}
+
+function generateSpeedTripletRun(key: NoteName, scaleId: string, startFret: number, endFret: number): Exercise {
+  const notes = getScaleOnFretboard(key, scaleId, startFret, endFret);
+  const sorted = sortNotesAscending(dedupNotes(notes));
+  const tripletNotes: FretboardNote[] = [];
+  // Triplet runs: 3-note groups shifting by one note
+  for (let i = 0; i <= sorted.length - 3; i++) {
+    tripletNotes.push(sorted[i]);
+    tripletNotes.push(sorted[i + 1]);
+    tripletNotes.push(sorted[i + 2]);
+  }
+  return makeExercise('speed-triplet-run', tripletNotes.length >= 3 ? tripletNotes : sorted, sorted);
+}
+
 // ─── MAIN GENERATOR ───
 
 export function generateExercise(
@@ -2666,6 +4142,101 @@ export function generateExercise(
     case 'chromatic-1423': return generateChromaticPattern(key, scaleId, startFret, endFret, [1, 4, 2, 3], 'chromatic-1423');
     case 'chromatic-2413': return generateChromaticPattern(key, scaleId, startFret, endFret, [2, 4, 1, 3], 'chromatic-2413');
     case 'finger-stretch': return generateFingerStretch(key, scaleId, startFret, endFret);
+
+    // ── New Chromatic Drills ──
+    case 'chromatic-2341': return generateChromaticPattern(key, scaleId, startFret, endFret, [2, 3, 4, 1], 'chromatic-2341');
+    case 'chromatic-3142': return generateChromaticPattern(key, scaleId, startFret, endFret, [3, 1, 4, 2], 'chromatic-3142');
+    case 'chromatic-4132': return generateChromaticPattern(key, scaleId, startFret, endFret, [4, 1, 3, 2], 'chromatic-4132');
+    case 'chromatic-3241': return generateChromaticPattern(key, scaleId, startFret, endFret, [3, 2, 4, 1], 'chromatic-3241');
+    case 'chromatic-desc-warmup': return generateChromaticDescWarmup(key, scaleId, startFret, endFret);
+    case 'chromatic-all-strings': return generateChromaticAllStrings(key, scaleId, startFret, endFret);
+
+    // ── Spider Exercises ──
+    case 'chromatic-spider-walk': return generateSpiderWalkClassic(key, scaleId, startFret, endFret);
+    case 'spider-cross-1': return generateSpiderCross(key, scaleId, startFret, endFret, 'asc');
+    case 'spider-cross-2': return generateSpiderCross(key, scaleId, startFret, endFret, 'desc');
+    case 'spider-inward': return generateSpiderInward(key, scaleId, startFret, endFret);
+    case 'spider-outward': return generateSpiderOutward(key, scaleId, startFret, endFret);
+
+    // ── String Crossing ──
+    case 'string-cross-asc': return generateStringCrossAsc(key, scaleId, startFret, endFret);
+    case 'string-cross-desc': return generateStringCrossDesc(key, scaleId, startFret, endFret);
+    case 'string-cross-skip': return generateStringCrossSkip(key, scaleId, startFret, endFret);
+    case 'string-cross-alternate': return generateStringCrossAlternate(key, scaleId, startFret, endFret);
+
+    // ── Sweep Picking ──
+    case 'sweep-3string': return generateSweepNString(key, scaleId, startFret, endFret, 3, 'sweep-3string');
+    case 'sweep-5string': return generateSweepNString(key, scaleId, startFret, endFret, 5, 'sweep-5string');
+    case 'sweep-minor': return generateSweepMinor(key, scaleId, startFret, endFret);
+    case 'sweep-major': return generateSweepMajor(key, scaleId, startFret, endFret);
+
+    // ── Legato ──
+    case 'legato-hammer-asc': return generateLegatoHammerAsc(key, scaleId, startFret, endFret);
+    case 'legato-hammer-desc': return generateLegatoHammerDesc(key, scaleId, startFret, endFret);
+    case 'legato-pull-asc': return generateLegatoPullAsc(key, scaleId, startFret, endFret);
+    case 'legato-pull-desc': return generateLegatoPullDesc(key, scaleId, startFret, endFret);
+    case 'legato-trill': return generateLegatoTrill(key, scaleId, startFret, endFret);
+
+    // ── Position Shifting ──
+    case 'pos-shift-1-fret': return generatePositionShiftN(key, scaleId, 1, 'pos-shift-1-fret');
+    case 'pos-shift-2-fret': return generatePositionShiftN(key, scaleId, 2, 'pos-shift-2-fret');
+    case 'pos-shift-3-fret': return generatePositionShiftN(key, scaleId, 3, 'pos-shift-3-fret');
+
+    // ── Scale Patterns ──
+    case 'scale-2nps': return generateScale2NPS(key, scaleId, startFret, endFret);
+    case 'scale-4nps': return generateScale4NPS(key, scaleId, startFret, endFret);
+    case 'scale-offset-run': return generateScaleOffsetRun(key, scaleId, startFret, endFret);
+    case 'scale-spiral': return generateScaleSpiral(key, scaleId, startFret, endFret);
+    case 'scale-box-run': return generateScaleBoxRun(key, scaleId);
+
+    // ── Interval Studies ──
+    case 'intervals-octave': return generateIntervalsOctave(key, scaleId, startFret, endFret);
+    case 'intervals-tritone': return generateIntervalsTritone(key, scaleId, startFret, endFret);
+    case 'intervals-compound': return generateIntervalsCompound(key, scaleId, startFret, endFret);
+    case 'intervals-chromatic': return generateIntervalsChromatic(key, scaleId, startFret, endFret);
+
+    // ── Arpeggio Studies ──
+    case 'arp-diminished': return generateArpByIntervals(key, scaleId, startFret, endFret, [0, 3, 6], 'arp-diminished');
+    case 'arp-augmented': return generateArpByIntervals(key, scaleId, startFret, endFret, [0, 4, 8], 'arp-augmented');
+    case 'arp-minor7': return generateArpByIntervals(key, scaleId, startFret, endFret, [0, 3, 7, 10], 'arp-minor7');
+    case 'arp-dom7': return generateArpByIntervals(key, scaleId, startFret, endFret, [0, 4, 7, 10], 'arp-dom7');
+    case 'arp-maj7': return generateArpByIntervals(key, scaleId, startFret, endFret, [0, 4, 7, 11], 'arp-maj7');
+    case 'arp-min9': return generateArpByIntervals(key, scaleId, startFret, endFret, [0, 3, 7, 10, 14], 'arp-min9');
+
+    // ── Rhythm & Timing ──
+    case 'rhythm-gallop': return generateRhythmGallop(key, scaleId, startFret, endFret);
+    case 'rhythm-triplet': return generateRhythmTriplet(key, scaleId, startFret, endFret);
+    case 'rhythm-dotted': return generateRhythmDotted(key, scaleId, startFret, endFret);
+
+    // ── Bending & Expression ──
+    case 'bend-release': return generateBendRelease(key, scaleId, startFret, endFret);
+    case 'bend-1step': return generateBend1Step(key, scaleId, startFret, endFret);
+    case 'bend-1half': return generateBend1Half(key, scaleId, startFret, endFret);
+
+    // ── Harmonics ──
+    case 'harmonics-tap': return generateHarmonicsTap(key, scaleId, startFret, endFret);
+    case 'harmonics-pinch-scale': return generateHarmonicsPinchScale(key, scaleId, startFret, endFret);
+
+    // ── Tapping ──
+    case 'tap-8finger': return generateTap8Finger(key, scaleId, startFret, endFret);
+    case 'tap-sweep': return generateTapSweep(key, scaleId, startFret, endFret);
+    case 'tap-tap-pull': return generateTapTapPull(key, scaleId, startFret, endFret);
+
+    // ── Blues ──
+    case 'blues-lick-1': return generateBluesLick1(key, scaleId, startFret, endFret);
+    case 'blues-lick-2': return generateBluesLick2(key, scaleId, startFret, endFret);
+    case 'blues-turnaround': return generateBluesTurnaround(key, scaleId, startFret, endFret);
+
+    // ── Fretboard Knowledge ──
+    case 'caged-shapes': return generateCagedShapes(key, scaleId);
+    case 'note-triplets': return generateNoteTriplets(key, scaleId, startFret, endFret);
+    case 'relative-note': return generateRelativeNote(key, scaleId, startFret, endFret);
+    case 'fretboard-map': return generateFretboardMap(key, scaleId, startFret, endFret);
+
+    // ── Speed & Agility ──
+    case 'speed-ladder': return generateSpeedLadder(key, scaleId, startFret, endFret);
+    case 'speed-burst-16th': return generateSpeedBurst16th(key, scaleId, startFret, endFret);
+    case 'speed-triplet-run': return generateSpeedTripletRun(key, scaleId, startFret, endFret);
 
     default: return generateAscendingScale(key, scaleId, startFret, endFret);
   }

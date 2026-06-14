@@ -68,7 +68,7 @@ import {
   Activity,
   Hash,
   Ruler,
-  SkipBack, SkipForward, RotateCcw, Repeat, Gauge, Waves, Metronome as MetronomeIcon, Hand, Shuffle as ShuffleIcon, Dice5, TimerReset, Flag, ChevronFirst, ChevronLast, Siren, Disc3, ToggleLeft,
+  SkipBack, SkipForward, RotateCcw, Repeat, Gauge, Waves, Metronome as MetronomeIcon, Hand, Shuffle as ShuffleIcon, Dice5, TimerReset, Flag, ChevronFirst, ChevronLast, Siren, Disc3, ToggleLeft, Info, BookOpen, ChevronRight as ChevronRightIcon,
 } from 'lucide-react';
 
 // ─── AUDIO ENGINE ───
@@ -575,6 +575,7 @@ export default function Home() {
   const [expandedCategory, setExpandedCategory] = useState<string>('scale-runs');
   const [rightPanelExpanded, setRightPanelExpanded] = useState(true);
   const [exerciseSearch, setExerciseSearch] = useState('');
+  const [infoPageOpen, setInfoPageOpen] = useState(false);
 
   // Derived state
   const keyNote = KEY_NAMES[keyIndex];
@@ -1063,6 +1064,11 @@ export default function Home() {
           <button className={`sketch-btn px-1.5 py-0.5 text-[10px] flex items-center gap-0.5 shrink-0 ${soundEnabled ? 'border-[#6b5b47]' : 'border-[#c4b89c] opacity-50'}`}
             onClick={() => setSoundEnabled(!soundEnabled)}>
             {soundEnabled ? <Volume2 className="w-2.5 h-2.5" /> : <VolumeX className="w-2.5 h-2.5" />}
+          </button>
+          <button className="sketch-btn px-1.5 py-0.5 text-[10px] flex items-center gap-0.5 shrink-0 border-[#8b7355]"
+            onClick={() => setInfoPageOpen(true)} title="App Guide & Documentation">
+            <Info className="w-2.5 h-2.5" />
+            <span className="hidden sm:inline text-[9px] font-serif italic">Guide</span>
           </button>
         </div>
       </header>
@@ -1981,6 +1987,567 @@ export default function Home() {
           </div>
         </div>
       </div>
+
+      {/* ═══ INFO / DOCUMENTATION SHEET ═══ */}
+      <Sheet open={infoPageOpen} onOpenChange={setInfoPageOpen}>
+        <SheetContent side="right" className="w-full sm:max-w-[700px] p-0 bg-[#faf6ef] border-l-2 border-[#8b7355] overflow-y-auto">
+          <SheetHeader className="sticky top-0 z-10 bg-[#faf6ef] border-b-2 border-[#8b7355] px-6 py-4">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded border-2 border-[#8b7355] flex items-center justify-center bg-[#f5f0e8]">
+                <Guitar className="w-5 h-5 text-[#6b5b47]" />
+              </div>
+              <div>
+                <SheetTitle className="text-lg font-bold text-[#2c2c2c]" style={{ fontFamily: "'Georgia', serif", fontStyle: 'italic' }}>FretBoard Forge — Complete Guide</SheetTitle>
+                <SheetDescription className="text-xs text-[#8b7355] font-serif italic">Everything you need to know about mastering the fretboard</SheetDescription>
+              </div>
+            </div>
+          </SheetHeader>
+          <div className="px-6 py-6 space-y-8 text-[13px] text-[#2c2c2c] leading-relaxed">
+
+            {/* ─── Welcome ─── */}
+            <section>
+              <h2 className="text-base font-bold text-[#9b3939] mb-3 flex items-center gap-2" style={{ fontFamily: "'Georgia', serif", fontStyle: 'italic' }}>
+                <BookOpen className="w-4 h-4" /> Welcome to FretBoard Forge
+              </h2>
+              <p className="mb-2">FretBoard Forge is an interactive guitar practice tool designed to help guitarists of all levels master the fretboard. It provides a visual, hands-on approach to learning scales, positions, exercises, and music theory directly on a realistic fretboard diagram. Whether you are a beginner learning your first pentatonic shape or an advanced player working through complex arpeggio sequences, this tool adapts to your needs.</p>
+              <p className="mb-2">At its core, FretBoard Forge shows you <strong>exactly where to place your fingers</strong> on the fretboard for any scale, in any key, at any position. It then generates structured exercises from those scale patterns, complete with tab notation, playback, and a professional metronome to keep your timing solid.</p>
+              <p>The philosophy behind this tool is simple: <em>see it, hear it, play it, internalize it</em>. Visual learning combined with auditory feedback and structured repetition is the fastest path to fretboard mastery.</p>
+            </section>
+
+            <hr className="border-[#e8e2d6]" />
+
+            {/* ─── Getting Started ─── */}
+            <section>
+              <h2 className="text-base font-bold text-[#9b3939] mb-3 flex items-center gap-2" style={{ fontFamily: "'Georgia', serif", fontStyle: 'italic' }}>
+                <Target className="w-4 h-4" /> Getting Started
+              </h2>
+              <div className="space-y-3">
+                <div className="bg-[#f5f0e8] rounded border border-[#c4b89c] p-3">
+                  <h3 className="font-bold text-[11px] uppercase tracking-wider text-[#8b7355] mb-1">Step 1: Choose Your Key</h3>
+                  <p className="text-[12px]">Use the <strong>Key</strong> dropdown in the header to select any of the 12 musical keys (C, C#/Db, D, etc.). The entire fretboard will instantly update to show the notes available in your chosen key.</p>
+                </div>
+                <div className="bg-[#f5f0e8] rounded border border-[#c4b89c] p-3">
+                  <h3 className="font-bold text-[11px] uppercase tracking-wider text-[#8b7355] mb-1">Step 2: Choose Your Scale</h3>
+                  <p className="text-[12px]">Use the <strong>Scale</strong> dropdown to select from 12 scale types: Minor Pentatonic, Major Pentatonic, Blues, Major, Natural Minor, Harmonic Minor, Melodic Minor, Dorian, Phrygian, Lydian, Mixolydian, and Locrian. Each scale highlights different intervals, giving you a unique palette of notes to work with.</p>
+                </div>
+                <div className="bg-[#f5f0e8] rounded border border-[#c4b89c] p-3">
+                  <h3 className="font-bold text-[11px] uppercase tracking-wider text-[#8b7355] mb-1">Step 3: Choose Your Position</h3>
+                  <p className="text-[12px]">The <strong>Position</strong> buttons (1–5 + All) let you focus on a specific CAGED position or view the entire fretboard at once. Positions correspond to the five fundamental scale shapes that every guitarist should know, based on the C-A-G-E-D chord shape system.</p>
+                </div>
+                <div className="bg-[#f5f0e8] rounded border border-[#c4b89c] p-3">
+                  <h3 className="font-bold text-[11px] uppercase tracking-wider text-[#8b7355] mb-1">Step 4: Pick an Exercise</h3>
+                  <p className="text-[12px]">Browse the <strong>Exercise Library</strong> in the left sidebar. With 174+ exercise types across 30 categories, you will find exercises for every skill level and focus area. Click any exercise to see it visualized on the fretboard with tab notation and detailed stats.</p>
+                </div>
+                <div className="bg-[#f5f0e8] rounded border border-[#c4b89c] p-3">
+                  <h3 className="font-bold text-[11px] uppercase tracking-wider text-[#8b7355] mb-1">Step 5: Play Along</h3>
+                  <p className="text-[12px]">Hit the <strong>Play</strong> button (or press Space) to hear each note played back in sequence. Enable the <strong>metronome</strong> to practice with a steady beat. Use the practice tools like Tempo Trainer, Speed Burst, and more to progressively build speed and accuracy.</p>
+                </div>
+              </div>
+            </section>
+
+            <hr className="border-[#e8e2d6]" />
+
+            {/* ─── Scales & Modes ─── */}
+            <section>
+              <h2 className="text-base font-bold text-[#9b3939] mb-3 flex items-center gap-2" style={{ fontFamily: "'Georgia', serif", fontStyle: 'italic' }}>
+                <Music className="w-4 h-4" /> Scales & Modes Explained
+              </h2>
+              <p className="mb-3">Scales are the foundation of all melody and improvisation. Each scale has a unique combination of intervals that gives it its characteristic sound. Here is a breakdown of every scale available in FretBoard Forge:</p>
+              <div className="space-y-3">
+                <div className="border-l-3 border-[#9b3939] pl-3">
+                  <h3 className="font-bold text-[12px]">Minor Pentatonic</h3>
+                  <p className="text-[11px] text-[#4a4a4a]">The most essential scale in rock, blues, and pop. Contains 5 notes: Root, flat 3rd, 4th, 5th, and flat 7th. Its simplicity makes it the perfect starting point for improvisation. Every guitarist should have all five positions memorized. The missing 2nd and 6th degrees are what give it that open, bluesy quality — there are no wrong notes to hit.</p>
+                </div>
+                <div className="border-l-3 border-[#4a5a8a] pl-3">
+                  <h3 className="font-bold text-[12px]">Major Pentatonic</h3>
+                  <p className="text-[11px] text-[#4a4a4a]">The happy counterpart to the minor pentatonic. Contains Root, 2nd, 3rd, 5th, and 6th. Used extensively in country, pop, and classic rock. It shares the same shapes as minor pentatonic but shifted down three frets (relative major/minor relationship). Try mixing major and minor pentatonic for classic blues-rock sounds.</p>
+                </div>
+                <div className="border-l-3 border-[#9b3939] pl-3">
+                  <h3 className="font-bold text-[12px]">Blues Scale</h3>
+                  <p className="text-[11px] text-[#4a4a4a]">The minor pentatonic with one crucial addition: the flat 5th (the blue note). This single note adds tension and release that defines the blues. Use it as a passing note between the 4th and 5th for that classic blues wail. The blue note works especially well when bent into or approached chromatically.</p>
+                </div>
+                <div className="border-l-3 border-[#4a5a8a] pl-3">
+                  <h3 className="font-bold text-[12px]">Major Scale (Ionian)</h3>
+                  <p className="text-[11px] text-[#4a4a4a]">The mother of all Western music theory. Seven notes: Root, 2nd, 3rd, 4th, 5th, 6th, 7th. Understanding the major scale unlocks everything — chords, modes, intervals, and harmony all derive from it. Practice this scale until you can play it in any key, any position, without thinking.</p>
+                </div>
+                <div className="border-l-3 border-[#9b3939] pl-3">
+                  <h3 className="font-bold text-[12px]">Natural Minor (Aeolian)</h3>
+                  <p className="text-[11px] text-[#4a4a4a]">The sixth mode of the major scale. Darker and more somber than the major scale, it is the foundation of rock and metal. The flat 3rd, flat 6th, and flat 7th give it its minor quality. Compare it to the major scale to hear the emotional difference that just three altered notes can make.</p>
+                </div>
+                <div className="border-l-3 border-[#6b4a7a] pl-3">
+                  <h3 className="font-bold text-[12px]">Harmonic Minor</h3>
+                  <p className="text-[11px] text-[#4a4a4a]">The natural minor with a raised 7th (natural 7th instead of flat 7th). This creates an exotic, classical sound with a signature augmented 2nd interval between the flat 6th and natural 7th. Widely used in classical, neoclassical, and metal. The raised 7th creates a stronger resolution back to the root, which is why it is the basis for minor-key harmony.</p>
+                </div>
+                <div className="border-l-3 border-[#6b4a7a] pl-3">
+                  <h3 className="font-bold text-[12px]">Melodic Minor</h3>
+                  <p className="text-[11px] text-[#4a4a4a]">The jazz musician's secret weapon. Ascending, it has a natural 6th and 7th (like major with a flat 3rd). Descending, it reverts to natural minor. In jazz practice, it is often used with the ascending form in both directions (jazz minor). This scale unlocks altered dominant sounds and is the basis for many advanced improvisational concepts.</p>
+                </div>
+                <div className="border-l-3 border-[#4a5a8a] pl-3">
+                  <h3 className="font-bold text-[12px]">Dorian</h3>
+                  <p className="text-[11px] text-[#4a4a4a]">The second mode of the major scale. Think of it as natural minor with a raised 6th. This single note change gives Dorian its unique jazzy, funky quality. It works beautifully over minor chords and ii-V progressions. Carlos Santana and many jazz greats rely heavily on this mode. The major 6th is the sweet note that distinguishes Dorian from Aeolian.</p>
+                </div>
+                <div className="border-l-3 border-[#6b4a7a] pl-3">
+                  <h3 className="font-bold text-[12px]">Phrygian</h3>
+                  <p className="text-[11px] text-[#4a4a4a]">The third mode, featuring a flat 2nd that creates an immediately dark, Spanish/flamenco flavor. The half-step between the root and flat 2nd is its defining characteristic. Used extensively in flamenco, metal, and progressive rock. Try it over minor chords for instant exotic tension.</p>
+                </div>
+                <div className="border-l-3 border-[#4a5a8a] pl-3">
+                  <h3 className="font-bold text-[12px]">Lydian</h3>
+                  <p className="text-[11px] text-[#4a4a4a]">The fourth mode with a raised 4th (sharp 4th). This creates a dreamy, floating quality. Joe Satriani and Steve Vai use Lydian extensively for its otherworldly sound. The sharp 4th over a major chord creates a beautiful tension that never quite resolves, giving Lydian its signature suspended-in-air feeling.</p>
+                </div>
+                <div className="border-l-3 border-[#4a5a8a] pl-3">
+                  <h3 className="font-bold text-[12px]">Mixolydian</h3>
+                  <p className="text-[11px] text-[#4a4a4a]">The fifth mode — essentially a major scale with a flat 7th. This is the dominant scale, the sound of rock, blues-rock, and funk. The flat 7th makes it perfect over dominant 7th chords. Think of the Grateful Dead, Allman Brothers, or any blues-rock solo — Mixolydian is the foundation.</p>
+                </div>
+                <div className="border-l-3 border-[#6b4a7a] pl-3">
+                  <h3 className="font-bold text-[12px]">Locrian</h3>
+                  <p className="text-[11px] text-[#4a4a4a]">The seventh and most dissonant mode. With a flat 2nd, flat 3rd, flat 5th, flat 6th, and flat 7th, it creates maximum tension. Used over half-diminished chords in jazz. While it may sound harsh on its own, understanding Locrian completes your modal knowledge and is essential for advanced jazz improvisation.</p>
+                </div>
+              </div>
+            </section>
+
+            <hr className="border-[#e8e2d6]" />
+
+            {/* ─── CAGED System ─── */}
+            <section>
+              <h2 className="text-base font-bold text-[#9b3939] mb-3 flex items-center gap-2" style={{ fontFamily: "'Georgia', serif", fontStyle: 'italic' }}>
+                <Layers className="w-4 h-4" /> The CAGED System
+              </h2>
+              <p className="mb-2">The CAGED system is the most important fretboard navigation concept you will ever learn. It is based on the fact that the five basic open chord shapes — <strong>C, A, G, E, D</strong> — can be moved up the neck as barre chords to play any chord in any position. When applied to scales, these same five shapes give you a complete map of the fretboard.</p>
+              <p className="mb-2">In FretBoard Forge, when you select a key and scale, the five CAGED positions are calculated automatically. Each position covers a 4–5 fret zone and connects to the next position through overlapping notes. Position 1 starts at the root on the low E string, and each subsequent position shifts higher up the neck.</p>
+              <div className="bg-[#f5f0e8] rounded border border-[#c4b89c] p-3 mb-2">
+                <h3 className="font-bold text-[11px] uppercase tracking-wider text-[#8b7355] mb-1">The Five Shapes</h3>
+                <ul className="text-[11px] space-y-1">
+                  <li><strong>C Shape:</strong> Open C chord shape moved up the neck. Root on the A string. Wide stretch, great for rhythm playing.</li>
+                  <li><strong>A Shape:</strong> Based on the open A chord. Root on the low E string. The most commonly used barre chord shape.</li>
+                  <li><strong>G Shape:</strong> Based on the open G chord. Often the hardest shape to finger, but essential for connecting positions.</li>
+                  <li><strong>E Shape:</strong> The classic F barre chord shape. Root on the low E string. The most familiar shape for most guitarists.</li>
+                  <li><strong>D Shape:</strong> Based on the open D chord. Root on the D string. A smaller shape that works great in the upper register.</li>
+                </ul>
+              </div>
+              <p className="text-[12px]">The real power of CAGED comes from <strong>connecting</strong> the positions. Use the Connecting and CAGED Cycle exercises to practice moving smoothly between shapes. The All Positions view shows you how all five shapes tile the entire fretboard like puzzle pieces.</p>
+            </section>
+
+            <hr className="border-[#e8e2d6]" />
+
+            {/* ─── Exercise Library ─── */}
+            <section>
+              <h2 className="text-base font-bold text-[#9b3939] mb-3 flex items-center gap-2" style={{ fontFamily: "'Georgia', serif", fontStyle: 'italic' }}>
+                <FileText className="w-4 h-4" /> Exercise Library — Complete Reference
+              </h2>
+              <p className="mb-3">FretBoard Forge includes 174+ exercise types organized into 30+ categories across four sections. Every exercise is dynamically generated based on your selected key, scale, and position. Here is a complete breakdown:</p>
+
+              <div className="space-y-4">
+                <div>
+                  <h3 className="font-bold text-[12px] text-[#9b3939] mb-2">PRACTICE Exercises</h3>
+                  <div className="space-y-2">
+                    <div className="bg-[#f5f0e8] rounded border border-[#c4b89c] p-2">
+                      <h4 className="font-bold text-[11px] text-[#6b5b47]">Scale Runs (8 types)</h4>
+                      <p className="text-[10px] text-[#4a4a4a]">Ascending Scale, Descending Scale, Asc/Desc Scale, Desc/Asc Scale, Reverse Pentatonic, Skip Note Scale, 3-Note Fragments, 4-Note Fragments. These are the bread and butter of scale practice. Start with ascending and descending runs, then progress to fragments and skip-note patterns for variety.</p>
+                    </div>
+                    <div className="bg-[#f5f0e8] rounded border border-[#c4b89c] p-2">
+                      <h4 className="font-bold text-[11px] text-[#6b5b47]">Sequences (12 types)</h4>
+                      <p className="text-[10px] text-[#4a4a4a]">Diatonic Thirds, Fourths, Fifths, Sixths, Sevenths, plus 3- through 7-Note Sequences, and Pedal Tone patterns. Sequences train your ear to hear interval relationships while building picking speed and finger independence.</p>
+                    </div>
+                    <div className="bg-[#f5f0e8] rounded border border-[#c4b89c] p-2">
+                      <h4 className="font-bold text-[11px] text-[#6b5b47]">Shapes (10 types)</h4>
+                      <p className="text-[10px] text-[#4a4a4a]">Triads, 1st/2nd Inversion Triads, Arpeggios, Octave Shapes, Double Stops, Shell Voicings, Dyads, Chord Scale, Power Shapes. Understanding shapes is how you move from playing scales to making music.</p>
+                    </div>
+                    <div className="bg-[#f5f0e8] rounded border border-[#c4b89c] p-2">
+                      <h4 className="font-bold text-[11px] text-[#6b5b47]">Arpeggios (6 types)</h4>
+                      <p className="text-[10px] text-[#4a4a4a]">Sweep Arpeggios, String-Skipped Arps, Triad Arps Ascending, 7th Chord Arps, Inverted Arps, Connecting Arps. Arpeggios are the key to outlining chord changes in solos.</p>
+                    </div>
+                    <div className="bg-[#f5f0e8] rounded border border-[#c4b89c] p-2">
+                      <h4 className="font-bold text-[11px] text-[#6b5b47]">Rhythm (9 types)</h4>
+                      <p className="text-[10px] text-[#4a4a4a]">Subdivisions, Syncopation, Rest Positions, Accents, Swing Feel, Tied Notes, Gallop Rhythm, Triplets, Dotted Rhythms. Rhythm practice is often overlooked but is essential for musicality.</p>
+                    </div>
+                    <div className="bg-[#f5f0e8] rounded border border-[#c4b89c] p-2">
+                      <h4 className="font-bold text-[11px] text-[#6b5b47]">Advanced Scale Runs (5 types)</h4>
+                      <p className="text-[10px] text-[#4a4a4a]">3 Notes Per String (3NPS), Single String Runs, Zigzag Patterns, Wide Skip Patterns, Chromatic Passing Tones. These run patterns expand your fretboard vocabulary beyond basic positions.</p>
+                    </div>
+                    <div className="bg-[#f5f0e8] rounded border border-[#c4b89c] p-2">
+                      <h4 className="font-bold text-[11px] text-[#6b5b47]">Scale Patterns (5 types)</h4>
+                      <p className="text-[10px] text-[#4a4a4a]">2NPS, 4NPS, Offset Runs, Spiral Patterns, Box Run Connections. Different note-per-string approaches change how you navigate the fretboard and open new melodic possibilities.</p>
+                    </div>
+                    <div className="bg-[#f5f0e8] rounded border border-[#c4b89c] p-2">
+                      <h4 className="font-bold text-[11px] text-[#6b5b47]">Blues (3 types)</h4>
+                      <p className="text-[10px] text-[#4a4a4a]">Blues Lick 1, Blues Lick 2, Blues Turnaround. Essential vocabulary for blues and rock playing. Turnarounds are the signature move that signals the end of a 12-bar blues progression.</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <h3 className="font-bold text-[12px] text-[#4a5a8a] mb-2">TECHNIQUE Exercises</h3>
+                  <div className="space-y-2">
+                    <div className="bg-[#f5f0e8] rounded border border-[#c4b89c] p-2">
+                      <h4 className="font-bold text-[11px] text-[#6b5b47]">Picking (4 types)</h4>
+                      <p className="text-[10px] text-[#4a4a4a]">String Skipping, Economy Picking, Cross-String Picking, Speed Bursts. Picking technique is the engine that drives everything else. Clean, efficient picking unlocks speed.</p>
+                    </div>
+                    <div className="bg-[#f5f0e8] rounded border border-[#c4b89c] p-2">
+                      <h4 className="font-bold text-[11px] text-[#6b5b47]">Legato (7 types)</h4>
+                      <p className="text-[10px] text-[#4a4a4a]">Hammer-Ons/Pull-Offs, Slides, Ascending/Descending Hammer-Ons, Ascending/Descending Pull-Offs, Trills. Legato playing produces smooth, flowing lines and reduces pick dependency.</p>
+                    </div>
+                    <div className="bg-[#f5f0e8] rounded border border-[#c4b89c] p-2">
+                      <h4 className="font-bold text-[11px] text-[#6b5b47]">String Work (6 types)</h4>
+                      <p className="text-[10px] text-[#4a4a4a]">Lateral Runs, Diagonal Patterns, Position Shifts, Pentatonic Runs, Spider Walk, Interval Jumps. These exercises develop your ability to move fluidly across the entire fretboard.</p>
+                    </div>
+                    <div className="bg-[#f5f0e8] rounded border border-[#c4b89c] p-2">
+                      <h4 className="font-bold text-[11px] text-[#6b5b47]">Spider Exercises (5 types)</h4>
+                      <p className="text-[10px] text-[#4a4a4a]">Classic Chromatic Spider Walk, Cross-String Spider (ascending/descending), Inward Spider, Outward Spider. The spider walk is one of the most effective finger independence exercises ever devised. It forces each finger to operate independently while crossing strings.</p>
+                    </div>
+                    <div className="bg-[#f5f0e8] rounded border border-[#c4b89c] p-2">
+                      <h4 className="font-bold text-[11px] text-[#6b5b47]">String Crossing (4 types)</h4>
+                      <p className="text-[10px] text-[#4a4a4a]">Ascending, Descending, Skip, and Alternate String Crossing. String crossing is where most picking problems occur. These exercises isolate and fix crossing issues.</p>
+                    </div>
+                    <div className="bg-[#f5f0e8] rounded border border-[#c4b89c] p-2">
+                      <h4 className="font-bold text-[11px] text-[#6b5b47]">Sweep Picking (4 types)</h4>
+                      <p className="text-[10px] text-[#4a4a4a]">3-String Sweep, 5-String Sweep, Minor Sweep, Major Sweep. Sweep picking creates cascading arpeggio sounds that are impossible with alternate picking alone.</p>
+                    </div>
+                    <div className="bg-[#f5f0e8] rounded border border-[#c4b89c] p-2">
+                      <h4 className="font-bold text-[11px] text-[#6b5b47]">Position Shifting (3 types)</h4>
+                      <p className="text-[10px] text-[#4a4a4a]">1-Fret, 2-Fret, and 3-Fret Shifts. Position shifting exercises teach you to slide your hand smoothly up and down the neck without losing your place.</p>
+                    </div>
+                    <div className="bg-[#f5f0e8] rounded border border-[#c4b89c] p-2">
+                      <h4 className="font-bold text-[11px] text-[#6b5b47]">Bending and Expression (8 types)</h4>
+                      <p className="text-[10px] text-[#4a4a4a]">Unison Bends, Half-Step Bends, Full-Step Bends, Pre-Bends, Vibrato Control, Bend and Release, 1-Step Bends, 1.5-Step Bends. Bending is what makes the guitar sing — these exercises develop pitch accuracy and expressive control.</p>
+                    </div>
+                    <div className="bg-[#f5f0e8] rounded border border-[#c4b89c] p-2">
+                      <h4 className="font-bold text-[11px] text-[#6b5b47]">Tapping (7 types)</h4>
+                      <p className="text-[10px] text-[#4a4a4a]">Basic Tapping, Arpeggio Tapping, Scale Tapping, Tapped Harmonics, 8-Finger Tapping, Sweep Tapping, Tap-Pull Combinations. Tapping extends your range and enables rapid arpeggio playing impossible with conventional technique.</p>
+                    </div>
+                    <div className="bg-[#f5f0e8] rounded border border-[#c4b89c] p-2">
+                      <h4 className="font-bold text-[11px] text-[#6b5b47]">Harmonics (5 types)</h4>
+                      <p className="text-[10px] text-[#4a4a4a]">Natural Harmonics, Artificial Harmonics, Pinch Harmonics, Tapped Harmonics, Pinch Harmonics Scale. Harmonics add ethereal textures and are essential for advanced expression.</p>
+                    </div>
+                    <div className="bg-[#f5f0e8] rounded border border-[#c4b89c] p-2">
+                      <h4 className="font-bold text-[11px] text-[#6b5b47]">Advanced Technique (6 types)</h4>
+                      <p className="text-[10px] text-[#4a4a4a]">Hybrid Picking, Chicken Pickin', Banjo Rolls, Palm Muting, Staccato, Sweep and Tap Combos. These specialized techniques add color and vocabulary to your playing style.</p>
+                    </div>
+                    <div className="bg-[#f5f0e8] rounded border border-[#c4b89c] p-2">
+                      <h4 className="font-bold text-[11px] text-[#6b5b47]">Speed and Agility (3 types)</h4>
+                      <p className="text-[10px] text-[#4a4a4a]">Speed Ladder, 16th Note Speed Bursts, Triplet Speed Runs. Designed specifically to push your maximum tempo higher with structured progressive exercises.</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <h3 className="font-bold text-[12px] text-[#6b4a7a] mb-2">ADVANCED Exercises</h3>
+                  <div className="space-y-2">
+                    <div className="bg-[#f5f0e8] rounded border border-[#c4b89c] p-2">
+                      <h4 className="font-bold text-[11px] text-[#6b5b47]">Connections (4 types)</h4>
+                      <p className="text-[10px] text-[#4a4a4a]">Position Connecting, Position Sweep, CAGED Cycle, CAGED Run. These exercises teach you to flow between positions without hesitation — the mark of an advanced player.</p>
+                    </div>
+                    <div className="bg-[#f5f0e8] rounded border border-[#c4b89c] p-2">
+                      <h4 className="font-bold text-[11px] text-[#6b5b47]">Intervals (10 types)</h4>
+                      <p className="text-[10px] text-[#4a4a4a]">2nd through 7th Intervals, Octave Drills, Tritone Studies, Compound Intervals, Chromatic Interval Walking. Interval knowledge is the bridge between theory and ear training.</p>
+                    </div>
+                    <div className="bg-[#f5f0e8] rounded border border-[#c4b89c] p-2">
+                      <h4 className="font-bold text-[11px] text-[#6b5b47]">Arpeggio Studies (6 types)</h4>
+                      <p className="text-[10px] text-[#4a4a4a]">Diminished, Augmented, Minor 7th, Dominant 7th, Major 7th, Minor 9th Arpeggios. Extended arpeggios are essential for jazz and progressive playing.</p>
+                    </div>
+                    <div className="bg-[#f5f0e8] rounded border border-[#c4b89c] p-2">
+                      <h4 className="font-bold text-[11px] text-[#6b5b47]">Advanced Sequences (5 types)</h4>
+                      <p className="text-[10px] text-[#4a4a4a]">Enclosures, Bebop Scales, Cycle of 4ths, Cycle of 5ths, Chromatic Enclosures. Jazz vocabulary that adds sophistication to any line.</p>
+                    </div>
+                    <div className="bg-[#f5f0e8] rounded border border-[#c4b89c] p-2">
+                      <h4 className="font-bold text-[11px] text-[#6b5b47]">Advanced Shapes (5 types)</h4>
+                      <p className="text-[10px] text-[#4a4a4a]">Barre Shapes, Drop 2 Voicings, Guide Tones, Quartal Voicings, Stacked Fourths. Chord voicing knowledge transforms your rhythm and comping abilities.</p>
+                    </div>
+                    <div className="bg-[#f5f0e8] rounded border border-[#c4b89c] p-2">
+                      <h4 className="font-bold text-[11px] text-[#6b5b47]">Fretboard Navigation (8 types)</h4>
+                      <p className="text-[10px] text-[#4a4a4a]">Note Finder, Octave Drill, Unison Drill, Interval Matrix, CAGED Shapes, Note Triplets, Relative Note Finding, Fretboard Mapping. These drills build deep fretboard knowledge that makes everything easier.</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <h3 className="font-bold text-[12px] text-[#8b7355] mb-2">WARMUP Exercises</h3>
+                  <div className="space-y-2">
+                    <div className="bg-[#f5f0e8] rounded border border-[#c4b89c] p-2">
+                      <h4 className="font-bold text-[11px] text-[#6b5b47]">Chromatic Drills (12 types)</h4>
+                      <p className="text-[10px] text-[#4a4a4a]">Classic 1-2-3-4, Reverse 4-3-2-1, plus 10 finger permutation patterns (1-3-2-4, 1-4-2-3, 2-4-1-3, 2-3-4-1, 3-1-4-2, 4-1-3-2, 3-2-4-1, and more), descending chromatic warmup, and full-range chromatic runs. These are the most fundamental warmup exercises and should be part of every practice session.</p>
+                    </div>
+                    <div className="bg-[#f5f0e8] rounded border border-[#c4b89c] p-2">
+                      <h4 className="font-bold text-[11px] text-[#6b5b47]">Warmups (4 types)</h4>
+                      <p className="text-[10px] text-[#4a4a4a]">Chromatic Warmup, Spider Warmup, Finger Gym, String Cross Warmup. General warmup exercises to get blood flowing and fingers limber before serious practice.</p>
+                    </div>
+                    <div className="bg-[#f5f0e8] rounded border border-[#c4b89c] p-2">
+                      <h4 className="font-bold text-[11px] text-[#6b5b47]">Finger Stretch</h4>
+                      <p className="text-[10px] text-[#4a4a4a]">Progressive stretch patterns that build finger independence and reach. Essential for playing wide intervallic leaps and chord voicings.</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <hr className="border-[#e8e2d6]" />
+
+            {/* ─── Practice Engine ─── */}
+            <section>
+              <h2 className="text-base font-bold text-[#9b3939] mb-3 flex items-center gap-2" style={{ fontFamily: "'Georgia', serif", fontStyle: 'italic' }}>
+                <Target className="w-4 h-4" /> Practice Engine and Metronome
+              </h2>
+              <p className="mb-2">The bottom toolbar is your complete practice command center. It combines a professional metronome with structured practice tools designed to systematically improve your playing.</p>
+              <div className="space-y-3">
+                <div className="bg-[#f5f0e8] rounded border border-[#c4b89c] p-3">
+                  <h3 className="font-bold text-[11px] uppercase tracking-wider text-[#8b7355] mb-1">Transport Controls</h3>
+                  <p className="text-[11px]">Play, Pause, Stop, and Skip buttons control exercise playback. Press Space to play/pause, Escape to stop. Each note is played with a realistic guitar tone synthesis using Web Audio, so you can hear exactly what each note should sound like.</p>
+                </div>
+                <div className="bg-[#f5f0e8] rounded border border-[#c4b89c] p-3">
+                  <h3 className="font-bold text-[11px] uppercase tracking-wider text-[#8b7355] mb-1">Tempo Control</h3>
+                  <p className="text-[11px]">Adjust BPM from 30 to 300 using the slider, or click the BPM number to type a specific value. Use arrow keys (Left/Right) for fine adjustment, or Shift+Arrow for 5 BPM jumps. The Tap Tempo button lets you set the BPM by tapping in time.</p>
+                </div>
+                <div className="bg-[#f5f0e8] rounded border border-[#c4b89c] p-3">
+                  <h3 className="font-bold text-[11px] uppercase tracking-wider text-[#8b7355] mb-1">Metronome</h3>
+                  <p className="text-[11px]">9 sound types: Classic Woodblock, Stick, Cowbell, Digital, Drumstick, Hi-Hat, Electronic, Rim Shot, and Shaker. Supports subdivisions from quarter notes through sextuplets, time signatures from 2/4 to 12/8, accent modes (first beat, every Nth beat, random), gap click training, silent measures, and polyrhythm overlays. Press M to toggle the metronome.</p>
+                </div>
+                <div className="bg-[#f5f0e8] rounded border border-[#c4b89c] p-3">
+                  <h3 className="font-bold text-[11px] uppercase tracking-wider text-[#8b7355] mb-1">Practice Tools</h3>
+                  <ul className="text-[11px] space-y-1 mt-1">
+                    <li><strong>Tempo Trainer:</strong> Automatically increases BPM after a set number of repetitions. Start slow and build speed progressively.</li>
+                    <li><strong>Speed Burst:</strong> Alternates between your base tempo and a faster burst tempo. Great for pushing your upper limit.</li>
+                    <li><strong>Random Tempo:</strong> Changes tempo randomly within a range. Trains adaptability and prevents mechanical playing.</li>
+                    <li><strong>Repetition Counter:</strong> Track how many times you have played through the exercise. Set goals to stay focused.</li>
+                    <li><strong>Practice Timer:</strong> Tracks total practice time in the current session.</li>
+                  </ul>
+                </div>
+              </div>
+            </section>
+
+            <hr className="border-[#e8e2d6]" />
+
+            {/* ─── Music Theory ─── */}
+            <section>
+              <h2 className="text-base font-bold text-[#9b3939] mb-3 flex items-center gap-2" style={{ fontFamily: "'Georgia', serif", fontStyle: 'italic' }}>
+                <Music className="w-4 h-4" /> Essential Guitar Theory
+              </h2>
+              <div className="space-y-3">
+                <div>
+                  <h3 className="font-bold text-[12px] mb-1">Intervals</h3>
+                  <p className="text-[11px] mb-1">Intervals are the distance between two notes, measured in semitones (half steps). Every scale, chord, and melody is built from intervals. Understanding them is the key to ear training and improvisation.</p>
+                  <div className="bg-[#f5f0e8] rounded border border-[#c4b89c] p-2 text-[10px]">
+                    <div className="grid grid-cols-2 gap-x-4 gap-y-0.5">
+                      <span><strong>0 semitones</strong> — Unison (same note)</span>
+                      <span><strong>1 semitone</strong> — Minor 2nd</span>
+                      <span><strong>2 semitones</strong> — Major 2nd</span>
+                      <span><strong>3 semitones</strong> — Minor 3rd</span>
+                      <span><strong>4 semitones</strong> — Major 3rd</span>
+                      <span><strong>5 semitones</strong> — Perfect 4th</span>
+                      <span><strong>6 semitones</strong> — Tritone (aug 4th / dim 5th)</span>
+                      <span><strong>7 semitones</strong> — Perfect 5th</span>
+                      <span><strong>8 semitones</strong> — Minor 6th</span>
+                      <span><strong>9 semitones</strong> — Major 6th</span>
+                      <span><strong>10 semitones</strong> — Minor 7th</span>
+                      <span><strong>11 semitones</strong> — Major 7th</span>
+                      <span><strong>12 semitones</strong> — Octave</span>
+                    </div>
+                  </div>
+                </div>
+                <div>
+                  <h3 className="font-bold text-[12px] mb-1">The Nashville Number System</h3>
+                  <p className="text-[11px]">FretBoard Forge uses scale degrees (R, 2, 3, 4, 5, 6, 7 for major; R, flat 3, 4, 5, flat 7 for minor pentatonic, etc.) to label notes. This is similar to the Nashville Number System used by session musicians worldwide. By thinking in numbers rather than note names, you can transpose any pattern to any key instantly — just change the root and the intervals stay the same.</p>
+                </div>
+                <div>
+                  <h3 className="font-bold text-[12px] mb-1">Relative Major/Minor</h3>
+                  <p className="text-[11px]">Every major key has a relative minor key that shares the same notes (and vice versa). The relative minor is found 3 semitones below the major root. For example, C Major and A Minor share identical notes — the difference is which note feels like home. This is why the minor pentatonic and major pentatonic shapes overlap on the fretboard.</p>
+                </div>
+                <div>
+                  <h3 className="font-bold text-[12px] mb-1">Chord Construction</h3>
+                  <p className="text-[11px]">Chords are built by stacking intervals: Major triad = Root + Major 3rd + Perfect 5th. Minor triad = Root + Minor 3rd + Perfect 5th. Diminished = Root + Minor 3rd + Diminished 5th. Augmented = Root + Major 3rd + Augmented 5th. Seventh chords add a fourth note. Understanding construction lets you find any chord anywhere on the neck.</p>
+                </div>
+                <div>
+                  <h3 className="font-bold text-[12px] mb-1">Diatonic Harmony</h3>
+                  <p className="text-[11px]">In any major key, chords naturally occur in this order: I (major), ii (minor), iii (minor), IV (major), V (major), vi (minor), viio (diminished). This is the foundation of most Western music. The V7 chord resolving to I is the strongest cadence in music. Practice the Chord Scale exercise to see and hear this relationship on the fretboard.</p>
+                </div>
+                <div>
+                  <h3 className="font-bold text-[12px] mb-1">The Fretboard Layout</h3>
+                  <p className="text-[11px]">The guitar fretboard repeats every 12 frets (one octave). Fret 12 is the octave of the open string. The dots at frets 3, 5, 7, 9, and the double dot at 12 are visual landmarks. Learning the notes on the low E and A strings first gives you anchor points for finding every other note using octave shapes. The Note Finder and Octave Drill exercises are specifically designed to build this knowledge.</p>
+                </div>
+                <div>
+                  <h3 className="font-bold text-[12px] mb-1">String Tuning and Standard Tuning</h3>
+                  <p className="text-[11px]">FretBoard Forge uses standard tuning: E-A-D-G-B-E (low to high). The intervals between adjacent strings are: 4th, 4th, 4th, Major 3rd, 4th — that Major 3rd between G and B strings is the B string bump that makes guitar tuning unique and requires a fret adjustment when crossing between the G and B strings.</p>
+                </div>
+              </div>
+            </section>
+
+            <hr className="border-[#e8e2d6]" />
+
+            {/* ─── View Modes ─── */}
+            <section>
+              <h2 className="text-base font-bold text-[#9b3939] mb-3 flex items-center gap-2" style={{ fontFamily: "'Georgia', serif", fontStyle: 'italic' }}>
+                <Eye className="w-4 h-4" /> View Modes
+              </h2>
+              <p className="mb-2">FretBoard Forge offers three view modes, selectable with the eye icon in the right panel:</p>
+              <div className="space-y-2">
+                <div className="bg-[#f5f0e8] rounded border border-[#c4b89c] p-2">
+                  <h4 className="font-bold text-[11px] text-[#6b5b47]">Hybrid View</h4>
+                  <p className="text-[10px]">Shows both the fretboard diagram and pattern diagram simultaneously. This is the default and recommended view for most practice sessions. You can see the big picture (fretboard) and the detailed exercise pattern (diagram) at the same time.</p>
+                </div>
+                <div className="bg-[#f5f0e8] rounded border border-[#c4b89c] p-2">
+                  <h4 className="font-bold text-[11px] text-[#6b5b47]">Fretboard Only</h4>
+                  <p className="text-[10px]">Full-width fretboard view for seeing the complete scale layout. Ideal for learning note positions and understanding how shapes connect across the neck. Notes light up as they play in sequence.</p>
+                </div>
+                <div className="bg-[#f5f0e8] rounded border border-[#c4b89c] p-2">
+                  <h4 className="font-bold text-[11px] text-[#6b5b47]">Diagram Only</h4>
+                  <p className="text-[10px]">Pattern diagram with tab notation. Shows the exercise shape clearly with numbered finger positions. Best for focused practice on a specific exercise pattern without fretboard distractions.</p>
+                </div>
+              </div>
+            </section>
+
+            <hr className="border-[#e8e2d6]" />
+
+            {/* ─── Color Coding ─── */}
+            <section>
+              <h2 className="text-base font-bold text-[#9b3939] mb-3 flex items-center gap-2" style={{ fontFamily: "'Georgia', serif", fontStyle: 'italic' }}>
+                <Star className="w-4 h-4" /> Color Coding System
+              </h2>
+              <p className="mb-2">Notes on the fretboard are color-coded by interval function, making it easy to see the structure of any scale at a glance:</p>
+              <div className="grid grid-cols-2 gap-2 text-[11px]">
+                <div className="flex items-center gap-2"><span className="w-4 h-4 rounded-full" style={{ backgroundColor: '#ef4444' }} /> <span><strong>Red</strong> — Root (R)</span></div>
+                <div className="flex items-center gap-2"><span className="w-4 h-4 rounded-full" style={{ backgroundColor: '#a855f7' }} /> <span><strong>Purple</strong> — Flat intervals</span></div>
+                <div className="flex items-center gap-2"><span className="w-4 h-4 rounded-full" style={{ backgroundColor: '#22c55e' }} /> <span><strong>Green</strong> — Natural intervals</span></div>
+                <div className="flex items-center gap-2"><span className="w-4 h-4 rounded-full" style={{ backgroundColor: '#3b82f6' }} /> <span><strong>Blue</strong> — Fourth (4)</span></div>
+                <div className="flex items-center gap-2"><span className="w-4 h-4 rounded-full" style={{ backgroundColor: '#06b6d4' }} /> <span><strong>Cyan</strong> — Fifth (5)</span></div>
+                <div className="flex items-center gap-2"><span className="w-4 h-4 rounded-full" style={{ backgroundColor: '#f97316' }} /> <span><strong>Orange</strong> — Sixth intervals</span></div>
+                <div className="flex items-center gap-2"><span className="w-4 h-4 rounded-full" style={{ backgroundColor: '#ec4899' }} /> <span><strong>Pink</strong> — Seventh intervals</span></div>
+              </div>
+              <p className="mt-2 text-[11px]">String pairs share colors: Low E and A strings are red, D and G strings are yellow, B and High E strings are green. This visual grouping helps you quickly identify which strings you are looking at.</p>
+            </section>
+
+            <hr className="border-[#e8e2d6]" />
+
+            {/* ─── Difficulty Levels ─── */}
+            <section>
+              <h2 className="text-base font-bold text-[#9b3939] mb-3 flex items-center gap-2" style={{ fontFamily: "'Georgia', serif", fontStyle: 'italic' }}>
+                <BarChart3 className="w-4 h-4" /> Difficulty Levels
+              </h2>
+              <p className="mb-2">Every exercise is rated on a 1–5 difficulty scale, shown as dots next to the exercise name:</p>
+              <div className="space-y-1 text-[11px]">
+                <div><strong>Level 1:</strong> Beginner. Single-direction scale runs, basic chromatic patterns. Anyone can start here regardless of experience.</div>
+                <div><strong>Level 2:</strong> Early Intermediate. Sequences like thirds, pedal tones, simple triad shapes. Requires comfort with alternate picking and basic position playing.</div>
+                <div><strong>Level 3:</strong> Intermediate. More complex sequences, string skipping, inversions, wider intervals. You should be comfortable with all five CAGED positions.</div>
+                <div><strong>Level 4:</strong> Advanced. Extended arpeggios, bebop vocabulary, compound intervals, advanced string crossing. Requires solid technique and fretboard knowledge.</div>
+                <div><strong>Level 5:</strong> Expert. Sweep tapping, 8-finger tapping, complex enclosures, advanced voicings. These push the limits of guitar technique.</div>
+              </div>
+            </section>
+
+            <hr className="border-[#e8e2d6]" />
+
+            {/* ─── Keyboard Shortcuts ─── */}
+            <section>
+              <h2 className="text-base font-bold text-[#9b3939] mb-3 flex items-center gap-2" style={{ fontFamily: "'Georgia', serif", fontStyle: 'italic' }}>
+                <Hash className="w-4 h-4" /> Keyboard Shortcuts
+              </h2>
+              <div className="bg-[#f5f0e8] rounded border border-[#c4b89c] p-3">
+                <div className="grid grid-cols-2 gap-x-6 gap-y-1 text-[11px]">
+                  <div><kbd className="bg-[#e8e2d6] px-1 rounded text-[9px] font-mono">Space</kbd> — Play / Pause</div>
+                  <div><kbd className="bg-[#e8e2d6] px-1 rounded text-[9px] font-mono">Esc</kbd> — Stop</div>
+                  <div><kbd className="bg-[#e8e2d6] px-1 rounded text-[9px] font-mono">M</kbd> — Toggle Metronome</div>
+                  <div><kbd className="bg-[#e8e2d6] px-1 rounded text-[9px] font-mono">Left</kbd> — BPM -1</div>
+                  <div><kbd className="bg-[#e8e2d6] px-1 rounded text-[9px] font-mono">Right</kbd> — BPM +1</div>
+                  <div><kbd className="bg-[#e8e2d6] px-1 rounded text-[9px] font-mono">Shift+Left</kbd> — BPM -5</div>
+                  <div><kbd className="bg-[#e8e2d6] px-1 rounded text-[9px] font-mono">Shift+Right</kbd> — BPM +5</div>
+                </div>
+              </div>
+            </section>
+
+            <hr className="border-[#e8e2d6]" />
+
+            {/* ─── Practice Tips ─── */}
+            <section>
+              <h2 className="text-base font-bold text-[#9b3939] mb-3 flex items-center gap-2" style={{ fontFamily: "'Georgia', serif", fontStyle: 'italic' }}>
+                <Zap className="w-4 h-4" /> Practice Tips
+              </h2>
+              <div className="space-y-2">
+                <div className="bg-[#f5f0e8] rounded border border-[#c4b89c] p-2">
+                  <h4 className="font-bold text-[11px] text-[#6b5b47]">Start Slow, Build Speed</h4>
+                  <p className="text-[10px]">Always begin at a tempo where you can play perfectly. Use the Tempo Trainer to gradually increase BPM. Speed is a byproduct of accuracy — never sacrifice clean playing for tempo.</p>
+                </div>
+                <div className="bg-[#f5f0e8] rounded border border-[#c4b89c] p-2">
+                  <h4 className="font-bold text-[11px] text-[#6b5b47]">Use the Metronome Always</h4>
+                  <p className="text-[10px]">Timing separates good guitarists from great ones. Even simple exercises become valuable when practiced with strict time. Start with quarter notes, then progress to eighth notes, triplets, and sixteenths.</p>
+                </div>
+                <div className="bg-[#f5f0e8] rounded border border-[#c4b89c] p-2">
+                  <h4 className="font-bold text-[11px] text-[#6b5b47]">Practice All Positions</h4>
+                  <p className="text-[10px]">Do not get stuck in Position 1. Work through all five CAGED positions. The All Positions view shows you the complete fretboard map — aim to be equally comfortable in every zone.</p>
+                </div>
+                <div className="bg-[#f5f0e8] rounded border border-[#c4b89c] p-2">
+                  <h4 className="font-bold text-[11px] text-[#6b5b47]">Practice All Keys</h4>
+                  <p className="text-[10px]">Many guitarists only practice in guitar-friendly keys (E, A, D, G, C). Force yourself to work in all 12 keys. The fretboard patterns are identical — only the starting position changes. Use the Cycle of 4ths or Cycle of 5ths exercises to practice key changes systematically.</p>
+                </div>
+                <div className="bg-[#f5f0e8] rounded border border-[#c4b89c] p-2">
+                  <h4 className="font-bold text-[11px] text-[#6b5b47]">Mix Exercise Types</h4>
+                  <p className="text-[10px]">Alternate between scale runs, arpeggios, and technique exercises in each session. This develops well-rounded musicianship rather than narrow specialization. A good session might include: 5 min chromatic warmup, 10 min scale sequences, 10 min arpeggios, 10 min technique work, 5 min free improvisation.</p>
+                </div>
+                <div className="bg-[#f5f0e8] rounded border border-[#c4b89c] p-2">
+                  <h4 className="font-bold text-[11px] text-[#6b5b47]">Listen to the Playback</h4>
+                  <p className="text-[10px]">Use the play button to hear each exercise before attempting it. This builds the crucial ear-finger connection. Try to sing or hum each note as you play it — if you can sing it, you truly hear it.</p>
+                </div>
+                <div className="bg-[#f5f0e8] rounded border border-[#c4b89c] p-2">
+                  <h4 className="font-bold text-[11px] text-[#6b5b47]">The Spider Walk is Your Best Friend</h4>
+                  <p className="text-[10px]">The Chromatic Spider Walk is one of the most effective finger independence exercises ever created. It forces each finger to move independently while crossing strings. Do it daily as a warmup, starting at 60 BPM and working up to 120+ BPM over weeks.</p>
+                </div>
+                <div className="bg-[#f5f0e8] rounded border border-[#c4b89c] p-2">
+                  <h4 className="font-bold text-[11px] text-[#6b5b47]">Consistency Over Duration</h4>
+                  <p className="text-[10px]">Twenty minutes of focused daily practice beats two hours of unfocused practice once a week. Use the built-in practice timer and repetition counter to maintain structure. Set a goal (e.g., 20 clean repetitions) and stop when you achieve it.</p>
+                </div>
+              </div>
+            </section>
+
+            <hr className="border-[#e8e2d6]" />
+
+            {/* ─── FAQ ─── */}
+            <section>
+              <h2 className="text-base font-bold text-[#9b3939] mb-3 flex items-center gap-2" style={{ fontFamily: "'Georgia', serif", fontStyle: 'italic' }}>
+                <Route className="w-4 h-4" /> Frequently Asked Questions
+              </h2>
+              <div className="space-y-3">
+                <div>
+                  <h3 className="font-bold text-[12px]">What does the All position button do?</h3>
+                  <p className="text-[11px]">It shows the complete scale across the entire fretboard (frets 0-15) instead of restricting to a single CAGED position. This is useful for seeing the big picture and understanding how all five positions connect.</p>
+                </div>
+                <div>
+                  <h3 className="font-bold text-[12px]">Why are there 5 positions?</h3>
+                  <p className="text-[11px]">The 5 positions correspond to the C-A-G-E-D chord shapes. Each shape covers a 4-5 fret zone and connects to the next. Together, these 5 shapes tile the entire fretboard without gaps.</p>
+                </div>
+                <div>
+                  <h3 className="font-bold text-[12px]">How do I know which exercise to start with?</h3>
+                  <p className="text-[11px]">Begin with Level 1 exercises (marked with one dot): Ascending Scale, Descending Scale, or Chromatic 1-2-3-4. These build the foundation. Progress to Level 2 once you can play Level 1 exercises cleanly at 80+ BPM with the metronome.</p>
+                </div>
+                <div>
+                  <h3 className="font-bold text-[12px]">What is the difference between Intervals and Sequences?</h3>
+                  <p className="text-[11px]">Sequences play through the scale in a specific pattern (e.g., play 3 notes, shift up one, repeat). Intervals specifically target the distance between two notes (e.g., find every major 3rd above each root). Sequences build technique; intervals build ear training and fretboard knowledge.</p>
+                </div>
+                <div>
+                  <h3 className="font-bold text-[12px]">Can I use this for bass guitar?</h3>
+                  <p className="text-[11px]">While designed for 6-string guitar in standard tuning, the scale and interval theory applies directly to bass (which uses the same tuning for the low 4 strings). The exercises work on bass — simply ignore the B and high E strings.</p>
+                </div>
+                <div>
+                  <h3 className="font-bold text-[12px]">What BPM should I practice at?</h3>
+                  <p className="text-[11px]">Start at 60-80 BPM for new exercises. Increase by 5 BPM only when you can play perfectly at the current tempo. Most intermediate players work between 100-140 BPM. Advanced players may reach 160-200+ BPM for scale runs.</p>
+                </div>
+                <div>
+                  <h3 className="font-bold text-[12px]">What is the Enclosure exercise?</h3>
+                  <p className="text-[11px]">An enclosure is a jazz technique where you approach a target note from above and below before landing on it. For example, to target C, you might play C#-B-C (chromatic enclosure) or D-B-C (diatonic enclosure). This creates melodic interest and is a hallmark of bebop vocabulary.</p>
+                </div>
+                <div>
+                  <h3 className="font-bold text-[12px]">How do the metronome subdivisions work?</h3>
+                  <p className="text-[11px]">Quarter notes = 1 click per beat. Eighth notes = 2 clicks per beat. Triplets = 3 clicks per beat. Sixteenths = 4 clicks per beat. Sextuplets = 6 clicks per beat. Start with quarter notes and gradually subdivide further as your timing improves.</p>
+                </div>
+              </div>
+            </section>
+
+            {/* Closing */}
+            <div className="text-center py-4 border-t-2 border-[#8b7355] mt-6">
+              <div className="w-8 h-8 rounded border-2 border-[#8b7355] flex items-center justify-center bg-[#f5f0e8] mx-auto mb-2">
+                <Guitar className="w-5 h-5 text-[#6b5b47]" />
+              </div>
+              <p className="text-[12px] font-serif italic text-[#8b7355] font-bold">FretBoard Forge</p>
+              <p className="text-[10px] text-[#b8a88a] font-serif italic">Master the fretboard, one note at a time.</p>
+            </div>
+
+          </div>
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }
