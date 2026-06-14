@@ -108,62 +108,51 @@ function playGuitarNote(stringIdx: number, fret: number, duration: number = 0.5)
     const sampleRate = ctx.sampleRate;
 
     // ── Karplus-Strong string synthesis ──
-    // Creates a plucked-string sound by feeding noise through a delay line
-    // with feedback and a lowpass filter (physical model of a vibrating string).
+    // Physical model: a noise burst circulates through a delay line (1 period long)
+    // with a gentle lowpass filter in the feedback loop. Each pass removes a bit
+    // of high-frequency energy, producing a natural plucked-string decay.
 
-    const delayLength = Math.max(1, Math.round(sampleRate / freq));
-    const noiseBuffer = ctx.createBuffer(1, delayLength, sampleRate);
+    const periodSamples = Math.max(2, Math.round(sampleRate / freq));
+    const noiseLen = Math.min(periodSamples, Math.round(sampleRate * 0.008));
+
+    const noiseBuffer = ctx.createBuffer(1, periodSamples, sampleRate);
     const noiseData = noiseBuffer.getChannelData(0);
-    // Strike noise: mix of random and filtered to match string gauge
-    for (let i = 0; i < delayLength; i++) {
-      const t = i / delayLength;
-      noiseData[i] = (Math.random() * 2 - 1) * (1 - t * 0.7);
+    for (let i = 0; i < periodSamples; i++) {
+      if (i < noiseLen) {
+        const t = i / noiseLen;
+        noiseData[i] = (Math.random() * 2 - 1) * (1 - t);
+      } else {
+        noiseData[i] = 0;
+      }
     }
 
     const noiseSource = ctx.createBufferSource();
     noiseSource.buffer = noiseBuffer;
 
     const delay = ctx.createDelay(1);
-    delay.delayTime.setValueAtTime(delayLength / sampleRate, now);
-
-    const feedback = ctx.createGain();
-    // Feedback gain just under 1 — higher = longer sustain, lower = shorter
-    const fbGain = 0.97 + (0.02 * (stringIdx / 5));
-    feedback.gain.setValueAtTime(fbGain, now);
+    delay.delayTime.value = periodSamples / sampleRate;
 
     const lpFilter = ctx.createBiquadFilter();
     lpFilter.type = 'lowpass';
-    // Lower cutoff on low strings (darker), higher on high strings (brighter)
-    lpFilter.frequency.setValueAtTime(6000 + stringIdx * 200, now);
-    lpFilter.Q.setValueAtTime(0.5, now);
+    lpFilter.frequency.value = 2500 + stringIdx * 350;
+    lpFilter.Q.value = 0.3;
+
+    const feedback = ctx.createGain();
+    feedback.gain.value = 0.6 + 0.04 * (5 - stringIdx);
 
     const output = ctx.createGain();
-    // Natural volume per string (higher strings project more)
-    const vol = 0.15 + 0.04 * (stringIdx / 5);
-    output.gain.setValueAtTime(vol, now);
-    output.gain.exponentialRampToValueAtTime(0.001, now + Math.min(duration, 2.5));
+    output.gain.setValueAtTime(0.12 + 0.03 * stringIdx, now);
+    output.gain.exponentialRampToValueAtTime(0.001, now + Math.min(duration, 2));
 
-    // Body resonance filter (adds acoustic body warmth)
-    const bodyFilter = ctx.createBiquadFilter();
-    bodyFilter.type = 'bandpass';
-    bodyFilter.frequency.setValueAtTime(120 + stringIdx * 30, now);
-    bodyFilter.Q.setValueAtTime(1.5, now);
-
-    // ── Connect the Karplus-Strong loop ──
-    // Noise → delay → (feedback → filter → delay) loop → body_filter → output
     noiseSource.connect(delay);
     delay.connect(lpFilter);
     lpFilter.connect(feedback);
     feedback.connect(delay);
 
-    // Output tap
-    lpFilter.connect(bodyFilter);
-    bodyFilter.connect(output);
+    lpFilter.connect(output);
     output.connect(master);
 
-    // Start
     noiseSource.start(now);
-    noiseSource.stop(now + Math.min(duration + 0.1, 3));
   } catch (e) {}
 }
 
