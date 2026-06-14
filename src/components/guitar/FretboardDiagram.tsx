@@ -248,8 +248,8 @@ export default function FretboardDiagram({
     return false;
   }, [activeNote, hoveredNote]);
 
-  const fontSize = compact ? 7 : 9;
-  const smallFontSize = compact ? 5 : 7;
+  const fontSize = compact ? 9 : 11;
+  const smallFontSize = compact ? 7 : 9;
 
   return (
     <div className={`fretboard-container ${className}`}>
@@ -326,7 +326,7 @@ export default function FretboardDiagram({
               x={x} y={svgHeight - 5}
               textAnchor="middle"
               fill="#8b7355"
-              fontSize={compact ? 8 : 10}
+              fontSize={compact ? 10 : 12}
               fontFamily="'Georgia', serif"
               fontStyle="italic"
             >
@@ -361,7 +361,7 @@ export default function FretboardDiagram({
               x={lm - 18} y={y + 4}
               textAnchor="middle"
               fill="#6b5b47"
-              fontSize={compact ? 9 : 13}
+              fontSize={compact ? 11 : 15}
               fontWeight="bold"
               fontFamily="'Georgia', serif"
               fontStyle="italic"
@@ -507,7 +507,7 @@ export default function FretboardDiagram({
                   x={note.x} y={note.y - r - 6}
                   textAnchor="middle"
                   fill={color}
-                  fontSize={9}
+                  fontSize={11}
                   fontFamily="'Georgia', serif"
                   fontStyle="italic"
                   fontWeight="bold"
@@ -546,7 +546,7 @@ export default function FretboardDiagram({
                 x={badgeX} y={badgeY + 1}
                 textAnchor="middle"
                 fill="#faf6ef"
-                fontSize={7}
+                fontSize={9}
                 fontWeight="bold"
                 fontFamily="'Georgia', serif"
               >

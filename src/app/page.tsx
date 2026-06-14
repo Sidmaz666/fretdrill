@@ -547,10 +547,10 @@ export default function Home() {
           <div className="w-px h-5 bg-[#c4b89c] hidden md:block" />
           {/* Key */}
           <div className="hidden md:flex items-center gap-1 shrink-0">
-            <span className="text-[8px] uppercase tracking-[0.1em] text-[#8b7355] font-serif italic font-bold">Key</span>
+            <span className="text-[10px] uppercase tracking-[0.1em] text-[#8b7355] font-serif italic font-bold">Key</span>
             <div className="flex gap-0.5">
               {KEY_DISPLAY_NAMES.map((key, idx) => (
-                <button key={idx} className={`h-5 min-w-[22px] px-0.5 text-[8px] font-semibold border transition-all rounded-sm ${keyIndex === idx ? 'sketch-btn-active border-[#6b5b47]' : 'sketch-btn border-[#c4b89c] hover:border-[#8b7355]'}`}
+                <button key={idx} className={`h-6 min-w-[24px] px-0.5 text-[10px] font-semibold border transition-all rounded-sm ${keyIndex === idx ? 'sketch-btn-active border-[#6b5b47]' : 'sketch-btn border-[#c4b89c] hover:border-[#8b7355]'}`}
                   onClick={() => { setKeyIndex(idx); setPositionIndex(0); stopPlayback(); }}>{key}</button>
               ))}
             </div>
@@ -558,12 +558,12 @@ export default function Home() {
           <div className="w-px h-5 bg-[#c4b89c] hidden md:block" />
           {/* Scale */}
           <div className="hidden md:flex items-center gap-1 shrink-0">
-            <span className="text-[8px] uppercase tracking-[0.1em] text-[#8b7355] font-serif italic font-bold">Scale</span>
+            <span className="text-[10px] uppercase tracking-[0.1em] text-[#8b7355] font-serif italic font-bold">Scale</span>
             <Select value={scaleId} onValueChange={(v) => { setScaleId(v); setPositionIndex(0); stopPlayback(); }}>
-              <SelectTrigger className="bg-[#f5f0e8] border-[#c4b89c] text-[#2c2c2c] text-[9px] rounded-sm h-5 w-[140px]"><SelectValue /></SelectTrigger>
+              <SelectTrigger className="bg-[#f5f0e8] border-[#c4b89c] text-[#2c2c2c] text-[11px] rounded-sm h-6 w-[150px]"><SelectValue /></SelectTrigger>
               <SelectContent className="bg-[#faf6ef] border-[#c4b89c]">
                 {Object.entries(SCALES).map(([id, s]) => (
-                  <SelectItem key={id} value={id} className="text-[9px] text-[#2c2c2c]">{s.name} ({s.intervals.length})</SelectItem>
+                  <SelectItem key={id} value={id} className="text-[11px] text-[#2c2c2c]">{s.name} ({s.intervals.length})</SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -571,26 +571,26 @@ export default function Home() {
           <div className="w-px h-5 bg-[#c4b89c] hidden md:block" />
           {/* Position */}
           <div className="hidden md:flex items-center gap-0.5 shrink-0">
-            <span className="text-[8px] uppercase tracking-[0.1em] text-[#8b7355] font-serif italic font-bold">Pos</span>
+            <span className="text-[10px] uppercase tracking-[0.1em] text-[#8b7355] font-serif italic font-bold">Pos</span>
             <button className="sketch-btn w-4 h-5 flex items-center justify-center border-[#c4b89c] p-0" onClick={handlePrevPosition} disabled={positionIndex <= 0}><ChevronLeft className="h-2.5 w-2.5" /></button>
             {positions.map((_, idx) => (
-              <button key={idx} className={`h-5 w-5 text-[8px] font-semibold rounded-sm transition-all border p-0 ${!showAllPositions && positionIndex === idx ? 'sketch-btn-active border-[#6b5b47]' : 'sketch-btn border-[#c4b89c] hover:border-[#8b7355]'}`}
+              <button key={idx} className={`h-6 w-6 text-[10px] font-semibold rounded-sm transition-all border p-0 ${!showAllPositions && positionIndex === idx ? 'sketch-btn-active border-[#6b5b47]' : 'sketch-btn border-[#c4b89c] hover:border-[#8b7355]'}`}
                 onClick={() => { setPositionIndex(idx); setShowAllPositions(false); stopPlayback(); }}>{idx + 1}</button>
             ))}
-            <button className={`h-5 px-1 text-[8px] font-semibold rounded-sm transition-all border p-0 ${showAllPositions ? 'sketch-btn-active border-[#6b5b47]' : 'sketch-btn border-[#c4b89c] hover:border-[#8b7355]'}`}
+            <button className={`h-6 px-1 text-[10px] font-semibold rounded-sm transition-all border p-0 ${showAllPositions ? 'sketch-btn-active border-[#6b5b47]' : 'sketch-btn border-[#c4b89c] hover:border-[#8b7355]'}`}
               onClick={() => { setShowAllPositions(true); stopPlayback(); }}>All</button>
             <button className="sketch-btn w-4 h-5 flex items-center justify-center border-[#c4b89c] p-0" onClick={handleNextPosition} disabled={positionIndex >= positions.length - 1}><ChevronRight className="h-2.5 w-2.5" /></button>
           </div>
           {/* Mobile context pill */}
           <div className="md:hidden flex-1 flex items-center justify-center">
-            <span className="text-[9px] font-serif italic text-[#4a4a4a] font-bold">{keyNote} {scale.name} · P{positionIndex + 1}</span>
+            <span className="text-[11px] font-serif italic text-[#4a4a4a] font-bold">{keyNote} {scale.name} · P{positionIndex + 1}</span>
           </div>
           <div className="flex-1 hidden md:block" />
           <div className="hidden lg:flex items-center gap-1.5 shrink-0">
-            <span className="text-[8px] text-[#8b7355] font-serif italic">{currentPosition.name} · Frets {currentPosition.fretStart}–{currentPosition.fretEnd}</span>
-            <span className="text-[8px] text-[#b8a88a] font-serif italic">· {Object.keys(EXERCISE_TYPES).length} exercises</span>
+            <span className="text-[10px] text-[#8b7355] font-serif italic">{currentPosition.name} · Frets {currentPosition.fretStart}–{currentPosition.fretEnd}</span>
+            <span className="text-[10px] text-[#b8a88a] font-serif italic">· {Object.keys(EXERCISE_TYPES).length} exercises</span>
           </div>
-          <button className={`sketch-btn px-1.5 py-0.5 text-[8px] flex items-center gap-0.5 shrink-0 ${soundEnabled ? 'border-[#6b5b47]' : 'border-[#c4b89c] opacity-50'}`}
+          <button className={`sketch-btn px-1.5 py-0.5 text-[10px] flex items-center gap-0.5 shrink-0 ${soundEnabled ? 'border-[#6b5b47]' : 'border-[#c4b89c] opacity-50'}`}
             onClick={() => setSoundEnabled(!soundEnabled)}>
             {soundEnabled ? <Volume2 className="w-2.5 h-2.5" /> : <VolumeX className="w-2.5 h-2.5" />}
           </button>
@@ -605,24 +605,24 @@ export default function Home() {
         <aside className={`fixed lg:relative inset-y-0 left-0 z-30 lg:z-0 w-[250px] lg:w-[250px] shrink-0 bg-[#faf6ef] border-r-2 border-[#8b7355] overflow-y-auto transform transition-transform duration-200 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'} pt-[38px] lg:pt-0`}>
           <div className="p-2.5 space-y-1.5">
             <div className="flex items-center justify-between">
-              <h3 className="text-[9px] uppercase tracking-[0.15em] text-[#8b7355] font-serif italic font-bold">Exercise Library</h3>
+              <h3 className="text-[11px] uppercase tracking-[0.15em] text-[#8b7355] font-serif italic font-bold">Exercise Library</h3>
               <button className="lg:hidden" onClick={() => setSidebarOpen(false)}><X className="w-3.5 h-3.5 text-[#8b7355]" /></button>
             </div>
             {/* Search */}
             <div className="relative">
               <Search className="absolute left-1.5 top-1/2 -translate-y-1/2 w-2.5 h-2.5 text-[#8b7355]" />
               <input type="text" placeholder="Search..." value={exerciseSearch} onChange={e => setExerciseSearch(e.target.value)}
-                className="w-full pl-5 pr-2 py-1 text-[8px] bg-[#f5f0e8] border border-[#c4b89c] rounded-sm focus:outline-none focus:border-[#8b7355] font-serif italic" />
+                className="w-full pl-5 pr-2 py-1 text-[10px] bg-[#f5f0e8] border border-[#c4b89c] rounded-sm focus:outline-none focus:border-[#8b7355] font-serif italic" />
             </div>
             {/* Random */}
-            <button className="sketch-btn w-full text-[8px] py-1 border-[#8b7355] text-[#6b5b47] font-semibold flex items-center justify-center gap-1" onClick={handleRandomize}>
+            <button className="sketch-btn w-full text-[10px] py-1 border-[#8b7355] text-[#6b5b47] font-semibold flex items-center justify-center gap-1" onClick={handleRandomize}>
               <Shuffle className="w-2.5 h-2.5" /> Random Exercise
             </button>
 
             {/* Category groups by section */}
             {sectionGroups.map(group => (
               <div key={group.section}>
-                <div className="text-[7px] uppercase tracking-[0.2em] text-[#9b3939] font-serif italic font-bold pt-2 pb-0.5 border-b border-[#e8e2d6] mb-0.5">
+                <div className="text-[9px] uppercase tracking-[0.2em] text-[#9b3939] font-serif italic font-bold pt-2 pb-0.5 border-b border-[#e8e2d6] mb-0.5">
                   {group.section}
                 </div>
                 {group.categories.map(cat => {
@@ -630,10 +630,10 @@ export default function Home() {
                   const isExpanded = expandedCategory === cat.id;
                   return (
                     <div key={cat.id}>
-                      <button className={`w-full flex items-center gap-1 px-1.5 py-1 rounded-sm text-[8px] font-serif italic font-bold transition-all ${isActiveCat ? 'bg-[rgba(155,57,57,0.08)] text-[#9b3939]' : 'text-[#6b5b47] hover:bg-[rgba(139,115,85,0.06)]'}`}
+                      <button className={`w-full flex items-center gap-1 px-1.5 py-1 rounded-sm text-[10px] font-serif italic font-bold transition-all ${isActiveCat ? 'bg-[rgba(155,57,57,0.08)] text-[#9b3939]' : 'text-[#6b5b47] hover:bg-[rgba(139,115,85,0.06)]'}`}
                         onClick={() => setExpandedCategory(isExpanded ? '' : cat.id)}>
                         <span className="flex-1 text-left">{cat.label}</span>
-                        <span className="text-[6px] opacity-50">{cat.types.length}</span>
+                        <span className="text-[8px] opacity-50">{cat.types.length}</span>
                         {isExpanded ? <ChevronUp className="w-2.5 h-2.5 opacity-40" /> : <ChevronDown className="w-2.5 h-2.5 opacity-40" />}
                       </button>
                       {(isExpanded || isActiveCat) && (
@@ -642,7 +642,7 @@ export default function Home() {
                             const info = EXERCISE_TYPES[typeId];
                             const isSelected = exerciseType === typeId;
                             return (
-                              <button key={typeId} className={`w-full text-left flex items-center gap-1 text-[7px] py-0.5 px-1.5 rounded-sm transition-all ${isSelected ? 'bg-[rgba(155,57,57,0.12)] text-[#9b3939] font-bold' : 'text-[#4a4a4a] hover:bg-[rgba(139,115,85,0.08)]'}`}
+                              <button key={typeId} className={`w-full text-left flex items-center gap-1 text-[9px] py-0.5 px-1.5 rounded-sm transition-all ${isSelected ? 'bg-[rgba(155,57,57,0.12)] text-[#9b3939] font-bold' : 'text-[#4a4a4a] hover:bg-[rgba(139,115,85,0.08)]'}`}
                                 onClick={() => { setExerciseType(typeId); stopPlayback(); setSidebarOpen(false); }}>
                                 <DifficultyBadge level={info.difficulty} />
                                 <span className="flex-1 truncate">{info.name}</span>
@@ -659,24 +659,24 @@ export default function Home() {
 
             {/* Intervals legend */}
             <div className="border-t border-[#e8e2d6] pt-2 mt-2">
-              <h4 className="text-[8px] uppercase tracking-[0.12em] text-[#8b7355] font-serif italic font-bold mb-1">Intervals</h4>
+              <h4 className="text-[10px] uppercase tracking-[0.12em] text-[#8b7355] font-serif italic font-bold mb-1">Intervals</h4>
               <div className="flex flex-wrap gap-0.5">
                 {scale.intervalLabels.map((label, idx) => (
-                  <span key={idx} className="inline-flex items-center justify-center px-1 py-0.5 text-[7px] font-bold font-serif italic border rounded-sm"
+                  <span key={idx} className="inline-flex items-center justify-center px-1.5 py-0.5 text-[9px] font-bold font-serif italic border rounded-sm"
                     style={{ borderColor: getIntervalColor(label) + '55', color: getIntervalColor(label), backgroundColor: getIntervalColor(label) + '12' }}>{label}</span>
                 ))}
               </div>
             </div>
             {/* Scale notes */}
             <div className="border-t border-[#e8e2d6] pt-2 mt-1">
-              <h4 className="text-[8px] uppercase tracking-[0.12em] text-[#8b7355] font-serif italic font-bold mb-1">Scale Notes</h4>
+              <h4 className="text-[10px] uppercase tracking-[0.12em] text-[#8b7355] font-serif italic font-bold mb-1">Scale Notes</h4>
               <div className="flex flex-wrap gap-0.5">
                 {scaleNotes.map((note, idx) => {
                   const label = scale.intervalLabels[idx]; const color = getIntervalColor(label);
                   return (
-                    <span key={idx} className="inline-flex items-center gap-0.5 px-1 py-0.5 text-[7px] font-serif italic border rounded-sm"
+                    <span key={idx} className="inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[9px] font-serif italic border rounded-sm"
                       style={{ borderColor: color + '40', color, backgroundColor: color + '08' }}>
-                      <span className="font-bold">{note}</span><span className="opacity-40 text-[6px]">{label}</span>
+                      <span className="font-bold">{note}</span><span className="opacity-40 text-[8px]">{label}</span>
                     </span>
                   );
                 })}
@@ -692,7 +692,7 @@ export default function Home() {
             {/* Exercise Header (Sticky within center) */}
             <div className="sticky top-0 z-10 bg-[#faf6ef] border-b-2 border-[#8b7355] -mx-2.5 lg:-mx-3 px-2.5 lg:px-3 pb-2 pt-1">
               {/* Breadcrumb */}
-              <div className="flex items-center gap-1 text-[7px] text-[#8b7355] font-serif italic mb-0.5">
+              <div className="flex items-center gap-1 text-[9px] text-[#8b7355] font-serif italic mb-0.5">
                 <span>{exerciseCategory.section}</span>
                 <ChevronRight className="w-2 h-2" />
                 <span>{exerciseCategory.label}</span>
@@ -703,21 +703,21 @@ export default function Home() {
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0">
                   <div className="flex items-center gap-1.5">
-                    <span className="text-[11px] font-bold text-[#9b3939] font-serif italic truncate">{currentExercise?.name}</span>
+                    <span className="text-[12px] font-bold text-[#9b3939] font-serif italic truncate">{currentExercise?.name}</span>
                     <DifficultyBadge level={exerciseMeta.difficulty} />
                   </div>
                   <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-                    <span className="text-[7px] text-[#6b5b47] font-serif italic font-semibold">{keyNote} {scale.name} · {showAllPositions ? 'All Pos' : `P${positionIndex + 1}`}</span>
-                    <span className="text-[7px] text-[#b8a88a] font-serif italic">{exerciseMeta.focus}</span>
-                    <span className="text-[7px] text-[#b8a88a] font-serif italic">~{exerciseMeta.estimatedTime}</span>
+                    <span className="text-[9px] text-[#6b5b47] font-serif italic font-semibold">{keyNote} {scale.name} · {showAllPositions ? 'All Pos' : `P${positionIndex + 1}`}</span>
+                    <span className="text-[9px] text-[#b8a88a] font-serif italic">{exerciseMeta.focus}</span>
+                    <span className="text-[9px] text-[#b8a88a] font-serif italic">~{exerciseMeta.estimatedTime}</span>
                     {isPlaying && playbackActiveNote && (
-                      <span className="text-[7px] text-[#9b3939] font-serif italic font-bold">▸ {playingIdx + 1}/{playbackMode === 'exercise' ? currentExercise.notes.length : scaleNotesForPlayback.length}</span>
+                      <span className="text-[9px] text-[#9b3939] font-serif italic font-bold">▸ {playingIdx + 1}/{playbackMode === 'exercise' ? currentExercise.notes.length : scaleNotesForPlayback.length}</span>
                     )}
                   </div>
                 </div>
                 {/* Quick actions */}
                 <div className="flex items-center gap-1 shrink-0">
-                  <button className="sketch-btn h-5 px-1 text-[7px] border-[#c4b89c] text-[#8b7355]" onClick={handleRandomize} title="Random"><Shuffle className="w-2.5 h-2.5" /></button>
+                  <button className="sketch-btn h-6 px-1 text-[9px] border-[#c4b89c] text-[#8b7355]" onClick={handleRandomize} title="Random"><Shuffle className="w-3 h-3" /></button>
                 </div>
               </div>
             </div>
@@ -730,19 +730,19 @@ export default function Home() {
                 { mode: 'hybrid' as ViewMode, icon: Eye, label: 'Hybrid' },
                 { mode: 'analysis' as ViewMode, icon: BarChart3, label: 'Analysis' },
               ]).map(({ mode, icon: Icon, label }) => (
-                <button key={mode} className={`flex items-center gap-0.5 px-2 py-1 text-[8px] font-bold uppercase tracking-wider border-2 rounded-sm transition-all ${viewMode === mode ? 'sketch-btn-active border-[#6b5b47] text-[#2c2c2c]' : 'sketch-btn border-[#c4b89c] text-[#8b7355] hover:border-[#8b7355]'}`}
+                <button key={mode} className={`flex items-center gap-0.5 px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-wider border-2 rounded-sm transition-all ${viewMode === mode ? 'sketch-btn-active border-[#6b5b47] text-[#2c2c2c]' : 'sketch-btn border-[#c4b89c] text-[#8b7355] hover:border-[#8b7355]'}`}
                   onClick={() => setViewMode(mode)}>
                   <Icon className="w-2.5 h-2.5" /><span className="hidden sm:inline">{label}</span>
                 </button>
               ))}
               <div className="flex-1" />
-              <button className={`px-1.5 py-0.5 text-[8px] font-bold flex items-center gap-0.5 border-2 rounded-sm transition-all ${isPlaying && playbackMode === 'exercise' && !isPaused ? 'bg-[#9b3939] text-white border-[#9b3939]' : 'sketch-btn border-[#6b5b47]'}`} onClick={handlePlayExercise}>
+              <button className={`px-2 py-1 text-[10px] font-bold flex items-center gap-0.5 border-2 rounded-sm transition-all ${isPlaying && playbackMode === 'exercise' && !isPaused ? 'bg-[#9b3939] text-white border-[#9b3939]' : 'sketch-btn border-[#6b5b47]'}`} onClick={handlePlayExercise}>
                 {isPlaying && playbackMode === 'exercise' && !isPaused ? <Pause className="w-2.5 h-2.5" /> : <Play className="w-2.5 h-2.5" />}
               </button>
-              <button className={`px-1.5 py-0.5 text-[8px] font-bold flex items-center gap-0.5 border-2 rounded-sm transition-all ${isPlaying && playbackMode === 'scale' && !isPaused ? 'bg-[#4a5a8a] text-white border-[#4a5a8a]' : 'sketch-btn border-[#4a5a8a]'}`} onClick={handlePlayScale}>
+              <button className={`px-2 py-1 text-[10px] font-bold flex items-center gap-0.5 border-2 rounded-sm transition-all ${isPlaying && playbackMode === 'scale' && !isPaused ? 'bg-[#4a5a8a] text-white border-[#4a5a8a]' : 'sketch-btn border-[#4a5a8a]'}`} onClick={handlePlayScale}>
                 {isPlaying && playbackMode === 'scale' && !isPaused ? <Pause className="w-2.5 h-2.5" /> : <Music className="w-2.5 h-2.5" />}
               </button>
-              {isPlaying && <button className="px-1.5 py-0.5 text-[8px] font-bold flex items-center gap-0.5 border-2 rounded-sm bg-[#4a4a4a] text-white border-[#4a4a4a]" onClick={stopPlayback}><Square className="w-2.5 h-2.5" /></button>}
+              {isPlaying && <button className="px-2 py-1 text-[10px] font-bold flex items-center gap-0.5 border-2 rounded-sm bg-[#4a4a4a] text-white border-[#4a4a4a]" onClick={stopPlayback}><Square className="w-3 h-3" /></button>}
             </div>
 
             {/* ─── View Content ─── */}
@@ -794,7 +794,7 @@ export default function Home() {
               <div className="sketch-card bg-[#faf6ef] p-3 space-y-3">
                 {/* Overview Stats Grid */}
                 <div>
-                  <h3 className="text-[9px] uppercase tracking-[0.15em] text-[#8b7355] font-serif italic font-bold mb-1.5 flex items-center gap-1"><Activity className="w-3 h-3" /> Exercise Overview</h3>
+                  <h3 className="text-[11px] uppercase tracking-[0.15em] text-[#8b7355] font-serif italic font-bold mb-1.5 flex items-center gap-1"><Activity className="w-3 h-3" /> Exercise Overview</h3>
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
                     {[
                       { label: 'Total Notes', value: exerciseStats.totalNotes, icon: Hash },
@@ -803,7 +803,7 @@ export default function Home() {
                       { label: 'Pos. Shifts', value: exerciseStats.positionShifts, icon: Zap },
                     ].map(({ label, value, icon: Icon }) => (
                       <div key={label} className="bg-[#f5f0e8] border border-[#e8e2d6] rounded-sm p-1.5">
-                        <div className="flex items-center gap-0.5 text-[7px] text-[#8b7355] font-serif italic uppercase"><Icon className="w-2.5 h-2.5" />{label}</div>
+                        <div className="flex items-center gap-0.5 text-[9px] text-[#8b7355] font-serif italic uppercase"><Icon className="w-3 h-3" />{label}</div>
                         <div className="text-[14px] font-bold text-[#2c2c2c] font-serif italic">{value}</div>
                       </div>
                     ))}
@@ -812,7 +812,7 @@ export default function Home() {
 
                 {/* Deep Stats */}
                 <div>
-                  <h3 className="text-[9px] uppercase tracking-[0.15em] text-[#8b7355] font-serif italic font-bold mb-1.5 flex items-center gap-1"><Signal className="w-3 h-3" /> Detailed Metrics</h3>
+                  <h3 className="text-[11px] uppercase tracking-[0.15em] text-[#8b7355] font-serif italic font-bold mb-1.5 flex items-center gap-1"><Signal className="w-3.5 h-3.5" /> Detailed Metrics</h3>
                   <div className="grid grid-cols-3 sm:grid-cols-6 gap-1.5">
                     {[
                       { label: 'Avg Jump', value: exerciseStats.avgFretJump },
@@ -823,8 +823,8 @@ export default function Home() {
                       { label: 'Pattern', value: exerciseStats.patternType },
                     ].map(({ label, value }) => (
                       <div key={label} className="bg-[#f5f0e8] border border-[#e8e2d6] rounded-sm p-1.5">
-                        <div className="text-[6px] text-[#8b7355] font-serif italic uppercase">{label}</div>
-                        <div className="text-[11px] font-bold text-[#2c2c2c] font-serif italic">{value}</div>
+                        <div className="text-[8px] text-[#8b7355] font-serif italic uppercase">{label}</div>
+                        <div className="text-[12px] font-bold text-[#2c2c2c] font-serif italic">{value}</div>
                       </div>
                     ))}
                   </div>
@@ -832,7 +832,7 @@ export default function Home() {
 
                 {/* Interval Distribution */}
                 <div>
-                  <h3 className="text-[9px] uppercase tracking-[0.15em] text-[#8b7355] font-serif italic font-bold mb-1.5">Interval Distribution</h3>
+                  <h3 className="text-[11px] uppercase tracking-[0.15em] text-[#8b7355] font-serif italic font-bold mb-1.5">Interval Distribution</h3>
                   <div className="flex flex-wrap gap-1">
                     {Object.entries(exerciseStats.intervalDistribution).sort((a, b) => b[1] - a[1]).map(([label, count]) => {
                       const color = getIntervalColor(label);
@@ -843,7 +843,7 @@ export default function Home() {
                           <div className="h-3 rounded-sm overflow-hidden" style={{ width: `${width}px`, backgroundColor: color + '20', border: `1px solid ${color}40` }}>
                             <div className="h-full rounded-sm" style={{ width: `${(count / maxCount) * 100}%`, backgroundColor: color + '60' }} />
                           </div>
-                          <span className="text-[7px] font-serif italic" style={{ color }}>{label}: <b>{count}</b></span>
+                          <span className="text-[9px] font-serif italic" style={{ color }}>{label}: <b>{count}</b></span>
                         </div>
                       );
                     })}
@@ -852,15 +852,15 @@ export default function Home() {
 
                 {/* String Coverage */}
                 <div>
-                  <h3 className="text-[9px] uppercase tracking-[0.15em] text-[#8b7355] font-serif italic font-bold mb-1.5">String Coverage</h3>
+                  <h3 className="text-[11px] uppercase tracking-[0.15em] text-[#8b7355] font-serif italic font-bold mb-1.5">String Coverage</h3>
                   <div className="flex gap-1.5">
                     {['E', 'A', 'D', 'G', 'B', 'e'].map((s, idx) => {
                       const used = currentExercise.notes.some(n => n.string === idx);
                       const noteCount = currentExercise.notes.filter(n => n.string === idx).length;
                       return (
                         <div key={s} className={`flex flex-col items-center w-8 rounded-sm border-2 p-1 ${used ? 'border-[#8b7355] bg-[rgba(139,115,85,0.1)]' : 'border-[#e8e2d6]'}`}>
-                          <span className={`text-[9px] font-bold font-serif italic ${used ? 'text-[#4a4a4a]' : 'text-[#c4b89c]'}`}>{s}</span>
-                          {used && <span className="text-[6px] text-[#8b7355] font-serif italic">{noteCount}n</span>}
+                          <span className={`text-[11px] font-bold font-serif italic ${used ? 'text-[#4a4a4a]' : 'text-[#c4b89c]'}`}>{s}</span>
+                          {used && <span className="text-[8px] text-[#8b7355] font-serif italic">{noteCount}n</span>}
                         </div>
                       );
                     })}
@@ -869,19 +869,19 @@ export default function Home() {
 
                 {/* Scale Formula */}
                 <div>
-                  <h3 className="text-[9px] uppercase tracking-[0.15em] text-[#8b7355] font-serif italic font-bold mb-1.5">Scale Formula</h3>
+                  <h3 className="text-[11px] uppercase tracking-[0.15em] text-[#8b7355] font-serif italic font-bold mb-1.5">Scale Formula</h3>
                   <div className="flex flex-wrap gap-1 mb-1">
                     {scaleNotes.map((note, idx) => {
                       const label = scale.intervalLabels[idx]; const color = getIntervalColor(label);
                       return (
-                        <span key={idx} className="inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[8px] font-serif italic border rounded-sm"
+                        <span key={idx} className="inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[10px] font-serif italic border rounded-sm"
                           style={{ borderColor: color + '50', color, backgroundColor: color + '0a' }}>
-                          <span className="font-bold">{note}</span><span className="opacity-50 text-[6px]">{label}</span>
+                          <span className="font-bold">{note}</span><span className="opacity-50 text-[8px]">{label}</span>
                         </span>
                       );
                     })}
                   </div>
-                  <p className="text-[7px] text-[#8b7355] font-serif italic">
+                  <p className="text-[9px] text-[#8b7355] font-serif italic">
                     Steps: {scale.intervals.slice(1).map((interval, idx) => {
                       const prevInterval = idx === 0 ? 0 : scale.intervals[idx]; const step = interval - prevInterval;
                       return step === 1 ? 'H' : step === 2 ? 'W' : `${step}H`;
@@ -891,39 +891,39 @@ export default function Home() {
 
                 {/* Picking Direction */}
                 <div>
-                  <h3 className="text-[9px] uppercase tracking-[0.15em] text-[#8b7355] font-serif italic font-bold mb-1.5">Suggested Picking</h3>
+                  <h3 className="text-[11px] uppercase tracking-[0.15em] text-[#8b7355] font-serif italic font-bold mb-1.5">Suggested Picking</h3>
                   <div className="flex flex-wrap gap-px">
                     {exerciseStats.pickingDirection.slice(0, 40).map((dir, idx) => (
-                      <span key={idx} className={`w-3.5 h-3.5 rounded-sm flex items-center justify-center text-[6px] font-bold border ${
+                      <span key={idx} className={`w-4 h-4 rounded-sm flex items-center justify-center text-[8px] font-bold border ${
                         dir === 'D' ? 'border-[#4a7a4a] text-[#4a7a4a] bg-[rgba(74,122,74,0.06)]' : 'border-[#4a5a8a] text-[#4a5a8a] bg-[rgba(74,90,138,0.06)]'
                       }`}>{dir}</span>
                     ))}
-                    {exerciseStats.pickingDirection.length > 40 && <span className="text-[6px] text-[#8b7355] font-serif italic ml-0.5">+{exerciseStats.pickingDirection.length - 40}</span>}
+                    {exerciseStats.pickingDirection.length > 40 && <span className="text-[8px] text-[#8b7355] font-serif italic ml-0.5">+{exerciseStats.pickingDirection.length - 40}</span>}
                   </div>
                   <div className="flex items-center gap-3 mt-0.5">
-                    <span className="text-[6px] text-[#4a7a4a] font-serif italic">D = Downstroke</span>
-                    <span className="text-[6px] text-[#4a5a8a] font-serif italic">U = Upstroke</span>
+                    <span className="text-[8px] text-[#4a7a4a] font-serif italic">D = Downstroke</span>
+                    <span className="text-[8px] text-[#4a5a8a] font-serif italic">U = Upstroke</span>
                   </div>
                 </div>
 
                 {/* Exercise Metadata */}
                 <div>
-                  <h3 className="text-[9px] uppercase tracking-[0.15em] text-[#8b7355] font-serif italic font-bold mb-1.5 flex items-center gap-1"><Clock className="w-3 h-3" /> Exercise Info</h3>
+                  <h3 className="text-[11px] uppercase tracking-[0.15em] text-[#8b7355] font-serif italic font-bold mb-1.5 flex items-center gap-1"><Clock className="w-3.5 h-3.5" /> Exercise Info</h3>
                   <div className="bg-[#f5f0e8] border border-[#e8e2d6] rounded-sm p-2 space-y-1">
                     <div className="grid grid-cols-2 gap-x-4 gap-y-0.5">
-                      <div className="flex justify-between text-[7px]"><span className="text-[#8b7355] font-serif italic">Focus</span><span className="text-[#4a4a4a] font-bold">{exerciseMeta.focus}</span></div>
-                      <div className="flex justify-between text-[7px]"><span className="text-[#8b7355] font-serif italic">Duration</span><span className="text-[#4a4a4a] font-bold">{exerciseMeta.estimatedTime}</span></div>
-                      <div className="flex justify-between text-[7px]"><span className="text-[#8b7355] font-serif italic">Position</span><span className="text-[#4a4a4a] font-bold">{showAllPositions ? 'All' : `P${positionIndex + 1}`} ({currentPosition.fretStart}–{currentPosition.fretEnd})</span></div>
-                      <div className="flex justify-between text-[7px]"><span className="text-[#8b7355] font-serif italic">Category</span><span className="text-[#4a4a4a] font-bold">{exerciseStats.patternType}</span></div>
-                      <div className="flex justify-between text-[7px]"><span className="text-[#8b7355] font-serif italic">Notes</span><span className="text-[#4a4a4a] font-bold">{exerciseStats.totalNotes}</span></div>
-                      <div className="flex justify-between text-[7px]"><span className="text-[#8b7355] font-serif italic">Fret Span</span><span className="text-[#4a4a4a] font-bold">{exerciseStats.fretRange[1] - exerciseStats.fretRange[0] + 1} frets</span></div>
+                      <div className="flex justify-between text-[9px]"><span className="text-[#8b7355] font-serif italic">Focus</span><span className="text-[#4a4a4a] font-bold">{exerciseMeta.focus}</span></div>
+                      <div className="flex justify-between text-[9px]"><span className="text-[#8b7355] font-serif italic">Duration</span><span className="text-[#4a4a4a] font-bold">{exerciseMeta.estimatedTime}</span></div>
+                      <div className="flex justify-between text-[9px]"><span className="text-[#8b7355] font-serif italic">Position</span><span className="text-[#4a4a4a] font-bold">{showAllPositions ? 'All' : `P${positionIndex + 1}`} ({currentPosition.fretStart}–{currentPosition.fretEnd})</span></div>
+                      <div className="flex justify-between text-[9px]"><span className="text-[#8b7355] font-serif italic">Category</span><span className="text-[#4a4a4a] font-bold">{exerciseStats.patternType}</span></div>
+                      <div className="flex justify-between text-[9px]"><span className="text-[#8b7355] font-serif italic">Notes</span><span className="text-[#4a4a4a] font-bold">{exerciseStats.totalNotes}</span></div>
+                      <div className="flex justify-between text-[9px]"><span className="text-[#8b7355] font-serif italic">Fret Span</span><span className="text-[#4a4a4a] font-bold">{exerciseStats.fretRange[1] - exerciseStats.fretRange[0] + 1} frets</span></div>
                     </div>
                     <div className="flex flex-wrap gap-0.5 pt-1 border-t border-[#e8e2d6]">
                       {exerciseMeta.tags.map(tag => (
-                        <span key={tag} className="px-1 py-0.5 text-[6px] font-serif italic bg-[rgba(139,115,85,0.08)] text-[#6b5b47] border border-[#e8e2d6] rounded-sm">{tag}</span>
+                        <span key={tag} className="px-1.5 py-0.5 text-[8px] font-serif italic bg-[rgba(139,115,85,0.08)] text-[#6b5b47] border border-[#e8e2d6] rounded-sm">{tag}</span>
                       ))}
                     </div>
-                    <p className="text-[7px] text-[#4a4a4a] font-serif italic pt-1 border-t border-[#e8e2d6]">
+                    <p className="text-[9px] text-[#4a4a4a] font-serif italic pt-1 border-t border-[#e8e2d6]">
                       {exerciseStats.positionShifts > 0 ? 'Contains position shifts — practice slowly, focus on smooth transitions.' :
                         exerciseStats.stringChanges > exerciseStats.totalNotes * 0.6 ? 'High string-crossing density — keep picking hand relaxed, use efficient alternate picking.' :
                         'Focus on clean articulation and consistent timing with the metronome.'}
@@ -937,13 +937,13 @@ export default function Home() {
             <div className="xl:hidden">
               <button className="w-full sketch-card bg-[#faf6ef] px-2 py-1 flex items-center justify-between"
                 onClick={() => setRightPanelExpanded(!rightPanelExpanded)}>
-                <span className="text-[8px] uppercase tracking-[0.12em] text-[#8b7355] font-serif italic font-bold">Scale Explorer</span>
+                <span className="text-[10px] uppercase tracking-[0.12em] text-[#8b7355] font-serif italic font-bold">Scale Explorer</span>
                 {rightPanelExpanded ? <ChevronUp className="w-2.5 h-2.5 text-[#8b7355]" /> : <ChevronDown className="w-2.5 h-2.5 text-[#8b7355]" />}
               </button>
               {rightPanelExpanded && (
                 <div className="mt-1.5">
                   <div className="sketch-card bg-[#faf6ef] p-2">
-                    <h4 className="text-[8px] uppercase tracking-[0.12em] text-[#8b7355] font-serif italic font-bold mb-1.5">CAGED Positions</h4>
+                    <h4 className="text-[10px] uppercase tracking-[0.12em] text-[#8b7355] font-serif italic font-bold mb-1.5">CAGED Positions</h4>
                     <div className="grid grid-cols-5 gap-1.5">
                       {patternExercises.map((pat) => (
                         <button key={pat.position} onClick={() => handlePatternClick(pat.position - 1)} className="text-left">
@@ -962,22 +962,22 @@ export default function Home() {
 
         {/* ─── RIGHT SIDEBAR ─── */}
         <aside className="hidden xl:block w-[280px] shrink-0 border-l-2 border-[#8b7355] bg-[#faf6ef] overflow-y-auto">
-          <div className="p-2.5 space-y-2.5">
+          <div className="p-2.5 pb-16 space-y-2.5">
 
             {/* Card 1: Current Scale */}
             <div className="sketch-card bg-[#f5f0e8] p-2.5">
-              <h4 className="text-[8px] uppercase tracking-[0.12em] text-[#8b7355] font-serif italic font-bold mb-1.5">Current Scale</h4>
-              <div className="text-[11px] font-bold text-[#9b3939] font-serif italic mb-1">{keyNote} {scale.name}</div>
+              <h4 className="text-[10px] uppercase tracking-[0.12em] text-[#8b7355] font-serif italic font-bold mb-1.5">Current Scale</h4>
+              <div className="text-[13px] font-bold text-[#9b3939] font-serif italic mb-1">{keyNote} {scale.name}</div>
               <div className="flex flex-wrap gap-0.5 mb-1.5">
                 {scaleNotes.map((note, idx) => {
                   const label = scale.intervalLabels[idx]; const color = getIntervalColor(label);
-                  return <span key={idx} className="inline-flex items-center gap-0.5 px-1 py-0.5 text-[7px] font-serif italic border rounded-sm"
+                  return <span key={idx} className="inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[9px] font-serif italic border rounded-sm"
                     style={{ borderColor: color + '40', color, backgroundColor: color + '08' }}>
-                    <span className="font-bold">{note}</span><span className="opacity-40 text-[5px]">{label}</span>
+                    <span className="font-bold">{note}</span><span className="opacity-40 text-[8px]">{label}</span>
                   </span>;
                 })}
               </div>
-              <p className="text-[6px] text-[#8b7355] font-serif italic">{scale.intervals.length} notes · Steps: {scale.intervals.slice(1).map((interval, idx) => {
+              <p className="text-[8px] text-[#8b7355] font-serif italic">{scale.intervals.length} notes · Steps: {scale.intervals.slice(1).map((interval, idx) => {
                 const prevInterval = idx === 0 ? 0 : scale.intervals[idx]; const step = interval - prevInterval;
                 return step === 1 ? 'H' : step === 2 ? 'W' : `${step}H`;
               }).join('−')}</p>
@@ -985,7 +985,7 @@ export default function Home() {
 
             {/* Card 2: Current Position */}
             <div className="sketch-card bg-[#f5f0e8] p-2.5">
-              <h4 className="text-[8px] uppercase tracking-[0.12em] text-[#8b7355] font-serif italic font-bold mb-1.5">Current Position</h4>
+              <h4 className="text-[10px] uppercase tracking-[0.12em] text-[#8b7355] font-serif italic font-bold mb-1.5">Current Position</h4>
               <div className="space-y-1.5">
                 {patternExercises.map((pat) => (
                   <button key={pat.position} onClick={() => handlePatternClick(pat.position - 1)} className="w-full text-left">
@@ -999,17 +999,17 @@ export default function Home() {
 
             {/* Card 3: Related Exercises */}
             <div className="sketch-card bg-[#f5f0e8] p-2.5">
-              <h4 className="text-[8px] uppercase tracking-[0.12em] text-[#8b7355] font-serif italic font-bold mb-1.5">Related Exercises</h4>
+              <h4 className="text-[10px] uppercase tracking-[0.12em] text-[#8b7355] font-serif italic font-bold mb-1.5">Related Exercises</h4>
               <div className="space-y-0.5">
                 {exerciseCategory.types.filter(t => t !== exerciseType).slice(0, 5).map(typeId => {
                   const info = EXERCISE_TYPES[typeId];
                   return (
-                    <button key={typeId} className="w-full text-left flex items-center gap-1 px-1.5 py-1 rounded-sm text-[7px] text-[#4a4a4a] hover:bg-[rgba(139,115,85,0.08)] transition-all"
+                    <button key={typeId} className="w-full text-left flex items-center gap-1 px-1.5 py-1 rounded-sm text-[9px] text-[#4a4a4a] hover:bg-[rgba(139,115,85,0.08)] transition-all"
                       onClick={() => { setExerciseType(typeId); stopPlayback(); }}>
                       <ArrowRight className="w-2 h-2 text-[#8b7355] shrink-0" />
                       <div className="flex-1 min-w-0">
                         <span className="font-serif italic">{info.name}</span>
-                        <span className="text-[6px] text-[#8b7355] ml-1">{info.focus}</span>
+                        <span className="text-[8px] text-[#8b7355] ml-1">{info.focus}</span>
                       </div>
                       <DifficultyBadge level={info.difficulty} />
                     </button>
@@ -1020,20 +1020,20 @@ export default function Home() {
 
             {/* Card 4: Next Suggested */}
             <div className="sketch-card bg-[#f5f0e8] p-2.5">
-              <h4 className="text-[8px] uppercase tracking-[0.12em] text-[#8b7355] font-serif italic font-bold mb-1.5">Suggested Next</h4>
+              <h4 className="text-[10px] uppercase tracking-[0.12em] text-[#8b7355] font-serif italic font-bold mb-1.5">Suggested Next</h4>
               {(() => {
                 const currentIdx = exerciseCategory.types.indexOf(exerciseType);
                 const nextType = currentIdx >= 0 && currentIdx < exerciseCategory.types.length - 1 ? exerciseCategory.types[currentIdx + 1] : null;
                 const nextMeta = nextType ? EXERCISE_TYPES[nextType] : null;
-                if (!nextType || !nextMeta) return <p className="text-[7px] text-[#b8a88a] font-serif italic">Complete!</p>;
+                if (!nextType || !nextMeta) return <p className="text-[9px] text-[#b8a88a] font-serif italic">Complete!</p>;
                 return (
                   <button className="w-full text-left bg-[rgba(155,57,57,0.05)] border border-[#9b393930] rounded-sm p-1.5 hover:bg-[rgba(155,57,57,0.1)] transition-all"
                     onClick={() => { setExerciseType(nextType); stopPlayback(); }}>
                     <div className="flex items-center gap-1">
                       <Play className="w-2.5 h-2.5 text-[#9b3939]" />
-                      <span className="text-[8px] font-bold text-[#9b3939] font-serif italic">{nextMeta.name}</span>
+                      <span className="text-[10px] font-bold text-[#9b3939] font-serif italic">{nextMeta.name}</span>
                     </div>
-                    <p className="text-[6px] text-[#8b7355] font-serif italic mt-0.5">{nextMeta.description} · {nextMeta.focus}</p>
+                    <p className="text-[8px] text-[#8b7355] font-serif italic mt-0.5">{nextMeta.description} · {nextMeta.focus}</p>
                   </button>
                 );
               })()}
@@ -1041,12 +1041,12 @@ export default function Home() {
 
             {/* Card 5: Session */}
             <div className="sketch-card bg-[#f5f0e8] p-2.5">
-              <h4 className="text-[8px] uppercase tracking-[0.12em] text-[#8b7355] font-serif italic font-bold mb-1.5 flex items-center gap-1"><Clock className="w-2.5 h-2.5" /> Session</h4>
+              <h4 className="text-[10px] uppercase tracking-[0.12em] text-[#8b7355] font-serif italic font-bold mb-1.5 flex items-center gap-1"><Clock className="w-3 h-3" /> Session</h4>
               <div className="grid grid-cols-2 gap-1.5">
-                <div><div className="text-[6px] text-[#8b7355] font-serif italic uppercase">Time</div><div className="text-[12px] font-bold text-[#2c2c2c] font-mono">{formatTime(sessionElapsed)}</div></div>
-                <div><div className="text-[6px] text-[#8b7355] font-serif italic uppercase">Played</div><div className="text-[12px] font-bold text-[#2c2c2c] font-mono">{exercisesPlayed}</div></div>
-                <div><div className="text-[6px] text-[#8b7355] font-serif italic uppercase">Tempo</div><div className="text-[12px] font-bold text-[#2c2c2c] font-mono">{bpm}</div></div>
-                <div><div className="text-[6px] text-[#8b7355] font-serif italic uppercase">Library</div><div className="text-[12px] font-bold text-[#2c2c2c] font-mono">{Object.keys(EXERCISE_TYPES).length}</div></div>
+                <div><div className="text-[8px] text-[#8b7355] font-serif italic uppercase">Time</div><div className="text-[13px] font-bold text-[#2c2c2c] font-mono">{formatTime(sessionElapsed)}</div></div>
+                <div><div className="text-[8px] text-[#8b7355] font-serif italic uppercase">Played</div><div className="text-[13px] font-bold text-[#2c2c2c] font-mono">{exercisesPlayed}</div></div>
+                <div><div className="text-[8px] text-[#8b7355] font-serif italic uppercase">Tempo</div><div className="text-[13px] font-bold text-[#2c2c2c] font-mono">{bpm}</div></div>
+                <div><div className="text-[8px] text-[#8b7355] font-serif italic uppercase">Library</div><div className="text-[13px] font-bold text-[#2c2c2c] font-mono">{Object.keys(EXERCISE_TYPES).length}</div></div>
               </div>
             </div>
           </div>
@@ -1076,27 +1076,27 @@ export default function Home() {
           <div className="flex items-center gap-1 min-w-0">
             <div className="flex items-center gap-0.5 shrink-0">
               <Timer className="w-2.5 h-2.5 text-[#8b7355]" />
-              <button className="sketch-btn w-4 h-4 flex items-center justify-center border-[#c4b89c] p-0 text-[8px] font-bold" onClick={() => setBpm(Math.max(40, bpm - 1))} title="-1 BPM">−</button>
+              <button className="sketch-btn w-5 h-5 flex items-center justify-center border-[#c4b89c] p-0 text-[10px] font-bold" onClick={() => setBpm(Math.max(40, bpm - 1))} title="-1 BPM">−</button>
               <span className="text-[13px] font-mono font-bold text-[#4a4a4a] w-7 text-center">{bpm}</span>
-              <button className="sketch-btn w-4 h-4 flex items-center justify-center border-[#c4b89c] p-0 text-[8px] font-bold" onClick={() => setBpm(Math.min(220, bpm + 1))} title="+1 BPM">+</button>
-              <span className="text-[7px] text-[#8b7355] font-serif italic hidden sm:inline">BPM</span>
+              <button className="sketch-btn w-5 h-5 flex items-center justify-center border-[#c4b89c] p-0 text-[10px] font-bold" onClick={() => setBpm(Math.min(220, bpm + 1))} title="+1 BPM">+</button>
+              <span className="text-[9px] text-[#8b7355] font-serif italic hidden sm:inline">BPM</span>
             </div>
             <input type="range" min={40} max={220} step={1} value={bpm} onChange={e => setBpm(Number(e.target.value))}
               className="w-12 sm:w-18 h-1 cursor-pointer" style={{ accentColor: '#8b7355' }} />
             <div className="hidden md:flex items-center gap-px overflow-x-auto max-w-[240px]">
               {bpmPresets.map(preset => (
-                <button key={preset} className={`text-[6px] px-0.5 py-0.5 border rounded-sm transition-all whitespace-nowrap ${bpm === preset ? 'sketch-btn-active border-[#6b5b47]' : 'sketch-btn border-[#c4b89c] hover:border-[#8b7355]'}`}
+                <button key={preset} className={`text-[8px] px-1 py-0.5 border rounded-sm transition-all whitespace-nowrap ${bpm === preset ? 'sketch-btn-active border-[#6b5b47]' : 'sketch-btn border-[#c4b89c] hover:border-[#8b7355]'}`}
                   onClick={() => setBpm(preset)}>{preset}</button>
               ))}
             </div>
-            <button className="sketch-btn text-[7px] px-1 py-0.5 border-[#8b7355] text-[#6b5b47] font-semibold hidden sm:block" onClick={handleTapTempo}>TAP</button>
+            <button className="sketch-btn text-[9px] px-1.5 py-0.5 border-[#8b7355] text-[#6b5b47] font-semibold hidden sm:block" onClick={handleTapTempo}>TAP</button>
           </div>
 
           <div className="w-px h-5 bg-[#e8e2d6]" />
 
           {/* METRONOME */}
           <div className="flex items-center gap-1.5 shrink-0">
-            <button className={`px-1.5 py-0.5 text-[8px] font-bold flex items-center gap-0.5 border-2 rounded-sm transition-all ${metronomeOn ? 'bg-[#9b3939] text-white border-[#9b3939]' : 'sketch-btn border-[#6b5b47]'}`}
+            <button className={`px-2 py-1 text-[10px] font-bold flex items-center gap-0.5 border-2 rounded-sm transition-all ${metronomeOn ? 'bg-[#9b3939] text-white border-[#9b3939]' : 'sketch-btn border-[#6b5b47]'}`}
               onClick={toggleMetronome}>
               <Drum className="w-2.5 h-2.5" />
               <span className="hidden sm:inline">{metronomeOn ? 'STOP' : 'MET'}</span>
@@ -1108,7 +1108,7 @@ export default function Home() {
             </div>
             <div className="hidden md:flex gap-0.5">
               {[3, 4, 5, 6].map(ts => (
-                <button key={ts} className={`text-[7px] px-0.5 py-0.5 border rounded-sm transition-all ${timeSignature === ts ? 'sketch-btn-active border-[#6b5b47]' : 'sketch-btn border-[#c4b89c] hover:border-[#8b7355]'}`}
+                <button key={ts} className={`text-[9px] px-1 py-0.5 border rounded-sm transition-all ${timeSignature === ts ? 'sketch-btn-active border-[#6b5b47]' : 'sketch-btn border-[#c4b89c] hover:border-[#8b7355]'}`}
                   onClick={() => setTimeSignature(ts)}>{ts}/4</button>
               ))}
             </div>
@@ -1119,29 +1119,29 @@ export default function Home() {
           {/* SESSION */}
           <div className="hidden sm:flex items-center gap-2 shrink-0">
             <div className="text-right">
-              <div className="text-[8px] text-[#8b7355] font-serif italic leading-none">Session</div>
-              <div className="text-[10px] font-mono font-bold text-[#4a4a4a]">{formatTime(sessionElapsed)}</div>
+              <div className="text-[10px] text-[#8b7355] font-serif italic leading-none">Session</div>
+              <div className="text-[12px] font-mono font-bold text-[#4a4a4a]">{formatTime(sessionElapsed)}</div>
             </div>
             <div className="text-right">
-              <div className="text-[8px] text-[#8b7355] font-serif italic leading-none">Played</div>
-              <div className="text-[10px] font-mono font-bold text-[#4a4a4a]">{exercisesPlayed}</div>
+              <div className="text-[10px] text-[#8b7355] font-serif italic leading-none">Played</div>
+              <div className="text-[12px] font-mono font-bold text-[#4a4a4a]">{exercisesPlayed}</div>
             </div>
           </div>
 
           {/* Playback status */}
           {isPlaying && (
             <div className="hidden md:flex items-center gap-0.5 shrink-0">
-              <span className="text-[7px] text-[#9b3939] font-serif italic font-bold">{playbackMode === 'exercise' ? 'EX' : 'SC'}</span>
-              <span className="text-[7px] text-[#4a4a4a] font-mono">{playingIdx + 1}/{playbackMode === 'exercise' ? currentExercise.notes.length : scaleNotesForPlayback.length}</span>
+              <span className="text-[9px] text-[#9b3939] font-serif italic font-bold">{playbackMode === 'exercise' ? 'EX' : 'SC'}</span>
+              <span className="text-[9px] text-[#4a4a4a] font-mono">{playingIdx + 1}/{playbackMode === 'exercise' ? currentExercise.notes.length : scaleNotesForPlayback.length}</span>
             </div>
           )}
 
           {/* Mobile scale selector */}
           <div className="md:hidden shrink-0">
             <Select value={scaleId} onValueChange={(v) => { setScaleId(v); setPositionIndex(0); stopPlayback(); }}>
-              <SelectTrigger className="bg-[#f5f0e8] border-[#c4b89c] text-[8px] rounded-sm h-6 w-[100px]"><SelectValue /></SelectTrigger>
+              <SelectTrigger className="bg-[#f5f0e8] border-[#c4b89c] text-[10px] rounded-sm h-6 w-[110px]"><SelectValue /></SelectTrigger>
               <SelectContent className="bg-[#faf6ef] border-[#c4b89c]">
-                {Object.entries(SCALES).map(([id, s]) => (<SelectItem key={id} value={id} className="text-[8px] text-[#2c2c2c]">{s.name}</SelectItem>))}
+                {Object.entries(SCALES).map(([id, s]) => (<SelectItem key={id} value={id} className="text-[10px] text-[#2c2c2c]">{s.name}</SelectItem>))}
               </SelectContent>
             </Select>
           </div>

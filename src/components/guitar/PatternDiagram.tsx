@@ -188,10 +188,10 @@ export default function PatternDiagram({
     >
       {/* Position label */}
       <div className="text-center pt-1.5 pb-0.5">
-        <span className="text-[10px] font-bold text-[#4a4a4a] font-serif italic">
+        <span className="text-[11px] font-bold text-[#4a4a4a] font-serif italic">
           {customLabel || `P${positionNumber}`}
         </span>
-        <span className="text-[9px] text-[#8b7355] font-serif italic ml-1">
+        <span className="text-[11px] text-[#8b7355] font-serif italic ml-1">
           ({fretStart}–{fretEnd})
         </span>
       </div>
@@ -246,7 +246,7 @@ export default function PatternDiagram({
               x={x} y={svgHeight - 2}
               textAnchor="middle"
               fill="#8b7355"
-              fontSize={8}
+              fontSize={10}
               fontFamily="'Georgia', serif"
               fontStyle="italic"
             >
@@ -279,7 +279,7 @@ export default function PatternDiagram({
             x={LM - 14} y={TM + idx * SS + 3}
             textAnchor="middle"
             fill="#6b5b47"
-            fontSize={9}
+            fontSize={11}
             fontWeight="bold"
             fontFamily="'Georgia', serif"
             fontStyle="italic"
@@ -358,7 +358,7 @@ export default function PatternDiagram({
                 x={note.x} y={note.y + 3}
                 textAnchor="middle"
                 fill={isExNote ? '#2a2a2a' : '#3a3a3a'}
-                fontSize={note.intervalLabel.length > 2 ? 6 : 7}
+                fontSize={note.intervalLabel.length > 2 ? 8 : 9}
                 fontWeight="bold"
                 fontFamily="'Georgia', serif"
                 fontStyle="italic"
@@ -379,7 +379,7 @@ export default function PatternDiagram({
                     x={note.x + r + 2} y={note.y - r + 0.5}
                     textAnchor="middle"
                     fill="#faf6ef"
-                    fontSize={6}
+                    fontSize={8}
                     fontWeight="bold"
                     fontFamily="'Georgia', serif"
                   >

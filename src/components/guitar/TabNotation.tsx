@@ -76,7 +76,7 @@ export default function TabNotation({
   if (!exercise || !exercise.notes.length) {
     return (
       <div className={`sketch-card bg-[#faf6ef] flex items-center justify-center h-16 ${className}`}>
-        <p className="text-[#8b7355] text-[10px] italic font-serif">Select an exercise to see tabs...</p>
+        <p className="text-[#8b7355] text-[11px] italic font-serif">Select an exercise to see tabs...</p>
       </div>
     );
   }
@@ -193,11 +193,11 @@ export default function TabNotation({
       {/* Title bar + inline controls */}
       <div className="mb-1.5 flex items-center justify-between border-b border-[#e8e2d6] pb-1">
         <div className="flex items-center gap-1 min-w-0">
-          <span className="text-[10px] font-bold text-[#9b3939] font-serif italic truncate">{exercise.name}</span>
-          <span className="text-[8px] text-[#8b7355] font-serif italic hidden sm:inline">— {exercise.description}</span>
-          <span className="text-[7px] text-[#b8a88a] font-serif italic">· {exercise.notes.length} notes</span>
+          <span className="text-[11px] font-bold text-[#9b3939] font-serif italic truncate">{exercise.name}</span>
+          <span className="text-[9px] text-[#8b7355] font-serif italic hidden sm:inline">— {exercise.description}</span>
+          <span className="text-[8px] text-[#b8a88a] font-serif italic">· {exercise.notes.length} notes</span>
           {currentPlayingNote && (
-            <span className="text-[8px] text-[#9b3939] font-serif italic font-bold ml-1">
+            <span className="text-[9px] text-[#9b3939] font-serif italic font-bold ml-1">
               ▸ {currentPlayingNote.note} ({currentPlayingNote.intervalLabel})
             </span>
           )}
@@ -205,7 +205,7 @@ export default function TabNotation({
         <div className="flex items-center gap-1">
           {/* Play / Pause / Stop */}
           <button
-            className={`h-5 px-1.5 text-[8px] font-bold flex items-center gap-0.5 border-2 rounded-sm transition-all ${
+            className={`h-6 px-1.5 text-[9px] font-bold flex items-center gap-0.5 border-2 rounded-sm transition-all ${
               isPlaying && playbackMode === 'exercise' && !isPaused
                 ? 'bg-[#9b3939] text-white border-[#9b3939]'
                 : 'sketch-btn border-[#6b5b47]'
@@ -213,10 +213,10 @@ export default function TabNotation({
             onClick={isPlaying && playbackMode === 'exercise' && !isPaused ? onPause : onPlayExercise}
             title="Play exercise"
           >
-            {isPlaying && playbackMode === 'exercise' && !isPaused ? <Pause className="w-2.5 h-2.5" /> : <Play className="w-2.5 h-2.5" />}
+            {isPlaying && playbackMode === 'exercise' && !isPaused ? <Pause className="w-3 h-3" /> : <Play className="w-3 h-3" />}
           </button>
           <button
-            className={`h-5 px-1.5 text-[8px] font-bold flex items-center gap-0.5 border-2 rounded-sm transition-all ${
+            className={`h-6 px-1.5 text-[9px] font-bold flex items-center gap-0.5 border-2 rounded-sm transition-all ${
               isPlaying && playbackMode === 'scale' && !isPaused
                 ? 'bg-[#4a5a8a] text-white border-[#4a5a8a]'
                 : 'sketch-btn border-[#4a5a8a]'
@@ -224,31 +224,31 @@ export default function TabNotation({
             onClick={isPlaying && playbackMode === 'scale' && !isPaused ? onPause : onPlayScale}
             title="Play scale"
           >
-            {isPlaying && playbackMode === 'scale' && !isPaused ? <Pause className="w-2.5 h-2.5" /> : <Music className="w-2.5 h-2.5" />}
+            {isPlaying && playbackMode === 'scale' && !isPaused ? <Pause className="w-3 h-3" /> : <Music className="w-3 h-3" />}
           </button>
           {isPlaying && (
-            <button className="h-5 px-1.5 text-[8px] font-bold flex items-center gap-0.5 border-2 rounded-sm bg-[#4a4a4a] text-white border-[#4a4a4a]" onClick={onStop} title="Stop">
-              <Square className="w-2.5 h-2.5" />
+            <button className="h-6 px-1.5 text-[9px] font-bold flex items-center gap-0.5 border-2 rounded-sm bg-[#4a4a4a] text-white border-[#4a4a4a]" onClick={onStop} title="Stop">
+              <Square className="w-3 h-3" />
             </button>
           )}
 
           {/* Export */}
           <div className="relative" ref={exportMenuRef}>
-            <button className="sketch-btn h-5 text-[8px] px-1 border-[#c4b89c] text-[#8b7355] flex items-center gap-0.5" onClick={() => setShowExportMenu(!showExportMenu)}>
-              <Share2 className="w-2.5 h-2.5" />
+            <button className="sketch-btn h-6 text-[9px] px-1.5 border-[#c4b89c] text-[#8b7355] flex items-center gap-0.5" onClick={() => setShowExportMenu(!showExportMenu)}>
+              <Share2 className="w-3 h-3" />
             </button>
             {showExportMenu && (
-              <div className="absolute right-0 top-full mt-1 z-50 sketch-card bg-[#faf6ef] py-1 min-w-[120px]">
-                <button className="w-full text-left px-2 py-0.5 text-[8px] text-[#4a4a4a] hover:bg-[rgba(139,115,85,0.1)] flex items-center gap-1 font-serif italic" onClick={handleDownloadPNG}><FileImage className="w-2.5 h-2.5" /> PNG</button>
-                <button className="w-full text-left px-2 py-0.5 text-[8px] text-[#4a4a4a] hover:bg-[rgba(139,115,85,0.1)] flex items-center gap-1 font-serif italic" onClick={handleDownloadSVG}><Download className="w-2.5 h-2.5" /> SVG</button>
-                <button className="w-full text-left px-2 py-0.5 text-[8px] text-[#4a4a4a] hover:bg-[rgba(139,115,85,0.1)] flex items-center gap-1 font-serif italic" onClick={handleCopyText}><FileText className="w-2.5 h-2.5" /> Text</button>
-                <button className="w-full text-left px-2 py-0.5 text-[8px] text-[#4a4a4a] hover:bg-[rgba(139,115,85,0.1)] flex items-center gap-1 font-serif italic" onClick={handleCopyImage}><Copy className="w-2.5 h-2.5" /> Image</button>
+              <div className="absolute right-0 top-full mt-1 z-50 sketch-card bg-[#faf6ef] py-1 min-w-[130px]">
+                <button className="w-full text-left px-2 py-0.5 text-[9px] text-[#4a4a4a] hover:bg-[rgba(139,115,85,0.1)] flex items-center gap-1 font-serif italic" onClick={handleDownloadPNG}><FileImage className="w-3 h-3" /> PNG</button>
+                <button className="w-full text-left px-2 py-0.5 text-[9px] text-[#4a4a4a] hover:bg-[rgba(139,115,85,0.1)] flex items-center gap-1 font-serif italic" onClick={handleDownloadSVG}><Download className="w-3 h-3" /> SVG</button>
+                <button className="w-full text-left px-2 py-0.5 text-[9px] text-[#4a4a4a] hover:bg-[rgba(139,115,85,0.1)] flex items-center gap-1 font-serif italic" onClick={handleCopyText}><FileText className="w-3 h-3" /> Text</button>
+                <button className="w-full text-left px-2 py-0.5 text-[9px] text-[#4a4a4a] hover:bg-[rgba(139,115,85,0.1)] flex items-center gap-1 font-serif italic" onClick={handleCopyImage}><Copy className="w-3 h-3" /> Image</button>
                 <div className="border-t border-[#e8e2d6] my-0.5" />
-                <button className="w-full text-left px-2 py-0.5 text-[8px] text-[#4a4a4a] hover:bg-[rgba(139,115,85,0.1)] flex items-center gap-1 font-serif italic" onClick={handlePrint}><Printer className="w-2.5 h-2.5" /> Print</button>
+                <button className="w-full text-left px-2 py-0.5 text-[9px] text-[#4a4a4a] hover:bg-[rgba(139,115,85,0.1)] flex items-center gap-1 font-serif italic" onClick={handlePrint}><Printer className="w-3 h-3" /> Print</button>
               </div>
             )}
           </div>
-          {copied && <span className="text-[7px] text-[#4a7a4a] font-serif italic font-bold flex items-center gap-0.5"><Check className="w-2 h-2" />OK</span>}
+          {copied && <span className="text-[8px] text-[#4a7a4a] font-serif italic font-bold flex items-center gap-0.5"><Check className="w-2.5 h-2.5" />OK</span>}
         </div>
       </div>
 
@@ -277,7 +277,7 @@ export default function TabNotation({
 
                 {/* String labels */}
                 {stringLabels.map((l, si) => (
-                  <text key={`l${rowIdx}${si}`} x={LM - 5} y={TM + si * SS + 2} textAnchor="middle" fill="#6b5b47" fontSize={5} fontWeight="bold" fontFamily="Georgia,serif" fontStyle="italic">{l}</text>
+                  <text key={`l${rowIdx}${si}`} x={LM - 5} y={TM + si * SS + 2} textAnchor="middle" fill="#6b5b47" fontSize={6.5} fontWeight="bold" fontFamily="Georgia,serif" fontStyle="italic">{l}</text>
                 ))}
 
                 {/* Bar lines */}
@@ -299,7 +299,7 @@ export default function TabNotation({
                   const isAct = isHov || isPlay;
 
                   const fs = note.fret.toString();
-                  const fz = fs.length > 1 ? 5.5 : 6.5;
+                  const fz = fs.length > 1 ? 7 : 8;
 
                   return (
                     <g key={`n${rowIdx}${ni}`}

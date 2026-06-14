@@ -1,0 +1,502 @@
+     1→     1→     1→'use client';
+     2→     2→     2→
+     3→     3→     3→import React, { useState, useMemo, useCallback, useRef, useEffect } from 'react';
+     4→     4→     4→import {
+     5→     5→     5→  KEY_NAMES,
+     6→     6→     6→  KEY_DISPLAY_NAMES,
+     7→     7→     7→  SCALES,
+     8→     8→     8→  NoteName,
+     9→     9→     9→  getCAGEDPositions,
+    10→    10→    10→  getScaleOnFretboard,
+    11→    11→    11→  FRET_COUNT,
+    12→    12→    12→} from '@/lib/music-theory';
+    13→    13→    13→import {
+    14→    14→    14→  generateExercise,
+    15→    15→    15→  generatePatternExercises,
+    16→    16→    16→  computeExerciseStats,
+    17→    17→    17→  sortNotesAscending,
+    18→    18→    18→  ExerciseType,
+    19→    19→    19→  EXERCISE_TYPES,
+    20→    20→    20→  EXERCISE_CATEGORIES,
+    21→    21→    21→  ExerciseNote,
+    22→    22→    22→} from '@/lib/exercise-generator';
+    23→    23→    23→import FretboardDiagram from '@/components/guitar/FretboardDiagram';
+    24→    24→    24→import PatternDiagram from '@/components/guitar/PatternDiagram';
+    25→    25→    25→import TabNotation from '@/components/guitar/TabNotation';
+    26→    26→    26→import {
+    27→    27→    27→  Select,
+    28→    28→    28→  SelectContent,
+    29→    29→    29→  SelectItem,
+    30→    30→    30→  SelectTrigger,
+    31→    31→    31→  SelectValue,
+    32→    32→    32→} from '@/components/ui/select';
+    33→    33→    33→import {
+    34→    34→    34→  ChevronLeft,
+    35→    35→    35→  ChevronRight,
+    36→    36→    36→  Shuffle,
+    37→    37→    37→  Music,
+    38→    38→    38→  Zap,
+    39→    39→    39→  GitBranch,
+    40→    40→    40→  Target,
+    41→    41→    41→  Layers,
+    42→    42→    42→  Route,
+    43→    43→    43→  Volume2,
+    44→    44→    44→  VolumeX,
+    45→    45→    45→  Play,
+    46→    46→    46→  Pause,
+    47→    47→    47→  Square,
+    48→    48→    48→  Timer,
+    49→    49→    49→  Drum,
+    50→    50→    50→  Search,
+    51→    51→    51→  Menu,
+    52→    52→    52→  X,
+    53→    53→    53→  Guitar,
+    54→    54→    54→  FileText,
+    55→    55→    55→  BarChart3,
+    56→    56→    56→  Eye,
+    57→    57→    57→  ChevronDown,
+    58→    58→    58→  ChevronUp,
+    59→    59→    59→  Star,
+    60→    60→    60→  ArrowRight,
+    61→    61→    61→  Clock,
+    62→    62→    62→  Signal,
+    63→    63→    63→  Activity,
+    64→    64→    64→  Hash,
+    65→    65→    65→  Ruler,
+    66→    66→    66→} from 'lucide-react';
+    67→    67→    67→
+    68→    68→    68→// ─── AUDIO ENGINE ───
+    69→    69→    69→// Proper standard guitar tuning frequencies (Hz) — E2, A2, D3, G3, B3, E4
+    70→    70→    70→const STRING_FREQUENCIES = [82.41, 110.00, 146.83, 196.00, 246.94, 329.63];
+    71→    71→    71→
+    72→    72→    72→let audioCtx: AudioContext | null = null;
+    73→    73→    73→let masterCompressor: DynamicsCompressorNode | null = null;
+    74→    74→    74→function getAudioCtx() {
+    75→    75→    75→  if (!audioCtx) audioCtx = new AudioContext();
+    76→    76→    76→  return audioCtx;
+    77→    77→    77→}
+    78→    78→    78→
+    79→    79→    79→// Singleton master compressor
+    80→    80→    80→function getMaster(ctx: AudioContext): DynamicsCompressorNode {
+    81→    81→    81→  if (!masterCompressor) {
+    82→    82→    82→    const comp = ctx.createDynamicsCompressor();
+    83→    83→    83→    comp.threshold.setValueAtTime(-20, ctx.currentTime);
+    84→    84→    84→    comp.knee.setValueAtTime(10, ctx.currentTime);
+    85→    85→    85→    comp.ratio.setValueAtTime(4, ctx.currentTime);
+    86→    86→    86→    comp.attack.setValueAtTime(0.003, ctx.currentTime);
+    87→    87→    87→    comp.release.setValueAtTime(0.15, ctx.currentTime);
+    88→    88→    88→    comp.connect(ctx.destination);
+    89→    89→    89→    masterCompressor = comp;
+    90→    90→    90→  }
+    91→    91→    91→  return masterCompressor;
+    92→    92→    92→}
+    93→    93→    93→
+    94→    94→    94→function playGuitarNote(stringIdx: number, fret: number, duration: number = 0.5) {
+    95→    95→    95→  try {
+    96→    96→    96→    const ctx = getAudioCtx();
+    97→    97→    97→    if (ctx.state === 'suspended') ctx.resume();
+    98→    98→    98→    const master = getMaster(ctx);
+    99→    99→    99→    const baseFreq = STRING_FREQUENCIES[stringIdx];
+   100→   100→   100→    const freq = baseFreq * Math.pow(2, fret / 12);
+   101→   101→   101→    const now = ctx.currentTime;
+   102→   102→   102→
+   103→   103→   103→    // ── Fundamental (pulse wave — close to plucked string) ──
+   104→   104→   104→    const osc1 = ctx.createOscillator();
+   105→   105→   105→    const gain1 = ctx.createGain();
+   106→   106→   106→    osc1.type = 'triangle';
+   107→   107→   107→    osc1.frequency.setValueAtTime(freq, now);
+   108→   108→   108→    // Slight pitch envelope (attack transient — string stretches then settles)
+   109→   109→   109→    osc1.frequency.setValueAtTime(freq * 1.005, now);
+   110→   110→   110→    osc1.frequency.exponentialRampToValueAtTime(freq, now + 0.02);
+   111→   111→   111→    gain1.gain.setValueAtTime(0, now);
+   112→   112→   112→    gain1.gain.linearRampToValueAtTime(0.32, now + 0.004);  // Fast pluck attack
+   113→   113→   113→    gain1.gain.exponentialRampToValueAtTime(0.12, now + 0.08);
+   114→   114→   114→    gain1.gain.exponentialRampToValueAtTime(0.001, now + duration);
+   115→   115→   115→
+   116→   116→   116→    // ── 2nd harmonic (octave above, softer) ──
+   117→   117→   117→    const osc2 = ctx.createOscillator();
+   118→   118→   118→    const gain2 = ctx.createGain();
+   119→   119→   119→    osc2.type = 'sine';
+   120→   120→   120→    osc2.frequency.setValueAtTime(freq * 2, now);
+   121→   121→   121→    gain2.gain.setValueAtTime(0, now);
+   122→   122→   122→    gain2.gain.linearRampToValueAtTime(0.06, now + 0.003);
+   123→   123→   123→    gain2.gain.exponentialRampToValueAtTime(0.001, now + duration * 0.4);
+   124→   124→   124→
+   125→   125→   125→    // ── 3rd harmonic ──
+   126→   126→   126→    const osc3 = ctx.createOscillator();
+   127→   127→   127→    const gain3 = ctx.createGain();
+   128→   128→   128→    osc3.type = 'sine';
+   129→   129→   129→    osc3.frequency.setValueAtTime(freq * 3, now);
+   130→   130→   130→    gain3.gain.setValueAtTime(0, now);
+   131→   131→   131→    gain3.gain.linearRampToValueAtTime(0.025, now + 0.003);
+   132→   132→   132→    gain3.gain.exponentialRampToValueAtTime(0.001, now + duration * 0.25);
+   133→   133→   133→
+   134→   134→   134→    // ── Body resonance (low-pass filtered sub-harmonic) ──
+   135→   135→   135→    const oscBody = ctx.createOscillator();
+   136→   136→   136→    const gainBody = ctx.createGain();
+   137→   137→   137→    const filterBody = ctx.createBiquadFilter();
+   138→   138→   138→    oscBody.type = 'sine';
+   139→   139→   139→    oscBody.frequency.setValueAtTime(freq * 0.5, now);
+   140→   140→   140→    filterBody.type = 'lowpass';
+   141→   141→   141→    filterBody.frequency.setValueAtTime(300, now);
+   142→   142→   142→    filterBody.Q.setValueAtTime(1, now);
+   143→   143→   143→    gainBody.gain.setValueAtTime(0, now);
+   144→   144→   144→    gainBody.gain.linearRampToValueAtTime(0.04, now + 0.01);
+   145→   145→   145→    gainBody.gain.exponentialRampToValueAtTime(0.001, now + duration * 0.4);
+   146→   146→   146→
+   147→   147→   147→    // ── Brightness (sawtooth → lowpass, simulates pick attack brightness) ──
+   148→   148→   148→    const oscBright = ctx.createOscillator();
+   149→   149→   149→    const gainBright = ctx.createGain();
+   150→   150→   150→    const filterBright = ctx.createBiquadFilter();
+   151→   151→   151→    oscBright.type = 'sawtooth';
+   152→   152→   152→    oscBright.frequency.setValueAtTime(freq, now);
+   153→   153→   153→    filterBright.type = 'lowpass';
+   154→   154→   154→    filterBright.frequency.setValueAtTime(4000, now);           // Bright attack
+   155→   155→   155→    filterBright.frequency.exponentialRampToValueAtTime(800, now + 0.15); // Dulls quickly
+   156→   156→   156→    filterBright.Q.setValueAtTime(0.7, now);
+   157→   157→   157→    gainBright.gain.setValueAtTime(0, now);
+   158→   158→   158→    gainBright.gain.linearRampToValueAtTime(0.05, now + 0.002);
+   159→   159→   159→    gainBright.gain.exponentialRampToValueAtTime(0.001, now + duration * 0.3);
+   160→   160→   160→
+   161→   161→   161→    // ── Pluck noise burst (very short, simulates pick/finger noise) ──
+   162→   162→   162→    const noiseLen = 0.015;
+   163→   163→   163→    const noiseBuffer = ctx.createBuffer(1, ctx.sampleRate * noiseLen, ctx.sampleRate);
+   164→   164→   164→    const noiseData = noiseBuffer.getChannelData(0);
+   165→   165→   165→    for (let i = 0; i < noiseData.length; i++) noiseData[i] = (Math.random() * 2 - 1) * 0.3;
+   166→   166→   166→    const noiseSource = ctx.createBufferSource();
+   167→   167→   167→    noiseSource.buffer = noiseBuffer;
+   168→   168→   168→    const noiseGain = ctx.createGain();
+   169→   169→   169→    const noiseFilter = ctx.createBiquadFilter();
+   170→   170→   170→    noiseFilter.type = 'bandpass';
+   171→   171→   171→    noiseFilter.frequency.setValueAtTime(2000 + stringIdx * 500, now); // Higher strings = brighter noise
+   172→   172→   172→    noiseFilter.Q.setValueAtTime(2, now);
+   173→   173→   173→    noiseGain.gain.setValueAtTime(0.12, now);
+   174→   174→   174→    noiseGain.gain.exponentialRampToValueAtTime(0.001, now + noiseLen);
+   175→   175→   175→
+   176→   176→   176→    // Connect everything
+   177→   177→   177→    osc1.connect(gain1); gain1.connect(master);
+   178→   178→   178→    osc2.connect(gain2); gain2.connect(master);
+   179→   179→   179→    osc3.connect(gain3); gain3.connect(master);
+   180→   180→   180→    oscBody.connect(filterBody); filterBody.connect(gainBody); gainBody.connect(master);
+   181→   181→   181→    oscBright.connect(filterBright); filterBright.connect(gainBright); gainBright.connect(master);
+   182→   182→   182→    noiseSource.connect(noiseFilter); noiseFilter.connect(noiseGain); noiseGain.connect(master);
+   183→   183→   183→
+   184→   184→   184→    // Start all
+   185→   185→   185→    const stopTime = now + duration + 0.1;
+   186→   186→   186→    osc1.start(now); osc2.start(now); osc3.start(now); oscBody.start(now); oscBright.start(now); noiseSource.start(now);
+   187→   187→   187→    osc1.stop(stopTime); osc2.stop(stopTime); osc3.stop(stopTime); oscBody.stop(stopTime); oscBright.stop(stopTime);
+   188→   188→   188→  } catch (e) {}
+   189→   189→   189→}
+   190→   190→   190→
+   191→   191→   191→// Professional metronome — wood block sound
+   192→   192→   192→function playMetronomeClick(accent: boolean) {
+   193→   193→   193→  try {
+   194→   194→   194→    const ctx = getAudioCtx();
+   195→   195→   195→    if (ctx.state === 'suspended') ctx.resume();
+   196→   196→   196→    const now = ctx.currentTime;
+   197→   197→   197→
+   198→   198→   198→    // Tone component — short sine burst like a wood block
+   199→   199→   199→    const osc = ctx.createOscillator();
+   200→   200→   200→    const gain = ctx.createGain();
+   201→   201→   201→    osc.type = 'sine';
+   202→   202→   202→    osc.frequency.setValueAtTime(accent ? 1567.98 : 1046.50, now); // G6 (accent) / C6 (normal)
+   203→   203→   203→    gain.gain.setValueAtTime(accent ? 0.35 : 0.18, now);
+   204→   204→   204→    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.04);
+   205→   205→   205→    osc.connect(gain);
+   206→   206→   206→
+   207→   207→   207→    // Click noise burst (the "clack" of the wood block)
+   208→   208→   208→    const noiseLen = 0.008;
+   209→   209→   209→    const noiseBuffer = ctx.createBuffer(1, ctx.sampleRate * noiseLen, ctx.sampleRate);
+   210→   210→   210→    const noiseData = noiseBuffer.getChannelData(0);
+   211→   211→   211→    for (let i = 0; i < noiseData.length; i++) noiseData[i] = (Math.random() * 2 - 1);
+   212→   212→   212→    const noiseSource = ctx.createBufferSource();
+   213→   213→   213→    noiseSource.buffer = noiseBuffer;
+   214→   214→   214→    const noiseGain = ctx.createGain();
+   215→   215→   215→    const noiseFilter = ctx.createBiquadFilter();
+   216→   216→   216→    noiseFilter.type = 'highpass';
+   217→   217→   217→    noiseFilter.frequency.setValueAtTime(accent ? 3000 : 2000, now);
+   218→   218→   218→    noiseGain.gain.setValueAtTime(accent ? 0.15 : 0.07, now);
+   219→   219→   219→    noiseGain.gain.exponentialRampToValueAtTime(0.001, now + noiseLen);
+   220→   220→   220→    noiseSource.connect(noiseFilter); noiseFilter.connect(noiseGain);
+   221→   221→   221→
+   222→   222→   222→    // Resonance body
+   223→   223→   223→    const oscBody = ctx.createOscillator();
+   224→   224→   224→    const gainBody = ctx.createGain();
+   225→   225→   225→    oscBody.type = 'sine';
+   226→   226→   226→    oscBody.frequency.setValueAtTime(accent ? 800 : 600, now);
+   227→   227→   227→    gainBody.gain.setValueAtTime(accent ? 0.08 : 0.04, now);
+   228→   228→   228→    gainBody.gain.exponentialRampToValueAtTime(0.001, now + 0.03);
+   229→   229→   229→    oscBody.connect(gainBody);
+   230→   230→   230→
+   231→   231→   231→    const master = getMaster(ctx);
+   232→   232→   232→    gain.connect(master); noiseGain.connect(master); gainBody.connect(master);
+   233→   233→   233→
+   234→   234→   234→    osc.start(now); noiseSource.start(now); oscBody.start(now);
+   235→   235→   235→    osc.stop(now + 0.05); oscBody.stop(now + 0.04);
+   236→   236→   236→  } catch (e) {}
+   237→   237→   237→}
+   238→   238→   238→
+   239→   239→   239→// ─── INTERVAL COLOR ───
+   240→   240→   240→function getIntervalColor(label: string): string {
+   241→   241→   241→  if (label === 'R') return '#9b3939';
+   242→   242→   242→  if (label.includes('\u266D3') || label.includes('\u266D2')) return '#6b4a7a';
+   243→   243→   243→  if (label === '3' || label === '2') return '#4a7a4a';
+   244→   244→   244→  if (label === '4') return '#4a5a8a';
+   245→   245→   245→  if (label === '5') return '#4a7a7a';
+   246→   246→   246→  if (label.includes('5')) return '#4a7a7a';
+   247→   247→   247→  if (label.includes('6')) return '#8a6a3a';
+   248→   248→   248→  if (label.includes('7')) return '#7a4a6a';
+   249→   249→   249→  if (label.includes('\u266F') || label.includes('\u266D')) return '#6b4a7a';
+   250→   250→   250→  return '#5a5a6a';
+   251→   251→   251→}
+   252→   252→   252→
+   253→   253→   253→// Difficulty stars
+   254→   254→   254→function DifficultyBadge({ level }: { level: number }) {
+   255→   255→   255→  return (
+   256→   256→   256→    <div className="flex items-center gap-0.5">
+   257→   257→   257→      {[1, 2, 3, 4, 5].map(i => (
+   258→   258→   258→        <div key={i} className={`w-1.5 h-1.5 rounded-sm ${i <= level ? 'bg-[#9b3939]' : 'bg-[#e8e2d6]'}`} />
+   259→   259→   259→      ))}
+   260→   260→   260→    </div>
+   261→   261→   261→  );
+   262→   262→   262→}
+   263→   263→   263→
+   264→   264→   264→// ─── VIEW MODES ───
+   265→   265→   265→type ViewMode = 'fretboard' | 'tab' | 'hybrid' | 'analysis';
+   266→   266→   266→
+   267→   267→   267→// ─── MAIN COMPONENT ───
+   268→   268→   268→export default function Home() {
+   269→   269→   269→  // Core state
+   270→   270→   270→  const [keyIndex, setKeyIndex] = useState(9);
+   271→   271→   271→  const [scaleId, setScaleId] = useState('minor-pentatonic');
+   272→   272→   272→  const [positionIndex, setPositionIndex] = useState(0);
+   273→   273→   273→  const [exerciseType, setExerciseType] = useState<ExerciseType>('scale-asc-desc');
+   274→   274→   274→  const [showAllPositions, setShowAllPositions] = useState(false);
+   275→   275→   275→  const [soundEnabled, setSoundEnabled] = useState(true);
+   276→   276→   276→  const [viewMode, setViewMode] = useState<ViewMode>('hybrid');
+   277→   277→   277→
+   278→   278→   278→  // Playback state
+   279→   279→   279→  const [isPlaying, setIsPlaying] = useState(false);
+   280→   280→   280→  const [isPaused, setIsPaused] = useState(false);
+   281→   281→   281→  const [playingIdx, setPlayingIdx] = useState(-1);
+   282→   282→   282→  const [playbackMode, setPlaybackMode] = useState<'idle' | 'exercise' | 'scale'>('idle');
+   283→   283→   283→  const [playbackActiveNote, setPlaybackActiveNote] = useState<{ string: number; fret: number } | null>(null);
+   284→   284→   284→  const [clickActiveNote, setClickActiveNote] = useState<{ string: number; fret: number } | null>(null);
+   285→   285→   285→  const playbackRef = useRef<{ playing: boolean; notes: ExerciseNote[]; idx: number; timeoutId: number | null }>({
+   286→   286→   286→    playing: false, notes: [], idx: 0, timeoutId: null,
+   287→   287→   287→  });
+   288→   288→   288→
+   289→   289→   289→  // BPM & Metronome
+   290→   290→   290→  const [bpm, setBpm] = useState(100);
+   291→   291→   291→  const [metronomeOn, setMetronomeOn] = useState(false);
+   292→   292→   292→  const [currentBeat, setCurrentBeat] = useState(-1);
+   293→   293→   293→  const [timeSignature, setTimeSignature] = useState(4);
+   294→   294→   294→  const metronomeRef = useRef(false);
+   295→   295→   295→  const metronomeTimeoutRef = useRef<number | null>(null);
+   296→   296→   296→  const beatCountRef = useRef(0);
+   297→   297→   297→  const tapTimes = useRef<number[]>([]);
+   298→   298→   298→
+   299→   299→   299→  // Session timer
+   300→   300→   300→  const [sessionStart] = useState(Date.now());
+   301→   301→   301→  const [sessionElapsed, setSessionElapsed] = useState(0);
+   302→   302→   302→  const [exercisesPlayed, setExercisesPlayed] = useState(0);
+   303→   303→   303→
+   304→   304→   304→  // UI state
+   305→   305→   305→  const [sidebarOpen, setSidebarOpen] = useState(false);
+   306→   306→   306→  const [expandedCategory, setExpandedCategory] = useState<string>('scale-runs');
+   307→   307→   307→  const [rightPanelExpanded, setRightPanelExpanded] = useState(true);
+   308→   308→   308→  const [exerciseSearch, setExerciseSearch] = useState('');
+   309→   309→   309→
+   310→   310→   310→  // Derived state
+   311→   311→   311→  const keyNote = KEY_NAMES[keyIndex];
+   312→   312→   312→  const scale = SCALES[scaleId];
+   313→   313→   313→  const positions = useMemo(() => getCAGEDPositions(keyNote, scaleId), [keyNote, scaleId]);
+   314→   314→   314→  const currentPosition = positions[positionIndex] || { fretStart: 0, fretEnd: FRET_COUNT, name: 'Full Fretboard' };
+   315→   315→   315→  const startFret = showAllPositions ? 0 : currentPosition.fretStart;
+   316→   316→   316→  const endFret = showAllPositions ? FRET_COUNT : currentPosition.fretEnd;
+   317→   317→   317→
+   318→   318→   318→  // Current exercise
+   319→   319→   319→  const currentExercise = useMemo(
+   320→   320→   320→    () => generateExercise(exerciseType, keyNote, scaleId, positionIndex),
+   321→   321→   321→    [exerciseType, keyNote, scaleId, positionIndex]
+   322→   322→   322→  );
+   323→   323→   323→
+   324→   324→   324→  // Exercise stats (verbose, nerdy)
+   325→   325→   325→  const exerciseStats = useMemo(() => computeExerciseStats(currentExercise), [currentExercise]);
+   326→   326→   326→
+   327→   327→   327→  // Exercise type metadata
+   328→   328→   328→  const exerciseMeta = EXERCISE_TYPES[exerciseType];
+   329→   329→   329→
+   330→   330→   330→  // Breadcrumb
+   331→   331→   331→  const exerciseCategory = useMemo(() => {
+   332→   332→   332→    for (const cat of EXERCISE_CATEGORIES) {
+   333→   333→   333→      if (cat.types.includes(exerciseType)) return cat;
+   334→   334→   334→    }
+   335→   335→   335→    return EXERCISE_CATEGORIES[0];
+   336→   336→   336→  }, [exerciseType]);
+   337→   337→   337→
+   338→   338→   338→  // Scale notes for playback
+   339→   339→   339→  const scaleNotesForPlayback = useMemo(() => {
+   340→   340→   340→    const notes = getScaleOnFretboard(keyNote, scaleId, startFret, endFret);
+   341→   341→   341→    const sorted = sortNotesAscending(notes);
+   342→   342→   342→    const ascDesc = [...sorted, ...sorted.slice(0, -1).reverse()];
+   343→   343→   343→    return ascDesc.map((n, i) => ({
+   344→   344→   344→      string: n.string, fret: n.fret, note: n.note, intervalLabel: n.intervalLabel, isRoot: n.isRoot, sequenceNumber: i + 1,
+   345→   345→   345→    }));
+   346→   346→   346→  }, [keyNote, scaleId, startFret, endFret]);
+   347→   347→   347→
+   348→   348→   348→  const exerciseHighlightNotes = useMemo(() => {
+   349→   349→   349→    if (!currentExercise || !currentExercise.notes.length) return undefined;
+   350→   350→   350→    const allScaleNotes = getScaleOnFretboard(keyNote, scaleId, 0, FRET_COUNT);
+   351→   351→   351→    const exerciseNoteKeys = new Set(currentExercise.notes.map(n => `${n.string}-${n.fret}`));
+   352→   352→   352→    return allScaleNotes.filter(n => exerciseNoteKeys.has(`${n.string}-${n.fret}`));
+   353→   353→   353→  }, [currentExercise, keyNote, scaleId]);
+   354→   354→   354→
+   355→   355→   355→  const exercisePath = useMemo(() => {
+   356→   356→   356→    if (!currentExercise || !currentExercise.notes.length) return undefined;
+   357→   357→   357→    const seen = new Set<string>();
+   358→   358→   358→    const path: Array<{ string: number; fret: number; sequenceNumber?: number }> = [];
+   359→   359→   359→    for (const note of currentExercise.notes) {
+   360→   360→   360→      const key = `${note.string}-${note.fret}`;
+   361→   361→   361→      if (!seen.has(key)) { seen.add(key); path.push({ string: note.string, fret: note.fret, sequenceNumber: note.sequenceNumber }); }
+   362→   362→   362→    }
+   363→   363→   363→    return path;
+   364→   364→   364→  }, [currentExercise]);
+   365→   365→   365→
+   366→   366→   366→  const patternExercises = useMemo(() => generatePatternExercises(keyNote, scaleId), [keyNote, scaleId]);
+   367→   367→   367→
+   368→   368→   368→  const scaleNotes = useMemo(() => {
+   369→   369→   369→    return scale.intervals.map(interval => {
+   370→   370→   370→      const noteIndex = (KEY_NAMES.indexOf(keyNote) + interval) % 12;
+   371→   371→   371→      return KEY_NAMES[noteIndex];
+   372→   372→   372→    });
+   373→   373→   373→  }, [keyNote, scale]);
+   374→   374→   374→
+   375→   375→   375→  const effectiveActiveNote = playbackActiveNote || (isPlaying ? null : clickActiveNote);
+   376→   376→   376→
+   377→   377→   377→  // Session timer
+   378→   378→   378→  useEffect(() => {
+   379→   379→   379→    const interval = setInterval(() => setSessionElapsed(Math.floor((Date.now() - sessionStart) / 1000)), 1000);
+   380→   380→   380→    return () => clearInterval(interval);
+   381→   381→   381→  }, [sessionStart]);
+   382→   382→   382→
+   383→   383→   383→  const formatTime = (s: number) => `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, '0')}`;
+   384→   384→   384→
+   385→   385→   385→  // ─── HANDLERS ───
+   386→   386→   386→
+   387→   387→   387→  const handleRandomize = useCallback(() => {
+   388→   388→   388→    const types = Object.keys(EXERCISE_TYPES) as ExerciseType[];
+   389→   389→   389→    setExerciseType(types[Math.floor(Math.random() * types.length)]);
+   390→   390→   390→    setExercisesPlayed(p => p + 1);
+   391→   391→   391→  }, []);
+   392→   392→   392→
+   393→   393→   393→  const handlePrevPosition = useCallback(() => setPositionIndex(prev => Math.max(0, prev - 1)), []);
+   394→   394→   394→  const handleNextPosition = useCallback(() => setPositionIndex(prev => Math.min(positions.length - 1, prev + 1)), [positions.length]);
+   395→   395→   395→
+   396→   396→   396→  const handleFretboardNoteClick = useCallback((note: { string: number; fret: number }) => {
+   397→   397→   397→    if (soundEnabled) playGuitarNote(note.string, note.fret, 0.6);
+   398→   398→   398→    setClickActiveNote(prev => prev && prev.string === note.string && prev.fret === note.fret ? null : note);
+   399→   399→   399→  }, [soundEnabled]);
+   400→   400→   400→
+   401→   401→   401→  const handleTabNoteClick = useCallback((note: ExerciseNote) => {
+   402→   402→   402→    if (soundEnabled) playGuitarNote(note.string, note.fret, 0.6);
+   403→   403→   403→    if (!isPlaying) { setClickActiveNote({ string: note.string, fret: note.fret }); setTimeout(() => setClickActiveNote(null), 1500); }
+   404→   404→   404→  }, [soundEnabled, isPlaying]);
+   405→   405→   405→
+   406→   406→   406→  const handlePatternClick = useCallback((posIdx: number) => { setPositionIndex(posIdx); setShowAllPositions(false); }, []);
+   407→   407→   407→
+   408→   408→   408→  // ─── PLAYBACK ENGINE ───
+   409→   409→   409→  const stopPlayback = useCallback(() => {
+   410→   410→   410→    playbackRef.current.playing = false;
+   411→   411→   411→    if (playbackRef.current.timeoutId) { clearTimeout(playbackRef.current.timeoutId); playbackRef.current.timeoutId = null; }
+   412→   412→   412→    setIsPlaying(false); setIsPaused(false); setPlayingIdx(-1); setPlaybackMode('idle'); setPlaybackActiveNote(null);
+   413→   413→   413→  }, []);
+   414→   414→   414→
+   415→   415→   415→  const startPlayback = useCallback((mode: 'exercise' | 'scale', startFromIdx: number = 0) => {
+   416→   416→   416→    stopPlayback(); setClickActiveNote(null);
+   417→   417→   417→    const notes = mode === 'exercise' ? currentExercise.notes : scaleNotesForPlayback;
+   418→   418→   418→    if (!notes.length) return;
+   419→   419→   419→    setIsPlaying(true); setIsPaused(false); setPlaybackMode(mode);
+   420→   420→   420→    if (mode === 'exercise') setExercisesPlayed(p => p + 1);
+   421→   421→   421→    playbackRef.current = { playing: true, notes, idx: startFromIdx, timeoutId: null };
+   422→   422→   422→    const intervalMs = (60 / bpm) * 1000;
+   423→   423→   423→    const playNext = () => {
+   424→   424→   424→      if (!playbackRef.current.playing) return;
+   425→   425→   425→      const idx = playbackRef.current.idx;
+   426→   426→   426→      if (idx >= notes.length) { stopPlayback(); return; }
+   427→   427→   427→      const note = notes[idx];
+   428→   428→   428→      setPlayingIdx(idx); setPlaybackActiveNote({ string: note.string, fret: note.fret });
+   429→   429→   429→      if (soundEnabled) playGuitarNote(note.string, note.fret, Math.min(intervalMs / 1000 * 0.8, 0.6));
+   430→   430→   430→      playbackRef.current.idx = idx + 1;
+   431→   431→   431→      playbackRef.current.timeoutId = window.setTimeout(playNext, intervalMs);
+   432→   432→   432→    };
+   433→   433→   433→    playNext();
+   434→   434→   434→  }, [currentExercise, scaleNotesForPlayback, bpm, soundEnabled, stopPlayback]);
+   435→   435→   435→
+   436→   436→   436→  const togglePausePlayback = useCallback(() => {
+   437→   437→   437→    if (isPaused) {
+   438→   438→   438→      setIsPaused(false); playbackRef.current.playing = true;
+   439→   439→   439→      const notes = playbackRef.current.notes; const intervalMs = (60 / bpm) * 1000;
+   440→   440→   440→      const playNext = () => {
+   441→   441→   441→        if (!playbackRef.current.playing) return;
+   442→   442→   442→        const idx = playbackRef.current.idx;
+   443→   443→   443→        if (idx >= notes.length) { stopPlayback(); return; }
+   444→   444→   444→        const note = notes[idx];
+   445→   445→   445→        setPlayingIdx(idx); setPlaybackActiveNote({ string: note.string, fret: note.fret });
+   446→   446→   446→        if (soundEnabled) playGuitarNote(note.string, note.fret, Math.min(intervalMs / 1000 * 0.8, 0.6));
+   447→   447→   447→        playbackRef.current.idx = idx + 1;
+   448→   448→   448→        playbackRef.current.timeoutId = window.setTimeout(playNext, intervalMs);
+   449→   449→   449→      };
+   450→   450→   450→      playNext();
+   451→   451→   451→    } else {
+   452→   452→   452→      playbackRef.current.playing = false;
+   453→   453→   453→      if (playbackRef.current.timeoutId) { clearTimeout(playbackRef.current.timeoutId); playbackRef.current.timeoutId = null; }
+   454→   454→   454→      setIsPaused(true);
+   455→   455→   455→    }
+   456→   456→   456→  }, [isPaused, bpm, soundEnabled, stopPlayback]);
+   457→   457→   457→
+   458→   458→   458→  const handlePlayExercise = useCallback(() => {
+   459→   459→   459→    if (isPlaying && playbackMode === 'exercise') { togglePausePlayback(); }
+   460→   460→   460→    else if (isPlaying) { stopPlayback(); startPlayback('exercise'); }
+   461→   461→   461→    else { startPlayback('exercise'); }
+   462→   462→   462→  }, [isPlaying, playbackMode, togglePausePlayback, stopPlayback, startPlayback]);
+   463→   463→   463→
+   464→   464→   464→  const handlePlayScale = useCallback(() => {
+   465→   465→   465→    if (isPlaying && playbackMode === 'scale') { togglePausePlayback(); }
+   466→   466→   466→    else if (isPlaying) { stopPlayback(); startPlayback('scale'); }
+   467→   467→   467→    else { startPlayback('scale'); }
+   468→   468→   468→  }, [isPlaying, playbackMode, togglePausePlayback, stopPlayback, startPlayback]);
+   469→   469→   469→
+   470→   470→   470→  // ─── METRONOME ───
+   471→   471→   471→  const startMetronome = useCallback(() => {
+   472→   472→   472→    metronomeRef.current = true; beatCountRef.current = 0; setMetronomeOn(true);
+   473→   473→   473→    const tick = () => {
+   474→   474→   474→      if (!metronomeRef.current) return;
+   475→   475→   475→      const accent = beatCountRef.current % timeSignature === 0;
+   476→   476→   476→      setCurrentBeat(beatCountRef.current % timeSignature);
+   477→   477→   477→      if (soundEnabled) playMetronomeClick(accent);
+   478→   478→   478→      beatCountRef.current++;
+   479→   479→   479→      metronomeTimeoutRef.current = window.setTimeout(tick, (60 / bpm) * 1000);
+   480→   480→   480→    };
+   481→   481→   481→    tick();
+   482→   482→   482→  }, [bpm, soundEnabled, timeSignature]);
+   483→   483→   483→
+   484→   484→   484→  const stopMetronome = useCallback(() => {
+   485→   485→   485→    metronomeRef.current = false;
+   486→   486→   486→    if (metronomeTimeoutRef.current) clearTimeout(metronomeTimeoutRef.current);
+   487→   487→   487→    setMetronomeOn(false); setCurrentBeat(-1);
+   488→   488→   488→  }, []);
+   489→   489→   489→
+   490→   490→   490→  const toggleMetronome = useCallback(() => { metronomeOn ? stopMetronome() : startMetronome(); }, [metronomeOn, startMetronome, stopMetronome]);
+   491→   491→   491→
+   492→   492→   492→  useEffect(() => { if (metronomeOn) { stopMetronome(); startMetronome(); } }, [bpm, timeSignature]); // eslint-disable-line
+   493→   493→   493→  useEffect(() => { return () => { playbackRef.current.playing = false; metronomeRef.current = false; }; }, []);
+   494→   494→   494→
+   495→   495→   495→  const handleTapTempo = useCallback(() => {
+   496→   496→   496→    const now = Date.now();
+   497→   497→   497→    if (tapTimes.current.length > 0 && now - tapTimes.current[tapTimes.current.length - 1] > 2000) tapTimes.current = [];
+   498→   498→   498→    tapTimes.current.push(now);
+   499→   499→   499→    if (tapTimes.current.length > 5) tapTimes.current.shift();
+   500→   500→   500→    if (tapTimes.current.length >= 2) {
+
+[showing lines 1-500 of 1153; use offset=501 with limit to continue reading]
