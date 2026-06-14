@@ -971,7 +971,7 @@ export const EXERCISE_CATEGORIES: Array<{
   { id: 'arpeggios', label: 'Arpeggios', section: 'PRACTICE', types: ['arp-sweep', 'arp-string-skip', 'arp-triad-up', 'arp-seventh', 'arp-inverted', 'arp-connect'] },
   // TECHNIQUE section
   { id: 'picking', label: 'Picking', section: 'TECHNIQUE', types: ['string-skip', 'economy-picking', 'cross-string', 'speed-burst'] },
-  { id: 'legato', label: 'Legato', section: 'TECHNIQUE', types: ['hammer-pull', 'slide-exercise'] },
+  { id: 'legato', label: 'Legato', section: 'TECHNIQUE', types: ['hammer-pull', 'slide-exercise', 'legato-hammer-asc', 'legato-hammer-desc', 'legato-pull-asc', 'legato-pull-desc', 'legato-trill'] },
   { id: 'string-work', label: 'String Work', section: 'TECHNIQUE', types: ['lateral-run', 'diagonal', 'position-shift', 'pentatonic-run', 'spider-walk', 'interval-jump'] },
   // ADVANCED section
   { id: 'connections', label: 'Connections', section: 'ADVANCED', types: ['connecting', 'position-sweep', 'caged-cycle', 'caged-run'] },
@@ -991,7 +991,7 @@ export const EXERCISE_CATEGORIES: Array<{
   { id: 'spider-exercises', label: 'Spider Exercises', section: 'TECHNIQUE', types: ['chromatic-spider-walk', 'spider-cross-1', 'spider-cross-2', 'spider-inward', 'spider-outward'] },
   { id: 'string-crossing', label: 'String Crossing', section: 'TECHNIQUE', types: ['string-cross-asc', 'string-cross-desc', 'string-cross-skip', 'string-cross-alternate'] },
   { id: 'sweep-picking', label: 'Sweep Picking', section: 'TECHNIQUE', types: ['sweep-3string', 'sweep-5string', 'sweep-minor', 'sweep-major'] },
-  { id: 'legato', label: 'Legato', section: 'TECHNIQUE', types: ['legato-hammer-asc', 'legato-hammer-desc', 'legato-pull-asc', 'legato-pull-desc', 'legato-trill'] },
+
   { id: 'position-shifting', label: 'Position Shifting', section: 'TECHNIQUE', types: ['pos-shift-1-fret', 'pos-shift-2-fret', 'pos-shift-3-fret'] },
   { id: 'scale-patterns', label: 'Scale Patterns', section: 'PRACTICE', types: ['scale-2nps', 'scale-4nps', 'scale-offset-run', 'scale-spiral', 'scale-box-run'] },
   { id: 'interval-studies', label: 'Interval Studies', section: 'ADVANCED', types: ['intervals-octave', 'intervals-tritone', 'intervals-compound', 'intervals-chromatic'] },

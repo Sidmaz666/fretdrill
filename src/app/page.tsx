@@ -32,7 +32,7 @@ import {
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Slider } from '@/components/ui/slider';
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetDescription } from '@/components/ui/sheet';
+
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from '@/components/ui/collapsible';
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
@@ -1988,21 +1988,27 @@ export default function Home() {
         </div>
       </div>
 
-      {/* ═══ INFO / DOCUMENTATION SHEET ═══ */}
-      <Sheet open={infoPageOpen} onOpenChange={setInfoPageOpen}>
-        <SheetContent side="right" className="w-full sm:max-w-[700px] p-0 bg-[#faf6ef] border-l-2 border-[#8b7355] overflow-y-auto">
-          <SheetHeader className="sticky top-0 z-10 bg-[#faf6ef] border-b-2 border-[#8b7355] px-6 py-4">
+      {/* ═══ INFO / DOCUMENTATION FULL PAGE ═══ */}
+      {infoPageOpen && (
+        <div className="fixed inset-0 z-50 bg-[#faf6ef] overflow-y-auto">
+          {/* Header */}
+          <div className="sticky top-0 z-10 bg-[#faf6ef] border-b-2 border-[#8b7355]">
+            <div className="max-w-4xl mx-auto px-6 py-4 flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="w-8 h-8 rounded border-2 border-[#8b7355] flex items-center justify-center bg-[#f5f0e8]">
                 <Guitar className="w-5 h-5 text-[#6b5b47]" />
               </div>
               <div>
-                <SheetTitle className="text-lg font-bold text-[#2c2c2c]" style={{ fontFamily: "'Georgia', serif", fontStyle: 'italic' }}>FretBoard Forge — Complete Guide</SheetTitle>
-                <SheetDescription className="text-xs text-[#8b7355] font-serif italic">Everything you need to know about mastering the fretboard</SheetDescription>
+                <h1 className="text-lg font-bold text-[#2c2c2c]" style={{ fontFamily: "'Georgia', serif", fontStyle: 'italic' }}>FretBoard Forge — Complete Guide</h1>
+                <p className="text-xs text-[#8b7355] font-serif italic">Everything you need to know about mastering the fretboard</p>
               </div>
             </div>
-          </SheetHeader>
-          <div className="px-6 py-6 space-y-8 text-[13px] text-[#2c2c2c] leading-relaxed">
+            <button onClick={() => setInfoPageOpen(false)} className="w-8 h-8 rounded border-2 border-[#8b7355] flex items-center justify-center bg-[#f5f0e8] hover:bg-[#e8e2d6] transition-colors cursor-pointer" title="Close Guide">
+              <X className="w-4 h-4 text-[#6b5b47]" />
+            </button>
+            </div>
+          </div>
+          <div className="max-w-4xl mx-auto px-6 py-6 space-y-8 text-[13px] text-[#2c2c2c] leading-relaxed">
 
             {/* ─── Welcome ─── */}
             <section>
@@ -2586,8 +2592,8 @@ export default function Home() {
             </div>
 
           </div>
-        </SheetContent>
-      </Sheet>
+        </div>
+      )}
     </div>
   );
 }
