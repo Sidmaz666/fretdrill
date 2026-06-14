@@ -1,38 +1,37 @@
 ---
 Task ID: 1
 Agent: main
-Task: V3 FretBoard Forge overhaul — 62 exercise types, 150+ variations, V3 layout, verbose stats
+Task: Upgrade audio engine, fix playback visualizations, add BPM controls
 
 Work Log:
-- Read full codebase: page.tsx, exercise-generator.ts (661 lines → 1909 lines), FretboardDiagram.tsx, TabNotation.tsx, music-theory.ts, globals.css, PatternDiagram.tsx
-- Delegated exercise-generator expansion to subagent: 22 → 62 exercise types with variation system
-- Verified expanded exercise generator builds successfully (62 types, 150+ variations, computeExerciseStats, getAllExerciseEntries, EXERCISE_CATEGORIES with sections)
-- Completely rewrote page.tsx with V3 workstation layout:
-  - STICKY TOP BAR: Compact single-row with Key/Scale/Position selectors, sound toggle, context info
-  - LEFT SIDEBAR (250px): Section-grouped navigation (PRACTICE/TECHNIQUE/ADVANCED/WARMUP), search, difficulty badges, expandable categories
-  - CENTER PANEL: Sticky exercise header with breadcrumb + metadata, view switcher, larger fretboard
-  - RIGHT SIDEBAR (280px, xl+): 5 cards — Current Scale, Current Position, Related Exercises, Suggested Next, Session
-  - STICKY BOTTOM BAR: Transport/Tempo/Metronome/Session sections
-  - Mobile: Drawer sidebar, context card, compact bottom bar with scale selector
-- Made fretboard 25% larger: string spacing 28→35, fret spacing 44→52, note radius 11→13
-- Added exercise breadcrumb: Section > Category > Exercise Name
-- Added exercise metadata: difficulty badge, focus area, estimated time, tags
-- Added verbose nerdy stats in Analysis view: total notes, fret range, string changes, position shifts, avg/max fret jump, interval distribution with bar visualization, string coverage grid, picking direction chart, exercise info card with practice tips
-- Added session timer with elapsed time and exercises played count
-- Added DifficultyBadge component (5-dot visual indicator)
-- Added section headers in left sidebar (PRACTICE, TECHNIQUE, ADVANCED, WARMUP)
-- Added Related Exercises and Suggested Next cards in right sidebar
-- Styled scrollbars properly for the sketch workstation aesthetic (5px thin, warm colors, border on track)
-- Kept double-highlight fix from V2 (playbackActiveNote vs clickActiveNote separation)
-- Fixed GuitarPick import error (doesn't exist in lucide-react, replaced with Ruler)
+- Read current page.tsx audio engine (3-oscillator synth, simple sine metronome)
+- Identified issues: basic guitar sound, simple metronome click, limited BPM presets, scale vs exercise playback visualization differences
+- Rewrote guitar sound engine with 6-layer professional synthesis:
+  1. Fundamental (triangle wave with pitch envelope for string stretch transient)
+  2. 2nd harmonic (sine, octave above)
+  3. 3rd harmonic (sine)
+  4. Body resonance (low-pass filtered sub-harmonic)
+  5. Brightness (sawtooth → lowpass filter that decays quickly, simulating pick attack)
+  6. Pluck noise burst (bandpass filtered noise, string-dependent frequency)
+  - Added singleton DynamicsCompressor for overall dynamics
+  - Proper standard tuning frequencies: E2=82.41, A2=110.00, D3=146.83, G3=196.00, B3=246.94, E4=329.63
+- Rewrote metronome with professional wood block sound:
+  1. Tone component (sine burst at G6/C6 for accent/normal)
+  2. Click noise burst (highpass filtered, simulates wood block "clack")
+  3. Resonance body (low sine for woody tone)
+- Added BPM controls: +1/-1 increment buttons, 15 presets (40-220 in steps of 10), finer slider
+- Fixed scale vs exercise playback visualization:
+  - Fretboard: Now always shows exercise highlight notes AND exercise path during both exercise and scale playback (removed the isPlaying conditional that was hiding them)
+  - Tabs: Added `activePlayingNote` prop for position-based matching during scale playback
+  - Exercise mode: highlights tab note by index (playingIdx === gi)
+  - Scale mode: highlights tab note by string+fret position (scaleHighlightIdx)
+  - Both modes now properly highlight the active note on BOTH fretboard and tabs
 - Build passes successfully
 
 Stage Summary:
-- 62 exercise types (was 22) with 150+ variations
-- Exercise categories: Scale Runs (8), Sequences (12), Shapes (10), Technique (12), Connections (4), Intervals (6), Arpeggios (6), Warmups (4)
-- Each exercise has metadata: difficulty 1-5, focus, estimatedTime, tags
-- computeExerciseStats provides 16+ computed metrics per exercise
-- V3 layout with section-grouped sidebar, sticky exercise header, larger fretboard
-- Verbose analysis view with interval distribution, string coverage, picking direction
-- Session tracking (timer + exercises played)
-- Proper scrollbar styling throughout the app
+- Professional guitar sound: 6-oscillator synthesis with pick noise, body resonance, harmonic overtones, and dynamics compressor
+- Professional metronome: wood block sound with tone + click noise + resonance body
+- BPM: 15 presets (40-220), +1/-1 buttons, tap tempo
+- Scale playback now properly visualizes on both fretboard and tabs
+- Exercise playback shows exercise highlights + active note simultaneously
+- Single highlight on fretboard (playbackActiveNote) + exercise context (highlightNotes + exercisePath) visible together

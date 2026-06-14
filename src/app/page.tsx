@@ -66,53 +66,173 @@ import {
 } from 'lucide-react';
 
 // ─── AUDIO ENGINE ───
-const STRING_FREQUENCIES = [82.41, 110.0, 146.83, 196.0, 246.94, 329.63];
+// Proper standard guitar tuning frequencies (Hz) — E2, A2, D3, G3, B3, E4
+const STRING_FREQUENCIES = [82.41, 110.00, 146.83, 196.00, 246.94, 329.63];
 
 let audioCtx: AudioContext | null = null;
+let masterCompressor: DynamicsCompressorNode | null = null;
 function getAudioCtx() {
   if (!audioCtx) audioCtx = new AudioContext();
   return audioCtx;
+}
+
+// Singleton master compressor
+function getMaster(ctx: AudioContext): DynamicsCompressorNode {
+  if (!masterCompressor) {
+    const comp = ctx.createDynamicsCompressor();
+    comp.threshold.setValueAtTime(-20, ctx.currentTime);
+    comp.knee.setValueAtTime(10, ctx.currentTime);
+    comp.ratio.setValueAtTime(4, ctx.currentTime);
+    comp.attack.setValueAtTime(0.003, ctx.currentTime);
+    comp.release.setValueAtTime(0.15, ctx.currentTime);
+    comp.connect(ctx.destination);
+    masterCompressor = comp;
+  }
+  return masterCompressor;
 }
 
 function playGuitarNote(stringIdx: number, fret: number, duration: number = 0.5) {
   try {
     const ctx = getAudioCtx();
     if (ctx.state === 'suspended') ctx.resume();
+    const master = getMaster(ctx);
     const baseFreq = STRING_FREQUENCIES[stringIdx];
     const freq = baseFreq * Math.pow(2, fret / 12);
-    const osc = ctx.createOscillator(); const gain = ctx.createGain();
-    osc.type = 'triangle'; osc.frequency.setValueAtTime(freq, ctx.currentTime);
-    const osc2 = ctx.createOscillator(); const gain2 = ctx.createGain();
-    osc2.type = 'sawtooth'; osc2.frequency.setValueAtTime(freq, ctx.currentTime);
-    const osc3 = ctx.createOscillator(); const gain3 = ctx.createGain();
-    osc3.type = 'sine'; osc3.frequency.setValueAtTime(freq * 0.5, ctx.currentTime);
-    gain.gain.setValueAtTime(0, ctx.currentTime);
-    gain.gain.linearRampToValueAtTime(0.35, ctx.currentTime + 0.008);
-    gain.gain.exponentialRampToValueAtTime(0.15, ctx.currentTime + 0.1);
-    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + duration);
-    gain2.gain.setValueAtTime(0, ctx.currentTime);
-    gain2.gain.linearRampToValueAtTime(0.06, ctx.currentTime + 0.008);
-    gain2.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + duration * 0.7);
-    gain3.gain.setValueAtTime(0, ctx.currentTime);
-    gain3.gain.linearRampToValueAtTime(0.05, ctx.currentTime + 0.01);
-    gain3.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + duration * 0.5);
-    osc.connect(gain); osc2.connect(gain2); osc3.connect(gain3);
-    gain.connect(ctx.destination); gain2.connect(ctx.destination); gain3.connect(ctx.destination);
-    osc.start(ctx.currentTime); osc2.start(ctx.currentTime); osc3.start(ctx.currentTime);
-    osc.stop(ctx.currentTime + duration + 0.05); osc2.stop(ctx.currentTime + duration + 0.05); osc3.stop(ctx.currentTime + duration + 0.05);
+    const now = ctx.currentTime;
+
+    // ── Fundamental (pulse wave — close to plucked string) ──
+    const osc1 = ctx.createOscillator();
+    const gain1 = ctx.createGain();
+    osc1.type = 'triangle';
+    osc1.frequency.setValueAtTime(freq, now);
+    // Slight pitch envelope (attack transient — string stretches then settles)
+    osc1.frequency.setValueAtTime(freq * 1.005, now);
+    osc1.frequency.exponentialRampToValueAtTime(freq, now + 0.02);
+    gain1.gain.setValueAtTime(0, now);
+    gain1.gain.linearRampToValueAtTime(0.32, now + 0.004);  // Fast pluck attack
+    gain1.gain.exponentialRampToValueAtTime(0.12, now + 0.08);
+    gain1.gain.exponentialRampToValueAtTime(0.001, now + duration);
+
+    // ── 2nd harmonic (octave above, softer) ──
+    const osc2 = ctx.createOscillator();
+    const gain2 = ctx.createGain();
+    osc2.type = 'sine';
+    osc2.frequency.setValueAtTime(freq * 2, now);
+    gain2.gain.setValueAtTime(0, now);
+    gain2.gain.linearRampToValueAtTime(0.06, now + 0.003);
+    gain2.gain.exponentialRampToValueAtTime(0.001, now + duration * 0.4);
+
+    // ── 3rd harmonic ──
+    const osc3 = ctx.createOscillator();
+    const gain3 = ctx.createGain();
+    osc3.type = 'sine';
+    osc3.frequency.setValueAtTime(freq * 3, now);
+    gain3.gain.setValueAtTime(0, now);
+    gain3.gain.linearRampToValueAtTime(0.025, now + 0.003);
+    gain3.gain.exponentialRampToValueAtTime(0.001, now + duration * 0.25);
+
+    // ── Body resonance (low-pass filtered sub-harmonic) ──
+    const oscBody = ctx.createOscillator();
+    const gainBody = ctx.createGain();
+    const filterBody = ctx.createBiquadFilter();
+    oscBody.type = 'sine';
+    oscBody.frequency.setValueAtTime(freq * 0.5, now);
+    filterBody.type = 'lowpass';
+    filterBody.frequency.setValueAtTime(300, now);
+    filterBody.Q.setValueAtTime(1, now);
+    gainBody.gain.setValueAtTime(0, now);
+    gainBody.gain.linearRampToValueAtTime(0.04, now + 0.01);
+    gainBody.gain.exponentialRampToValueAtTime(0.001, now + duration * 0.4);
+
+    // ── Brightness (sawtooth → lowpass, simulates pick attack brightness) ──
+    const oscBright = ctx.createOscillator();
+    const gainBright = ctx.createGain();
+    const filterBright = ctx.createBiquadFilter();
+    oscBright.type = 'sawtooth';
+    oscBright.frequency.setValueAtTime(freq, now);
+    filterBright.type = 'lowpass';
+    filterBright.frequency.setValueAtTime(4000, now);           // Bright attack
+    filterBright.frequency.exponentialRampToValueAtTime(800, now + 0.15); // Dulls quickly
+    filterBright.Q.setValueAtTime(0.7, now);
+    gainBright.gain.setValueAtTime(0, now);
+    gainBright.gain.linearRampToValueAtTime(0.05, now + 0.002);
+    gainBright.gain.exponentialRampToValueAtTime(0.001, now + duration * 0.3);
+
+    // ── Pluck noise burst (very short, simulates pick/finger noise) ──
+    const noiseLen = 0.015;
+    const noiseBuffer = ctx.createBuffer(1, ctx.sampleRate * noiseLen, ctx.sampleRate);
+    const noiseData = noiseBuffer.getChannelData(0);
+    for (let i = 0; i < noiseData.length; i++) noiseData[i] = (Math.random() * 2 - 1) * 0.3;
+    const noiseSource = ctx.createBufferSource();
+    noiseSource.buffer = noiseBuffer;
+    const noiseGain = ctx.createGain();
+    const noiseFilter = ctx.createBiquadFilter();
+    noiseFilter.type = 'bandpass';
+    noiseFilter.frequency.setValueAtTime(2000 + stringIdx * 500, now); // Higher strings = brighter noise
+    noiseFilter.Q.setValueAtTime(2, now);
+    noiseGain.gain.setValueAtTime(0.12, now);
+    noiseGain.gain.exponentialRampToValueAtTime(0.001, now + noiseLen);
+
+    // Connect everything
+    osc1.connect(gain1); gain1.connect(master);
+    osc2.connect(gain2); gain2.connect(master);
+    osc3.connect(gain3); gain3.connect(master);
+    oscBody.connect(filterBody); filterBody.connect(gainBody); gainBody.connect(master);
+    oscBright.connect(filterBright); filterBright.connect(gainBright); gainBright.connect(master);
+    noiseSource.connect(noiseFilter); noiseFilter.connect(noiseGain); noiseGain.connect(master);
+
+    // Start all
+    const stopTime = now + duration + 0.1;
+    osc1.start(now); osc2.start(now); osc3.start(now); oscBody.start(now); oscBright.start(now); noiseSource.start(now);
+    osc1.stop(stopTime); osc2.stop(stopTime); osc3.stop(stopTime); oscBody.stop(stopTime); oscBright.stop(stopTime);
   } catch (e) {}
 }
 
+// Professional metronome — wood block sound
 function playMetronomeClick(accent: boolean) {
   try {
     const ctx = getAudioCtx();
     if (ctx.state === 'suspended') ctx.resume();
-    const osc = ctx.createOscillator(); const gain = ctx.createGain();
-    osc.type = 'sine'; osc.frequency.setValueAtTime(accent ? 1200 : 900, ctx.currentTime);
-    gain.gain.setValueAtTime(accent ? 0.25 : 0.12, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.06);
-    osc.connect(gain); gain.connect(ctx.destination);
-    osc.start(ctx.currentTime); osc.stop(ctx.currentTime + 0.06);
+    const now = ctx.currentTime;
+
+    // Tone component — short sine burst like a wood block
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(accent ? 1567.98 : 1046.50, now); // G6 (accent) / C6 (normal)
+    gain.gain.setValueAtTime(accent ? 0.35 : 0.18, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.04);
+    osc.connect(gain);
+
+    // Click noise burst (the "clack" of the wood block)
+    const noiseLen = 0.008;
+    const noiseBuffer = ctx.createBuffer(1, ctx.sampleRate * noiseLen, ctx.sampleRate);
+    const noiseData = noiseBuffer.getChannelData(0);
+    for (let i = 0; i < noiseData.length; i++) noiseData[i] = (Math.random() * 2 - 1);
+    const noiseSource = ctx.createBufferSource();
+    noiseSource.buffer = noiseBuffer;
+    const noiseGain = ctx.createGain();
+    const noiseFilter = ctx.createBiquadFilter();
+    noiseFilter.type = 'highpass';
+    noiseFilter.frequency.setValueAtTime(accent ? 3000 : 2000, now);
+    noiseGain.gain.setValueAtTime(accent ? 0.15 : 0.07, now);
+    noiseGain.gain.exponentialRampToValueAtTime(0.001, now + noiseLen);
+    noiseSource.connect(noiseFilter); noiseFilter.connect(noiseGain);
+
+    // Resonance body
+    const oscBody = ctx.createOscillator();
+    const gainBody = ctx.createGain();
+    oscBody.type = 'sine';
+    oscBody.frequency.setValueAtTime(accent ? 800 : 600, now);
+    gainBody.gain.setValueAtTime(accent ? 0.08 : 0.04, now);
+    gainBody.gain.exponentialRampToValueAtTime(0.001, now + 0.03);
+    oscBody.connect(gainBody);
+
+    const master = getMaster(ctx);
+    gain.connect(master); noiseGain.connect(master); gainBody.connect(master);
+
+    osc.start(now); noiseSource.start(now); oscBody.start(now);
+    osc.stop(now + 0.05); oscBody.stop(now + 0.04);
   } catch (e) {}
 }
 
@@ -385,7 +505,7 @@ export default function Home() {
     }
   }, []);
 
-  const bpmPresets = [60, 80, 100, 120, 140, 160];
+  const bpmPresets = [40, 50, 60, 70, 80, 90, 100, 110, 120, 130, 140, 160, 180, 200, 220];
 
   // Filtered exercises for search
   const filteredCategories = useMemo(() => {
@@ -633,8 +753,8 @@ export default function Home() {
                 <div className="px-1 py-1 overflow-x-auto">
                   <FretboardDiagram keyNote={keyNote} scaleId={scaleId} startFret={startFret} endFret={endFret}
                     showAllPositions={showAllPositions} positionIndex={positionIndex}
-                    highlightNotes={isPlaying ? undefined : exerciseHighlightNotes}
-                    exercisePath={isPlaying ? undefined : exercisePath}
+                    highlightNotes={exerciseHighlightNotes}
+                    exercisePath={exercisePath}
                     activeNote={effectiveActiveNote} onNoteClick={handleFretboardNoteClick}
                     showPatternLines={true} fullFretboard={true} />
                 </div>
@@ -645,6 +765,7 @@ export default function Home() {
             {viewMode === 'tab' && (
               <TabNotation exercise={currentExercise} onNoteClick={handleTabNoteClick} playingIdx={playingIdx}
                 isPlaying={isPlaying} isPaused={isPaused} playbackMode={playbackMode}
+                activePlayingNote={playbackActiveNote}
                 onPlayExercise={handlePlayExercise} onPlayScale={handlePlayScale} onPause={togglePausePlayback} onStop={stopPlayback} />
             )}
 
@@ -655,14 +776,15 @@ export default function Home() {
                   <div className="px-1 py-1 overflow-x-auto">
                     <FretboardDiagram keyNote={keyNote} scaleId={scaleId} startFret={startFret} endFret={endFret}
                       showAllPositions={showAllPositions} positionIndex={positionIndex}
-                      highlightNotes={isPlaying ? undefined : exerciseHighlightNotes}
-                      exercisePath={isPlaying ? undefined : exercisePath}
+                      highlightNotes={exerciseHighlightNotes}
+                      exercisePath={exercisePath}
                       activeNote={effectiveActiveNote} onNoteClick={handleFretboardNoteClick}
                       showPatternLines={true} fullFretboard={true} />
                   </div>
                 </div>
                 <TabNotation exercise={currentExercise} onNoteClick={handleTabNoteClick} playingIdx={playingIdx}
                   isPlaying={isPlaying} isPaused={isPaused} playbackMode={playbackMode}
+                  activePlayingNote={playbackActiveNote}
                   onPlayExercise={handlePlayExercise} onPlayScale={handlePlayScale} onPause={togglePausePlayback} onStop={stopPlayback} />
               </>
             )}
@@ -951,17 +1073,19 @@ export default function Home() {
           <div className="w-px h-5 bg-[#e8e2d6]" />
 
           {/* TEMPO */}
-          <div className="flex items-center gap-1.5 min-w-0">
+          <div className="flex items-center gap-1 min-w-0">
             <div className="flex items-center gap-0.5 shrink-0">
               <Timer className="w-2.5 h-2.5 text-[#8b7355]" />
-              <span className="text-[13px] font-mono font-bold text-[#4a4a4a]">{bpm}</span>
+              <button className="sketch-btn w-4 h-4 flex items-center justify-center border-[#c4b89c] p-0 text-[8px] font-bold" onClick={() => setBpm(Math.max(40, bpm - 1))} title="-1 BPM">−</button>
+              <span className="text-[13px] font-mono font-bold text-[#4a4a4a] w-7 text-center">{bpm}</span>
+              <button className="sketch-btn w-4 h-4 flex items-center justify-center border-[#c4b89c] p-0 text-[8px] font-bold" onClick={() => setBpm(Math.min(220, bpm + 1))} title="+1 BPM">+</button>
               <span className="text-[7px] text-[#8b7355] font-serif italic hidden sm:inline">BPM</span>
             </div>
             <input type="range" min={40} max={220} step={1} value={bpm} onChange={e => setBpm(Number(e.target.value))}
-              className="w-14 sm:w-20 h-1 cursor-pointer" style={{ accentColor: '#8b7355' }} />
-            <div className="hidden md:flex gap-0.5">
+              className="w-12 sm:w-18 h-1 cursor-pointer" style={{ accentColor: '#8b7355' }} />
+            <div className="hidden md:flex items-center gap-px overflow-x-auto max-w-[240px]">
               {bpmPresets.map(preset => (
-                <button key={preset} className={`text-[7px] px-0.5 py-0.5 border rounded-sm transition-all ${bpm === preset ? 'sketch-btn-active border-[#6b5b47]' : 'sketch-btn border-[#c4b89c] hover:border-[#8b7355]'}`}
+                <button key={preset} className={`text-[6px] px-0.5 py-0.5 border rounded-sm transition-all whitespace-nowrap ${bpm === preset ? 'sketch-btn-active border-[#6b5b47]' : 'sketch-btn border-[#c4b89c] hover:border-[#8b7355]'}`}
                   onClick={() => setBpm(preset)}>{preset}</button>
               ))}
             </div>

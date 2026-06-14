@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useCallback, useRef, useEffect } from 'react';
+import React, { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { Exercise, ExerciseNote } from '@/lib/exercise-generator';
 import { toPng, toSvg } from 'html-to-image';
 import {
@@ -24,6 +24,7 @@ interface TabNotationProps {
   isPlaying?: boolean;
   isPaused?: boolean;
   playbackMode?: 'idle' | 'exercise' | 'scale';
+  activePlayingNote?: { string: number; fret: number } | null;
   onPlayExercise?: () => void;
   onPlayScale?: () => void;
   onPause?: () => void;
@@ -48,6 +49,7 @@ export default function TabNotation({
   isPlaying = false,
   isPaused = false,
   playbackMode = 'idle',
+  activePlayingNote = null,
   onPlayExercise,
   onPlayScale,
   onPause,
@@ -162,9 +164,29 @@ export default function TabNotation({
   const svgWidth = LM + NPR * CW + 10;
   const totalHeight = rows.length * LH + (rows.length - 1) * RG + 4;
 
-  // Only highlight in tabs during exercise playback
-  const showTabHighlight = isPlaying && playbackMode === 'exercise';
-  const currentPlayingNote = showTabHighlight && playingIdx >= 0 && playingIdx < allNotes.length ? allNotes[playingIdx] : null;
+  // Highlight in tabs during any playback mode
+  // For exercise mode: use playingIdx (direct index into exercise notes)
+  // For scale mode: use activePlayingNote (string+fret position matching)
+  const showTabHighlight = isPlaying && (playbackMode === 'exercise' || playbackMode === 'scale');
+
+  // Find the current playing note: either by index (exercise) or by position (scale)
+  const currentPlayingNote = (() => {
+    if (!showTabHighlight) return null;
+    if (playbackMode === 'exercise' && playingIdx >= 0 && playingIdx < allNotes.length) {
+      return allNotes[playingIdx];
+    }
+    // For scale mode, find the exercise note that matches the playing position
+    if (playbackMode === 'scale' && activePlayingNote) {
+      return allNotes.find(n => n.string === activePlayingNote.string && n.fret === activePlayingNote.fret) || null;
+    }
+    return null;
+  })();
+
+  // Build a set of exercise note indices that should be highlighted during scale playback
+  const scaleHighlightIdx = useMemo(() => {
+    if (!isPlaying || playbackMode !== 'scale' || !activePlayingNote) return -1;
+    return allNotes.findIndex(n => n.string === activePlayingNote.string && n.fret === activePlayingNote.fret);
+  }, [isPlaying, playbackMode, activePlayingNote, allNotes]);
 
   return (
     <div className={`sketch-card bg-[#faf6ef] p-2 ${className}`}>
@@ -269,7 +291,11 @@ export default function TabNotation({
                   const x = LM + ni * CW + CW / 2;
                   const y = TM + (5 - note.string) * SS;
                   const isHov = hoveredIdx === gi;
-                  const isPlay = showTabHighlight && playingIdx === gi;
+                  // For exercise mode: match by global index. For scale mode: match by string+fret position
+                  const isPlay = showTabHighlight && (
+                    (playbackMode === 'exercise' && playingIdx === gi) ||
+                    (playbackMode === 'scale' && scaleHighlightIdx === gi)
+                  );
                   const isAct = isHov || isPlay;
 
                   const fs = note.fret.toString();
