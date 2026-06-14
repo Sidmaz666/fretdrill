@@ -764,7 +764,7 @@ export default function Home() {
       playbackRef.current.idx = idx + 1;
       playbackRef.current.timeoutId = window.setTimeout(playNext, intervalMs);
     };
-    playNext();
+    playbackRef.current.timeoutId = window.setTimeout(playNext, intervalMs);
   }, [currentExercise, scaleNotesForPlayback, bpm, soundEnabled, stopPlayback]);
 
   const togglePausePlayback = useCallback(() => {
@@ -1301,51 +1301,61 @@ export default function Home() {
             </div>
 
             {/* ─── View Content ─── */}
+            {(() => {
+              const isScalePlaying = playbackMode === 'scale';
+              const fbHighlightNotes = isScalePlaying ? undefined : exerciseHighlightNotes;
+              const fbExercisePath = isScalePlaying ? undefined : exercisePath;
 
-            {/* Fretboard Only */}
-            {viewMode === 'fretboard' && (
-              <div className="sketch-card bg-[#faf6ef] overflow-hidden">
-                <div className="px-1 py-1 overflow-x-auto overflow-y-visible">
-                  <FretboardDiagram keyNote={keyNote} scaleId={scaleId} startFret={startFret} endFret={endFret}
-                    showAllPositions={showAllPositions} positionIndex={safePositionIndex}
-                    highlightNotes={exerciseHighlightNotes}
-                    exercisePath={exercisePath}
-                    activeNote={effectiveActiveNote} onNoteClick={handleFretboardNoteClick}
-                    showPatternLines={true} fullFretboard={true} />
-                </div>
-              </div>
-            )}
-
-            {/* Tab Only */}
-            {viewMode === 'tab' && (
-              <TabNotation exercise={currentExercise} onNoteClick={handleTabNoteClick} playingIdx={playingIdx}
-                isPlaying={isPlaying} isPaused={isPaused} playbackMode={playbackMode}
-                activePlayingNote={playbackActiveNote}
-                onPlayExercise={handlePlayExercise} onPlayScale={handlePlayScale} onPause={togglePausePlayback} onStop={stopPlayback} />
-            )}
-
-            {/* Hybrid — Fretboard + Tab */}
-            {viewMode === 'hybrid' && (
-              <>
-                <div className="sketch-card bg-[#faf6ef] overflow-hidden">
-                  <div className="px-1 py-1 overflow-x-auto overflow-y-visible">
-                    <FretboardDiagram keyNote={keyNote} scaleId={scaleId} startFret={startFret} endFret={endFret}
-                      showAllPositions={showAllPositions} positionIndex={safePositionIndex}
-                      highlightNotes={exerciseHighlightNotes}
-                      exercisePath={exercisePath}
-                      activeNote={effectiveActiveNote} onNoteClick={handleFretboardNoteClick}
-                      showPatternLines={true} fullFretboard={true} />
+              if (isScalePlaying || viewMode === 'fretboard') {
+                return (
+                  <div className="sketch-card bg-[#faf6ef] overflow-hidden">
+                    <div className="px-1 py-1 overflow-x-auto overflow-y-visible">
+                      <FretboardDiagram keyNote={keyNote} scaleId={scaleId} startFret={startFret} endFret={endFret}
+                        showAllPositions={showAllPositions} positionIndex={safePositionIndex}
+                        highlightNotes={fbHighlightNotes}
+                        exercisePath={fbExercisePath}
+                        activeNote={effectiveActiveNote} onNoteClick={handleFretboardNoteClick}
+                        showPatternLines={true} fullFretboard={true} />
+                    </div>
                   </div>
-                </div>
-                <TabNotation exercise={currentExercise} onNoteClick={handleTabNoteClick} playingIdx={playingIdx}
-                  isPlaying={isPlaying} isPaused={isPaused} playbackMode={playbackMode}
-                  activePlayingNote={playbackActiveNote}
-                  onPlayExercise={handlePlayExercise} onPlayScale={handlePlayScale} onPause={togglePausePlayback} onStop={stopPlayback} />
-              </>
-            )}
+                );
+              }
+
+              if (viewMode === 'tab') {
+                return (
+                  <TabNotation exercise={currentExercise} onNoteClick={handleTabNoteClick} playingIdx={playingIdx}
+                    isPlaying={isPlaying} isPaused={isPaused} playbackMode={playbackMode}
+                    activePlayingNote={playbackActiveNote}
+                    onPlayExercise={handlePlayExercise} onPlayScale={handlePlayScale} onPause={togglePausePlayback} onStop={stopPlayback} />
+                );
+              }
+
+              if (viewMode === 'hybrid') {
+                return (
+                  <>
+                    <div className="sketch-card bg-[#faf6ef] overflow-hidden">
+                      <div className="px-1 py-1 overflow-x-auto overflow-y-visible">
+                        <FretboardDiagram keyNote={keyNote} scaleId={scaleId} startFret={startFret} endFret={endFret}
+                          showAllPositions={showAllPositions} positionIndex={safePositionIndex}
+                          highlightNotes={fbHighlightNotes}
+                          exercisePath={fbExercisePath}
+                          activeNote={effectiveActiveNote} onNoteClick={handleFretboardNoteClick}
+                          showPatternLines={true} fullFretboard={true} />
+                      </div>
+                    </div>
+                    <TabNotation exercise={currentExercise} onNoteClick={handleTabNoteClick} playingIdx={playingIdx}
+                      isPlaying={isPlaying} isPaused={isPaused} playbackMode={playbackMode}
+                      activePlayingNote={playbackActiveNote}
+                      onPlayExercise={handlePlayExercise} onPlayScale={handlePlayScale} onPause={togglePausePlayback} onStop={stopPlayback} />
+                  </>
+                );
+              }
+
+              return null;
+            })()}
 
             {/* Analysis — Verbose Nerdy Stats */}
-            {viewMode === 'analysis' && (
+            {viewMode === 'analysis' && playbackMode !== 'scale' && (
               <div className="sketch-card bg-[#faf6ef] p-3 space-y-3">
                 {/* Overview Stats Grid */}
                 <div>
