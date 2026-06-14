@@ -68,7 +68,7 @@ import {
   Activity,
   Hash,
   Ruler,
-  SkipBack, SkipForward, RotateCcw, Repeat, Gauge, Waves, Metronome as MetronomeIcon, Hand, Shuffle as ShuffleIcon, Dice5, TimerReset, Flag, ChevronFirst, ChevronLast, Siren, Disc3, ToggleLeft, Info, BookOpen, ChevronRight as ChevronRightIcon,
+  SkipBack, SkipForward, RotateCcw, Repeat, Gauge, Waves, Metronome as MetronomeIcon, Hand, Shuffle as ShuffleIcon, Dice5, TimerReset, Flag, ChevronFirst, ChevronLast, Siren, Disc3, ToggleLeft, Info, BookOpen, ChevronRight as ChevronRightIcon, Github,
 } from 'lucide-react';
 
 // ─── AUDIO ENGINE ───
@@ -1145,6 +1145,11 @@ export default function Home() {
             <Info className="w-2.5 h-2.5" />
             <span className="hidden sm:inline text-[9px] font-serif italic">Guide</span>
           </button>
+          <a href="https://github.com/Sidmaz666/fretdrill" target="_blank" rel="noopener noreferrer"
+             className="sketch-btn px-1.5 py-0.5 text-[10px] flex items-center gap-0.5 shrink-0 border-[#8b7355] cursor-pointer"
+             title="View source on GitHub">
+            <Github className="w-2.5 h-2.5" />
+          </a>
         </div>
       </header>
 
